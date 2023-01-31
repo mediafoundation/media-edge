@@ -1,0 +1,10 @@
+config/env.js
+node_modules/
+evm-contract/node_modules/
+evm-contract/test/node_modules
+evm-contract/.env
+evm-contract/config/env.js
+evm-contract/yarn-error.log
+.idea/
+yarn.lock
+package-lock.json
