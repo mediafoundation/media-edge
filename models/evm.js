@@ -40,29 +40,6 @@ module.exports = (sequelize, DataTypes) => {
         return decrypted;
     }
 
-
-    Evm.getResources = async (contract) => {
-        let resources = await contract.methods.getResources(config.WALLET).call();
-
-        let decryptedResources = []
-        for (i = 0; i < resources.length; i++) {
-            let attrs = JSON.parse(resources[i].encryptedSharedKey);
-            let decryptedSharedKey = await ethSigDecrypt(
-                attrs.encryptedData,
-                config.PRIVATE_KEY
-            );
-            let decrypted = await decrypt(
-                decryptedSharedKey,
-                attrs.iv,
-                attrs.tag,
-                resources[i].encryptedData
-            );
-            decryptedResources.push(decrypted);
-        }
-
-        console.log(decryptedResources);
-    }
-
     Evm.getPaginatedResources = async (contract, start, count) => {
         let resources = []
 
@@ -80,15 +57,19 @@ module.exports = (sequelize, DataTypes) => {
                 for (let i = 1; i * steps < totalResources; i++) {
                     console.log(i * steps, steps)
                     let result = await contract.methods.getPaginatedResources(config.WALLET, steps * i, steps).call()
-                    //console.log(result)
-                    resources.push(...result._resources)
+                    result._resources.forEach(resource => {
+                        resources.push(ethSigDecrypt(resource, config.PRIVATE_KEY))
+                    })
                 }
 
                 if(totalResources > resources.length){
                     let result = await contract.methods.getPaginatedResources(config.WALLET, resources.length, totalResources > resources.length).call()
-                    resources.push(...result._resources)
+                    result._resources.forEach(resource => {
+                        resources.push(ethSigDecrypt(resource, config.PRIVATE_KEY))
+                    })
                 }
             }
+
             return resources
         } catch (error) {
             console.log(error);
