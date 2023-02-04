@@ -1,0 +1,4 @@
+[submodule "evm-contract"]
+	path = evm-contract
+	url = git@github.com:mediafoundation/evm-contract.git
+	branch = marketplace

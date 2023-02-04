@@ -1,0 +1,29 @@
+{
+  "name": "media-edge",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:mediafoundation/media-edge.git",
+  "author": "barboldev <barboldev@protonmail.com>",
+  "license": "MIT",
+
+  "dependencies": {
+    "@metamask/eth-sig-util": "^5.0.2",
+    "axios": "^0.21.1",
+    "basic-auth": "^2.0.1",
+    "bignumber.js": "^9.0.1",
+    "cors": "^2.8.5",
+    "dohjs": "^0.3.2",
+    "dotenv": "^10.0.0",
+    "ejs": "^3.1.6",
+    "express": "^4.17.1",
+    "nanoid": "^3.3.4",
+    "pg": "^8.5.1",
+    "pg-hstore": "^2.3.3",
+    "rsync": "^0.6.1",
+    "sequelize": "^6.21.3",
+    "toml": "^3.0.0",
+    "tweetnacl-sealedbox-js": "^1.2.0",
+    "web3": "^1.5.1"
+  }
+  
+}
