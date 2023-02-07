@@ -9,7 +9,10 @@ const Web3 = require('web3');
 const init = async(Contract)=>{
   
   let resources = await db.Evm.getPaginatedResources(Contract, 0, 2);
-  console.log(resources)
+  for (const resource of resources) {
+    let resourceFormatted = db.Evm.formatDataToDB(resource.resource_id, resource.owner, resource.data)
+    await db.Evm.addRecord(resourceFormatted)
+  }
 }
 
 

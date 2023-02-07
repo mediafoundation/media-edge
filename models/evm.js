@@ -20,11 +20,10 @@ module.exports = (sequelize, DataTypes) => {
 
     const ethSigDecrypt = async (encryptedData, privateKey) => {
 
-        let decrypt = await ethSigUtil.decrypt({
+        return ethSigUtil.decrypt({
             encryptedData: JSON.parse(Buffer.from(encryptedData.slice(2), 'hex').toString('utf8')),
             privateKey: privateKey
         });
-        return decrypt;
     }
 
     const decrypt = async (key, iv, tag, resourceData) => {
@@ -40,8 +39,6 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     Evm.getPaginatedResources = async (contract, start, count) => {
-
-        console.log("Prueba de", await contract.methods.getResource(0, config.WALLET).call())
         let resources = []
 
         let paginatorIndex = start
@@ -122,7 +119,7 @@ module.exports = (sequelize, DataTypes) => {
     Evm.addRecord = async (resource) => {
         let evm_record = await Evm.findOne({
             where: {
-                id: resource.id
+                resource_id: resource.resource_id
             }
         })
         if(evm_record){
@@ -135,7 +132,20 @@ module.exports = (sequelize, DataTypes) => {
         return evm_record
     }
 
-    Evm.sync({force: true})
+    Evm.formatDataToDB = (resource_id, owner, data) => {
+        let parsedData = JSON.parse(data)
+        parsedData.resource_id = resource_id
+        parsedData.owner = owner
+        parsedData.label = parsedData.label ? parsedData.label : ""
+        parsedData.protocol = parsedData.protocol ? parsedData.protocol : ""
+        parsedData.origin = parsedData.origin ? parsedData.origin : ""
+        parsedData.path = parsedData.path ? parsedData.path : ""
+        parsedData.domain = parsedData.domain ? parsedData.domain : ""
+
+        return parsedData
+    }
+
+    Evm.sync({force: false})
     return Evm
 
 }
