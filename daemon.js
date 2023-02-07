@@ -7,11 +7,22 @@ const Web3 = require('web3');
 
 
 const init = async(Contract)=>{
-  
+
+  //fetch resources
   let resources = await db.Evm.getPaginatedResources(Contract, 0, 2);
+
+  //upsert records in db
   for (const resource of resources) {
-    let resourceFormatted = db.Evm.formatDataToDB(resource.resource_id, resource.owner, resource.data)
+    let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data)
     await db.Evm.addRecord(resourceFormatted)
+  }
+
+  //delete records that are in db but not in blockchain
+  let resourcesIds = resources.map(obj => obj.resource_id)
+  let notCompatibleResources = await db.Evm.compareBlockchainAndDbData(resourcesIds)
+
+  if(notCompatibleResources.length > 0){
+    await db.Evm.deleteRecords(notCompatibleResources)
   }
 }
 

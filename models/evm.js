@@ -1,8 +1,8 @@
 const config = require('../config/env')
-const web3 = require('web3');
 const crypto = require('crypto');
 const ethSigUtil = require('@metamask/eth-sig-util');
-const Resources = require('../evm-contract/build/contracts/Resources.json')
+const {idle_in_transaction_session_timeout} = require("pg/lib/defaults");
+const {noRawAttributes} = require("sequelize/lib/utils/deprecations");
 
 module.exports = (sequelize, DataTypes) => {
 
@@ -132,7 +132,7 @@ module.exports = (sequelize, DataTypes) => {
         return evm_record
     }
 
-    Evm.formatDataToDB = (resource_id, owner, data) => {
+    Evm.formatDataToDb = (resource_id, owner, data) => {
         let parsedData = JSON.parse(data)
         parsedData.resource_id = resource_id
         parsedData.owner = owner
@@ -143,6 +143,27 @@ module.exports = (sequelize, DataTypes) => {
         parsedData.domain = parsedData.domain ? parsedData.domain : ""
 
         return parsedData
+    }
+
+    Evm.compareBlockchainAndDbData = async (blockchainIds) => {
+        let difference = [];
+        let rawDbResources = await Evm.findAll({attributes: ['resource_id']})
+        let dbResourcesIds = rawDbResources.map(row => row.resource_id)
+        let set1 = new Set(blockchainIds);
+        for (let i = 0; i < dbResourcesIds.length; i++) {
+            if (!set1.has(dbResourcesIds[i])) {
+                difference.push(dbResourcesIds[i]);
+            }
+        }
+        return difference;
+
+    }
+
+    Evm.deleteRecords = async (ids) => {
+        for (const id of ids) {
+            let row = await Evm.findOne({where: {["resource_id"] : id}})
+            await row.destroy()
+        }
     }
 
     Evm.sync({force: false})
