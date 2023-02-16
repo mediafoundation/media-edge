@@ -23,7 +23,8 @@
     "sequelize": "^6.21.3",
     "toml": "^3.0.0",
     "tweetnacl-sealedbox-js": "^1.2.0",
-    "web3": "^1.5.1"
+    "web3": "^1.5.1",
+    "ethers": "^5.4.3"
   }
   
 }
