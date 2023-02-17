@@ -125,7 +125,7 @@ module.exports = (sequelize, DataTypes) => {
         try {
             let result = await contract.methods.getPaginatedDeals(config.WALLET, true, paginatorIndex, steps).call()
 
-            console.log("Result: ", result._deals)
+            //console.log("Deal 1: ", result._deals)
             deals.push(...result._deals)
 
             if(result._totalDeals > deals.length){
@@ -152,7 +152,7 @@ module.exports = (sequelize, DataTypes) => {
         let unixTime = BigNumber.from(Math.floor(Date.now() / 1000));
         let elapsedTime = unixTime.sub(deal.startTime);
         let totalTime = BigNumber.from(deal.blockedBalance).div(deal.pricePerSecond);
-        let remainingTime = totalTime.sub(elapsedTime);
+        totalTime.sub(elapsedTime);
         //let remainingBalance = remainingTime.mul(deal.pricePerSecond);
         //let pendingPayment = elapsedTime.mul(deal.pricePerSecond).gt(deal.blockedBalance) ? deal.blockedBalance  : elapsedTime.mul(deal.pricePerSecond);
         //let remainingOrConsumed = ((props.type == "provider" ? pendingPayment : remainingBalance) / 1000000);
@@ -177,7 +177,7 @@ module.exports = (sequelize, DataTypes) => {
             evm_record.save()
         } else {
             evm_record = await Evm.create(resource)
-            console.log("Created resource in evm table")
+            console.log("Created resource in evm table: ", resource.resource_id)
         }
         return evm_record
     }
@@ -211,8 +211,6 @@ module.exports = (sequelize, DataTypes) => {
 
     Evm.compareDealsResourcesWithResources = async (dealsIds, resourcesIds) => {
         let difference = [];
-        //let rawDbResources = await Evm.findAll({attributes: ['resource_id']})
-        //let dbResourcesIds = rawDbResources.map(row => row.resource_id)
         let set1 = new Set(dealsIds);
         for (let i = 0; i < resourcesIds.length; i++) {
             if (!set1.has(resourcesIds[i])) {
@@ -224,6 +222,7 @@ module.exports = (sequelize, DataTypes) => {
 
     Evm.deleteRecords = async (ids) => {
         for (const id of ids) {
+            console.log("Deleted resource in evm table: ", id)
             let row = await Evm.findOne({where: {["resource_id"] : id}})
             await row.destroy()
         }

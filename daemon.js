@@ -14,21 +14,45 @@ const init = async(ResourcesContract, MarketplaceContract)=>{
 
   let deals = await db.Evm.getPaginatedDeals(MarketplaceContract, 0, 2)
 
-  //delete deals that are not active
+  let dealsToDelete = []
+
+  //add to an array all the deal's id to delete
   for (let i = 0; i < deals.length; i++) {
-    if(await db.Evm.dealIsActive(deals[i]) === false){
-      delete deals[i]
+    if(await db.Evm.dealIsActive(deals[i]) === false || deals[i].active === false){
+      dealsToDelete.push(deals[i].id)
     }
   }
 
-  //console.log("Deals: ", deals)
-  //console.log("Resources: ", resources)
+  //delete deal from the array of deals
+  for (let i = 0; i < dealsToDelete.length; i++) {
+    let indexToDelete = deals.map(deal => deal.id).indexOf(dealsToDelete[i])
+    deals.splice(indexToDelete, 1)
+  }
 
+  //check which resources are not in an active deal
   let resourcesIds = resources.map(obj => obj.resource_id)
   let dealResourcesIds = deals.map(obj => obj.resourceId)
+  let resourcesToDelete = await db.Evm.compareDealsResourcesWithResources(dealResourcesIds, resourcesIds)
 
-  console.log("Resources Ids: ", resourcesIds)
-  console.log("Deal Resources Ids: ", dealResourcesIds)
+  //delete resource from the array of resources
+  for (let i = 0; i < resourcesToDelete.length; i++) {
+    let indexToDelete = resources.map(deal => deal.resource_id).indexOf(resourcesToDelete[i])
+    resources.splice(indexToDelete, 1)
+  }
+
+  //upsert records in db
+  for (const resource of resources) {
+    let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data)
+    await db.Evm.addRecord(resourceFormatted)
+  }
+
+  //delete records that are in db but not in blockchain
+  resourcesIds = resources.map(obj => obj.resource_id)
+  let notCompatibleResources = await db.Evm.compareBlockchainAndDbData(resourcesIds)
+
+  if(notCompatibleResources.length > 0){
+    await db.Evm.deleteRecords(notCompatibleResources)
+  }
 
 
 
@@ -45,14 +69,6 @@ const init = async(ResourcesContract, MarketplaceContract)=>{
   for (const resource of resources) {
     let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data)
     await db.Evm.addRecord(resourceFormatted)
-  }
-
-  //delete records that are in db but not in blockchain
-  let resourcesIds = resources.map(obj => obj.resource_id)
-  let notCompatibleResources = await db.Evm.compareBlockchainAndDbData(resourcesIds)
-
-  if(notCompatibleResources.length > 0){
-    await db.Evm.deleteRecords(notCompatibleResources)
   }
 
 
