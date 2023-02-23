@@ -7,7 +7,7 @@ const {BigNumber} = require("ethers");
 module.exports = (sequelize, DataTypes) => {
 
     const Evm = sequelize.define('Evm', {
-            resource_id: DataTypes.STRING,
+            id: {type: DataTypes.STRING, primaryKey: true},
             owner: DataTypes.STRING,
             label: DataTypes.STRING,
             protocol: DataTypes.STRING,
@@ -109,67 +109,21 @@ module.exports = (sequelize, DataTypes) => {
             }
 
             return resources
-        } catch (error) {
-            console.log(error);
+        } catch (e) {
+            if(e.message === "Internal JSON-RPC error.") {
+                e.message = e.data.message;
+            }
+            e.message = e.message.replace("VM Exception while processing transaction: revert","");
+            console.log(e.message);
         }
 
         return resources
     }
 
-    Evm.getPaginatedDeals = async (contract, start, count) => {
-        let deals = []
-
-        let paginatorIndex = start
-        let steps = count
-
-        try {
-            let result = await contract.methods.getPaginatedDeals(config.WALLET, true, paginatorIndex, steps).call()
-
-            //console.log("Deal 1: ", result._deals)
-            deals.push(...result._deals)
-
-            if(result._totalDeals > deals.length){
-                let totalDeals = result._totalDeals
-                for (let i = 1; i * steps < totalDeals; i++) {
-                    let result = await contract.methods.getPaginatedDeals(config.WALLET, true, steps * i, steps).call()
-                    deals.push(...result._deals)
-                }
-
-                if(totalDeals > deals.length){
-                    let result = await contract.methods.getPaginatedDeals(config.WALLET, true, deals.length, totalDeals - deals.length).call()
-                    deals.push(...result._deals)
-                }
-            }
-
-            return deals
-        } catch (error) {
-
-            //console.log(Web3RequestManager.Manager.)
-        }
-    }
-
-    Evm.dealIsActive = async (deal) => {
-        let unixTime = BigNumber.from(Math.floor(Date.now() / 1000));
-        let elapsedTime = unixTime.sub(deal.startTime);
-        let totalTime = BigNumber.from(deal.blockedBalance).div(deal.pricePerSecond);
-        totalTime.sub(elapsedTime);
-        //let remainingBalance = remainingTime.mul(deal.pricePerSecond);
-        //let pendingPayment = elapsedTime.mul(deal.pricePerSecond).gt(deal.blockedBalance) ? deal.blockedBalance  : elapsedTime.mul(deal.pricePerSecond);
-        //let remainingOrConsumed = ((props.type == "provider" ? pendingPayment : remainingBalance) / 1000000);
-        let calculatedEnd = BigNumber.from(deal.startTime).add(totalTime);
-        let d = new Date(calculatedEnd * 1000);
-        const pad2 = (n) => { return (n < 10 ? '0' : '') + n }
-        let formattedCalculatedEnd = pad2(d.getFullYear()) + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) + "T" + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
-        console.log("Formatted calculated end ", formattedCalculatedEnd, typeof formattedCalculatedEnd, Date.parse(formattedCalculatedEnd))
-        console.log(Date.now())
-
-        return Date.parse(formattedCalculatedEnd) > Date.now()
-    }
-
     Evm.addRecord = async (resource) => {
         let evm_record = await Evm.findOne({
             where: {
-                resource_id: resource.resource_id
+                id: resource.id
             }
         })
         if(evm_record){
@@ -177,14 +131,14 @@ module.exports = (sequelize, DataTypes) => {
             evm_record.save()
         } else {
             evm_record = await Evm.create(resource)
-            console.log("Created resource in evm table: ", resource.resource_id)
+            console.log("Created resource in evm table: ", resource.id)
         }
         return evm_record
     }
 
     Evm.formatDataToDb = (resource_id, owner, data) => {
         let parsedData = JSON.parse(data)
-        parsedData.resource_id = resource_id
+        parsedData.id = resource_id
         parsedData.owner = owner
         parsedData.label = parsedData.label ? parsedData.label : ""
         parsedData.protocol = parsedData.protocol ? parsedData.protocol : ""
@@ -197,8 +151,8 @@ module.exports = (sequelize, DataTypes) => {
 
     Evm.compareBlockchainAndDbData = async (blockchainIds) => {
         let difference = [];
-        let rawDbResources = await Evm.findAll({attributes: ['resource_id']})
-        let dbResourcesIds = rawDbResources.map(row => row.resource_id)
+        let rawDbResources = await Evm.findAll({attributes: ['id']})
+        let dbResourcesIds = rawDbResources.map(row => row.id)
         let set1 = new Set(blockchainIds);
         for (let i = 0; i < dbResourcesIds.length; i++) {
             if (!set1.has(dbResourcesIds[i])) {
@@ -223,7 +177,7 @@ module.exports = (sequelize, DataTypes) => {
     Evm.deleteRecords = async (ids) => {
         for (const id of ids) {
             console.log("Deleted resource in evm table: ", id)
-            let row = await Evm.findOne({where: {["resource_id"] : id}})
+            let row = await Evm.findOne({where: {["id"] : id}})
             await row.destroy()
         }
     }

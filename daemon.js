@@ -12,13 +12,15 @@ const init = async(ResourcesContract, MarketplaceContract)=>{
   //fetch resources and deals
   let resources = await db.Evm.getPaginatedResources(ResourcesContract, 0, 2);
 
-  let deals = await db.Evm.getPaginatedDeals(MarketplaceContract, 0, 2)
+  let deals = await db.Deals.getPaginatedDeals(MarketplaceContract, 0, 2)
+
+  console.log("Deal :", db.Deals.formatDataToDb(deals[0]))
 
   let dealsToDelete = []
 
   //add to an array all the deal's id to delete
   for (let i = 0; i < deals.length; i++) {
-    if(await db.Evm.dealIsActive(deals[i]) === false || deals[i].active === false){
+    if(await db.Deals.dealIsActive(deals[i]) === false || deals[i].active === false){
       dealsToDelete.push(deals[i].id)
     }
   }
@@ -32,7 +34,12 @@ const init = async(ResourcesContract, MarketplaceContract)=>{
   //check which resources are not in an active deal
   let resourcesIds = resources.map(obj => obj.resource_id)
   let dealResourcesIds = deals.map(obj => obj.resourceId)
+
+  console.log("Resources ids", resourcesIds)
+  console.log("Resources deals ids", dealResourcesIds)
   let resourcesToDelete = await db.Evm.compareDealsResourcesWithResources(dealResourcesIds, resourcesIds)
+
+  console.log("resource to delete: ", resourcesToDelete)
 
   //delete resource from the array of resources
   for (let i = 0; i < resourcesToDelete.length; i++) {
@@ -46,12 +53,26 @@ const init = async(ResourcesContract, MarketplaceContract)=>{
     await db.Evm.addRecord(resourceFormatted)
   }
 
+  for (const deal of deals) {
+    let dealFormatted = db.Deals.formatDataToDb(deal)
+    await db.Deals.addRecord(dealFormatted)
+  }
+
+  console.log(deals)
+
   //delete records that are in db but not in blockchain
   resourcesIds = resources.map(obj => obj.resource_id)
   let notCompatibleResources = await db.Evm.compareBlockchainAndDbData(resourcesIds)
 
   if(notCompatibleResources.length > 0){
     await db.Evm.deleteRecords(notCompatibleResources)
+  }
+
+  let dealsIds = deals.map(obj => obj.id)
+  let notCompatibleDeals = await db.Deals.compareBlockchainAndDbData(dealsIds)
+
+  if(notCompatibleDeals.length > 0){
+    await db.Deals.deleteRecords(notCompatibleDeals)
   }
 
 
