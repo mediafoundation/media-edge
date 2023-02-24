@@ -7,7 +7,9 @@ const Marketplace = require('./evm-contract/build/contracts/Marketplace.json')
 const Web3 = require('web3');
 
 
-const init = async(ResourcesContract, MarketplaceContract)=>{
+const init = async(ResourcesContract, MarketplaceContract, network)=>{
+
+  await db.Caddy.initApps()
 
   //fetch resources and deals
   let resources = await db.Evm.getPaginatedResources(ResourcesContract, 0, 2);
@@ -15,8 +17,6 @@ const init = async(ResourcesContract, MarketplaceContract)=>{
   let formattedResources = []
 
   let deals = await db.Deals.getPaginatedDeals(MarketplaceContract, 0, 2)
-
-  console.log("Deal :", db.Deals.formatDataToDb(deals[0]))
 
   let dealsToDelete = []
 
@@ -36,12 +36,7 @@ const init = async(ResourcesContract, MarketplaceContract)=>{
   //check which resources are not in an active deal
   let resourcesIds = resources.map(obj => obj.resource_id)
   let dealResourcesIds = deals.map(obj => obj.resourceId)
-
-  console.log("Resources ids", resourcesIds)
-  console.log("Resources deals ids", dealResourcesIds)
   let resourcesToDelete = await db.Evm.compareDealsResourcesWithResources(dealResourcesIds, resourcesIds)
-
-  console.log("resource to delete: ", resourcesToDelete)
 
   //delete resource from the array of resources
   for (let i = 0; i < resourcesToDelete.length; i++) {
@@ -52,8 +47,8 @@ const init = async(ResourcesContract, MarketplaceContract)=>{
   //upsert records in db
   for (const resource of resources) {
     let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data)
+    //store formated resources to be use in caddy
     formattedResources.push(resourceFormatted)
-    console.log("Formatted data:", resourceFormatted)
     await db.Evm.addRecord(resourceFormatted)
   }
 
@@ -61,8 +56,6 @@ const init = async(ResourcesContract, MarketplaceContract)=>{
     let dealFormatted = db.Deals.formatDataToDb(deal)
     await db.Deals.addRecord(dealFormatted)
   }
-
-  console.log("Resource: ", resources[0])
 
   //delete records that are in db but not in blockchain
   resourcesIds = resources.map(obj => obj.resource_id)
@@ -79,13 +72,10 @@ const init = async(ResourcesContract, MarketplaceContract)=>{
     await db.Deals.deleteRecords(notCompatibleDeals)
   }
 
-  //await db.Caddy.initApps()
-
-  console.log("Resources: ", resources.length)
-
   let caddyRecords = await db.Caddy.getRecords()
-  console.log("Caddy file:", caddyRecords)
-  let result = await db.Caddy.addRecords(formattedResources, caddyRecords)
+  await db.Caddy.addRecords(formattedResources, caddyRecords)
+
+  console.log("Caddy record:", await db.Caddy.getRecord(4))
 
 
 

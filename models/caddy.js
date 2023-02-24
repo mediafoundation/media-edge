@@ -185,15 +185,15 @@ module.exports = (sequelize, DataTypes) => {
           await CaddySource.findOrCreate({
             where: {
               host: res.domain,
-              resource_id: caddy.id
+              resource_id: res.id
             }
           })
-          console.log("Added CaddySources for domain:", res.domain, res.resource_id)
+          console.log("Added CaddySources for domain:", res.domain, res.id)
         } else { //if cname is not valid
           //if it's not on any queue already, add it
-          console.log("Adding domain to check queue.", res.domain, res.resource_id)
-          if (!Caddy.isInQueue(res.resource_id)) {
-            Caddy.queue[res.resource_id] = res
+          console.log("Adding domain to check queue.", res.domain, res.id)
+          if (!Caddy.isInQueue(res.id)) {
+            Caddy.queue[res.id] = res
           }
         }
       }
@@ -266,85 +266,74 @@ module.exports = (sequelize, DataTypes) => {
   //we allow these parameters to be sent so we don't make n requests to the caddy configuration for checking.
   Caddy.updateRecord = async (res, fileExist=false, caddy=false) => {
     //find resource on caddy file
-    fileExist = fileExist ? true : await Caddy.getRecord(res.account)
-    //find record in DB
-    caddy = caddy ? caddy : await Caddy.findOne({ 
-      where: { account: res.account } 
-    })
+    fileExist = fileExist ? true : await Caddy.getRecord(res.id)
+
     //add empty string to domain or label if these are empty. (this is required because if it's not present, db won't get updated)
     res.domain = res.domain ? res.domain : ""
     res.label = res.label ? res.label : ""
     //if found in DB and in File
-    if (fileExist && caddy) {
+    if (fileExist) {
       //domain name on DB
-      let prevDomain = caddy.domain;
-      //prepare resource to be saved on DB
-      await caddy.set(res)
-      //check for modifications
-      let changed = caddy.changed()
-      //save resource on DB
-      await caddy.save()
-      //if the resource has different data than CaddyFile
-      if(changed){
-        //if the domain was changed, and there was a previous domain, delete it from caddy sources
-        if(changed.includes("domain") && prevDomain){
-          let destroyed = CaddySource.destroy({ 
-            where: { 
-              host: prevDomain,
-              resource_id: caddy.id
-            } 
-          })
-          if(destroyed) console.log("Removing CaddySources", prevDomain, res.domain)
-          if(Caddy.isInQueue(res.resource_id)){
-            await Caddy.deletefromAllQueues(res.resource_id)
+      let prevDomain = undefined;
+      if(fileExist.length > 2){
+        prevDomain = fileExist[2]
+      }
+      //if the domain was changed, and there was a previous domain, delete it from caddy sources
+      if(changed.includes("domain") && prevDomain){
+        let destroyed = CaddySource.destroy({
+          where: {
+            host: prevDomain,
+            resource_id: caddy.id
           }
-        }
-        //create Caddy object required to be posted on caddyFile
-        let caddyData = await Caddy.newObject(res)
-        //if the resource has a custom cname
-        if(res.domain) {
-          let host = Caddy.getHostname(res.resource_id);
-          let cname_is_valid = await Caddy.checkCname(res.domain, host)
-          if (cname_is_valid) {
-            await Caddy.cleanUpCname(res.account, res.domain)
-            //add hostname to Caddy object
-            caddyData.match[0].host.push(res.domain)
-            //create caddy sources
-            for (const domain of caddyData.match[0].host){
-              await CaddySource.findOrCreate({
-                where: {
-                  host: domain,
-                  resource_id: caddy.id
-                }
-              })
-            }
-          } else { //if cname is not valid
-            //if resource is already on a queue
-            if (Caddy.isInQueue(res.resource_id)) {
-              //delete it, because it may have old data
-              await Caddy.deletefromAllQueues(res.resource_id)
-            }
-            if(env.debug) console.log("Adding domain to pending queue.", res.domain, res.resource_id)
-            Caddy.queue[res.resource_id] = res
-          }
-        }
-        try {
-          let url = Caddy.caddyBaseUrl+"id/"+res.account
-          axios.patch(
-            url,
-            caddyData,
-            Caddy.caddyReqCfg
-          )
-          console.log('Updated Caddyfile resource:', res.resource_id, res.account)
-        } catch (e){
-          console.log("axios error", url)
-          return false
+        })
+        if(destroyed) console.log("Removing CaddySources", prevDomain, res.domain)
+        if(Caddy.isInQueue(res.resource_id)){
+          await Caddy.deletefromAllQueues(res.resource_id)
         }
       }
-    } else {
-      //if wasn't found on both Caddy DB **AND** Caddyfile, add it.
-      await Caddy.addRecord(res, fileExist)
-    }
+      //create Caddy object required to be posted on caddyFile
+      let caddyData = await Caddy.newObject(res)
+      //if the resource has a custom cname
+      if(res.domain) {
+        let host = Caddy.getHostname(res.resource_id);
+        let cname_is_valid = await Caddy.checkCname(res.domain, host)
+        if (cname_is_valid) {
+          await Caddy.cleanUpCname(res.account, res.domain)
+          //add hostname to Caddy object
+          caddyData.match[0].host.push(res.domain)
+          //create caddy sources
+          for (const domain of caddyData.match[0].host){
+            await CaddySource.findOrCreate({
+              where: {
+                host: domain,
+                resource_id: res.id
+              }
+            })
+          }
+        } else { //if cname is not valid
+          //if resource is already on a queue
+          if (Caddy.isInQueue(res.resource_id)) {
+            //delete it, because it may have old data
+            await Caddy.deletefromAllQueues(res.resource_id)
+          }
+          if(env.debug) console.log("Adding domain to pending queue.", res.domain, res.resource_id)
+          Caddy.queue[res.resource_id] = res
+        }
+      }
+      try {
+        let url = Caddy.caddyBaseUrl+"id/"+res.account
+        axios.patch(
+          url,
+          caddyData,
+          Caddy.caddyReqCfg
+        )
+        console.log('Updated Caddyfile resource:', res.id)
+      } catch (e){
+        console.log("axios error", url)
+        return false
+      }
+      }
+
     return true
   }
 
