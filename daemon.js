@@ -12,6 +12,8 @@ const init = async(ResourcesContract, MarketplaceContract)=>{
   //fetch resources and deals
   let resources = await db.Evm.getPaginatedResources(ResourcesContract, 0, 2);
 
+  let formattedResources = []
+
   let deals = await db.Deals.getPaginatedDeals(MarketplaceContract, 0, 2)
 
   console.log("Deal :", db.Deals.formatDataToDb(deals[0]))
@@ -50,6 +52,8 @@ const init = async(ResourcesContract, MarketplaceContract)=>{
   //upsert records in db
   for (const resource of resources) {
     let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data)
+    formattedResources.push(resourceFormatted)
+    console.log("Formatted data:", resourceFormatted)
     await db.Evm.addRecord(resourceFormatted)
   }
 
@@ -58,7 +62,7 @@ const init = async(ResourcesContract, MarketplaceContract)=>{
     await db.Deals.addRecord(dealFormatted)
   }
 
-  console.log(deals)
+  console.log("Resource: ", resources[0])
 
   //delete records that are in db but not in blockchain
   resourcesIds = resources.map(obj => obj.resource_id)
@@ -74,6 +78,14 @@ const init = async(ResourcesContract, MarketplaceContract)=>{
   if(notCompatibleDeals.length > 0){
     await db.Deals.deleteRecords(notCompatibleDeals)
   }
+
+  //await db.Caddy.initApps()
+
+  console.log("Resources: ", resources.length)
+
+  let caddyRecords = await db.Caddy.getRecords()
+  console.log("Caddy file:", caddyRecords)
+  let result = await db.Caddy.addRecords(formattedResources, caddyRecords)
 
 
 

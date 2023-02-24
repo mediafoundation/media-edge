@@ -66,7 +66,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       unique: true
     },
-    caddy_id: DataTypes.INTEGER,
+    resource_id: DataTypes.INTEGER,
   })
 
   Caddy.checkDomain = async (host) => {
@@ -105,16 +105,14 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   Caddy.newObject = async (res) => {
-    if(!res.resource_id) {
-      res.resource_id = Caddy.getShortName(res.account)
-    }
-    let hostname = Caddy.getHostname(res.resource_id)
-    let dHostname = Caddy.getDHostname(res.resource_id)
+    console.log("Res in new object: ", res)
+    let hostname = Caddy.getHostname(res.id)
+    let dHostname = Caddy.getDHostname(res.id)
     let match = [hostname, dHostname]
-
+    console.log("match in caddy:", match)
     let splitted = res.origin.split(':');
-    let protocol = res.protocol ? res.protocol : (splitted[1] == '443' || splitted[1] == '8443' ? "https" : "http"); //old resources didnt have protocol in json
-    let transport = protocol == "https" ?  { "protocol": "http", "tls": {"insecure_skip_verify": true } } : { "protocol": "http" }
+    let protocol = res.protocol ? res.protocol : (splitted[1] === '443' || splitted[1] === '8443' ? "https" : "http"); //old resources didn't have protocol in json
+    let transport = protocol === "https" ?  { "protocol": "http", "tls": {"insecure_skip_verify": true } } : { "protocol": "http" }
 
     let routes = [{
       "handle": [{
@@ -132,7 +130,7 @@ module.exports = (sequelize, DataTypes) => {
         }],
       }]
     }]
-    if (res.path && res.path != "/") {
+    if (res.path && res.path !== "/") {
       let path = res.path.endsWith("/") ? res.path.slice(0, -1) : res.path
       routes.unshift({
         "handle": [{
@@ -142,7 +140,7 @@ module.exports = (sequelize, DataTypes) => {
       })
     }
     return {
-      "@id": res.account,
+      "@id": res.id,
       "handle": [{
         "handler": "subroute",
         "routes": routes
@@ -159,21 +157,23 @@ module.exports = (sequelize, DataTypes) => {
     for(const res of resources) {
       let caddyData = await Caddy.newObject(res)
       //if res has an ID, it may confict with DB id, so we delete it before adding
-      if(res.id) delete res.id
+      //if(res.id) delete res.id
       //add to Caddy DB
-      let caddy = await Caddy.create(res)
+      //let caddy = await Caddy.create(res)
       //add domains to Caddy Sources DB
+      console.log("Caddy data: ", caddyData.match[0].host)
       for (const domain of caddyData.match[0].host){
+        console.log("Domain:", domain)
         await CaddySource.findOrCreate({
           where: {
             host: domain,
-            caddy_id: caddy.id
+            resource_id: res.id
           }
         })
       }
       //if resource has a custom domain
       if(res.domain) {
-        let host = Caddy.getHostname(res.resource_id);
+        let host = Caddy.getHostname(res.id);
         //check if cname is pointing to the right target
         let cname_is_valid = await Caddy.checkCname(res.domain, host)
         if (cname_is_valid) {
@@ -185,7 +185,7 @@ module.exports = (sequelize, DataTypes) => {
           await CaddySource.findOrCreate({
             where: {
               host: res.domain,
-              caddy_id: caddy.id
+              resource_id: caddy.id
             }
           })
           console.log("Added CaddySources for domain:", res.domain, res.resource_id)
@@ -198,7 +198,9 @@ module.exports = (sequelize, DataTypes) => {
         }
       }
       //if resource is not on caddyfile already, add to payload
-      let fileExist = Caddyfile.find(o => o["@id"] === res.account) ? true : false;
+      console.log("Res:", res)
+      let fileExist = !!Caddyfile.find(o => o["@id"] === res.id);
+      console.log("File exists:", fileExist)
       if(!fileExist) payload.push(caddyData)
     }
     //Add to caddy file
@@ -216,13 +218,6 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   Caddy.addRecord = async (res, fileExist=false) => {
-    //find record in DB
-    let caddy = await Caddy.findOne({ where: { account: res.account }})
-    //if both caddy on db and caddyFile exist, send to update
-    if(caddy && fileExist){
-      await Caddy.updateRecord(res, fileExist)
-      return true
-    }
     //check if requires update (if record present on database **OR** on caddyFile)
     let requireUpdate = caddy || fileExist ? true : false
     //create caddy object
@@ -237,7 +232,7 @@ module.exports = (sequelize, DataTypes) => {
       for (const domain of caddyData.match[0].host){
         await CaddySource.create({
           host: domain,
-          caddy_id: caddy.id
+          resource_id: caddy.id
         })
       }
     }
@@ -296,7 +291,7 @@ module.exports = (sequelize, DataTypes) => {
           let destroyed = CaddySource.destroy({ 
             where: { 
               host: prevDomain,
-              caddy_id: caddy.id
+              resource_id: caddy.id
             } 
           })
           if(destroyed) console.log("Removing CaddySources", prevDomain, res.domain)
@@ -319,7 +314,7 @@ module.exports = (sequelize, DataTypes) => {
               await CaddySource.findOrCreate({
                 where: {
                   host: domain,
-                  caddy_id: caddy.id
+                  resource_id: caddy.id
                 }
               })
             }
@@ -361,7 +356,8 @@ module.exports = (sequelize, DataTypes) => {
       )        
       return resp.data
     } catch(e){
-      console.log("Axios error, status: " + e.response.status + " on " + url);
+      //console.log("Axios error, status: " + e.response.status + " on " + url);
+      console.log(e)
       return false;
     }
   }
@@ -375,7 +371,7 @@ module.exports = (sequelize, DataTypes) => {
       )        
       return resp.data
     } catch(e){
-      if(e.response.status == 500){
+      if(e.response.status === 500){
         console.log(`Record id ${id} not found on Caddyfile.`);
       } else {
         console.log("Axios error, status: " + e.response.status + " on " + url);
@@ -390,7 +386,7 @@ module.exports = (sequelize, DataTypes) => {
         Caddy.caddyBaseUrl +'id/'+ caddy.account,
         Caddy.caddyReqCfg
       )
-      await CaddySource.destroy({ where: { caddy_id:caddy.id } })
+      await CaddySource.destroy({ where: { resource_id:caddy.id } })
       
       Caddy.deletefromAllQueues(caddy.resource_id)
       console.log('Deleted from caddy:', caddy.account)
@@ -404,10 +400,8 @@ module.exports = (sequelize, DataTypes) => {
 
   //patches hostnames on an existing caddyfile record
   Caddy.patchRecord = async (res) => {
-
-    let caddy = await Caddy.findOne({ where: { account: res.account }, raw: true })
     
-    if (caddy && res.domain) {
+    if (res.domain) {
       let host = Caddy.getHostname(res.resource_id);
       let match = [host]
       match.push(Caddy.getDHostname(res.resource_id))
@@ -419,7 +413,7 @@ module.exports = (sequelize, DataTypes) => {
           CaddySource.findOrCreate({
             where: {
               host: domain,
-              caddy_id: caddy.id
+              resource_id: res.resource_id
             }
           })
         }
@@ -443,28 +437,6 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  //deprecated. die.
-  Caddy.deleteAll = async() => {
-    try {
-      let response = await axios.get(Caddy.caddyRoutesUrl)
-      for (const handle of response.data) {
-        if (handle["@id"]) {
-          console.log("handleid",handle["@id"])
-          await axios.delete(
-            Caddy.caddyBaseUrl +'id/'+ handle["@id"],
-            Caddy.caddyReqCfg
-          )
-          console.log("Deleted from Caddy: " + handle["@id"])
-        }
-      }
-      console.log("Finished deleting Caddy records.", "\n\n")
-      return true
-    } catch (e){
-      console.log(e)
-      return false
-    }
-  }
-
   Caddy.initApps = async() => {
     try {
       await axios.post(
@@ -475,13 +447,13 @@ module.exports = (sequelize, DataTypes) => {
       await CaddySource.findOrCreate({
         where: {
           host: Caddy.getHostname("media-api"),
-          caddy_id: 0
+          resource_id: 0
         }
       })
       await CaddySource.findOrCreate({
         where: {
           host: Caddy.getHostname("appdev"),
-          caddy_id: 0
+          resource_id: 0
         }
       })
       console.log("Finished resetting Caddy records.", "\n\n")
@@ -505,17 +477,17 @@ module.exports = (sequelize, DataTypes) => {
             console.log("Removing pending domain from queue, patch success", queue[res]["domain"])
             delete queue[res]
           } else {
-            if(queue[res]["retry"] == limit){
+            if(queue[res]["retry"] === limit){
               if(env.debug) console.log("Domain exceeded retry limits, sending to next stage.", queue[res]["domain"])
-              if (current == "Minutely") { 
+              if (current === "Minutely") {
                 Caddy.queueHourly[res] = val
                 Caddy.queueHourly[res]["retry"] = 0
               }
-              else if(current == "Hourly") { 
+              else if(current === "Hourly") {
                 Caddy.queueDaily[res] = val
                 Caddy.queueDaily[res]["retry"] = 0
               }
-              else if(current == "Daily") { 
+              else if(current === "Daily") {
                 Caddy.queueMonthly[res] = val
                 Caddy.queueMonthly[res]["retry"] = 0
               }
@@ -548,16 +520,10 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   Caddy.isInQueue = (id) => {
-    if (
-      Caddy.queue[id] ||
-      Caddy.queueHourly[id] ||
-      Caddy.queueDaily[id] ||
-      Caddy.queueMonthly[id]
-    ) {
-      return true
-    } else {
-      return false
-    }
+    return !!(Caddy.queue[id] ||
+        Caddy.queueHourly[id] ||
+        Caddy.queueDaily[id] ||
+        Caddy.queueMonthly[id]);
   }
 
   Caddy.deletefromAllQueues = async(id) => {
@@ -571,7 +537,7 @@ module.exports = (sequelize, DataTypes) => {
     try {
       let response = await axios.get(Caddy.caddyRoutesUrl)
       for (const resource of response.data) {
-        if (resource["@id"] == id) {
+        if (resource["@id"] === id) {
           console.log("Resource already added: "+resource["@id"])
           return true
         }
@@ -589,11 +555,7 @@ module.exports = (sequelize, DataTypes) => {
       if(response.answers.length > 0){
         let answers = []; 
         response.answers.forEach(ans => answers.push(ans.data))
-        if (answers.includes(expectedDomain)) {
-          return true
-        } else {
-          return false
-        }
+        return answers.includes(expectedDomain);
       } else {
         return false
       }
@@ -603,9 +565,9 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  Caddy.cleanUpCname = async(account, cname) =>{
+  Caddy.cleanUpCname = async(resource_id, cname) =>{
     let added = await Caddy.isCnameAlreadyAdded(cname)
-    if(added && added != account) await Caddy.removeCname(added, cname)
+    if(added && added !== resource_id) await Caddy.removeCname(added, cname)
     return true
   }
 
@@ -648,6 +610,5 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   CaddySource.sync({ force: true })
-  Caddy.sync({ force: true })
   return Caddy;
 }
