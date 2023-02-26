@@ -175,7 +175,7 @@ module.exports = (sequelize, DataTypes) => {
       //if resource has a custom domain
       if(item.resource.domain) {
         console.log("resource has domain: ", item.resource.domain)
-        //let host = caddyData.match[0].host
+        let host = caddyData.match[0].host
         //check if cname is pointing to the right target
         let cname_is_valid = await Caddy.checkCname(item.resource.domain, host)
         if (cname_is_valid) {
