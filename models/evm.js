@@ -191,7 +191,7 @@ module.exports = (sequelize, DataTypes) => {
         return resources
     }
 
-    Evm.sync({force: true})
+    Evm.sync({force: false})
     return Evm
 
 }

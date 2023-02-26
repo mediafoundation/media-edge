@@ -89,7 +89,6 @@ module.exports = (sequelize, DataTypes) => {
       hostnames.push(deal.id + "." + domain[1])
     }
     //return deal.id + "." + env.host
-    console.log("Hostnames:", hostnames)
     return hostnames
   }
 
@@ -159,7 +158,6 @@ module.exports = (sequelize, DataTypes) => {
   Caddy.addRecords = async(dealsResources, Caddyfile) => {
     let payload = []
     for(const item of dealsResources) {
-      console.log("CADYY:", item.resource)
       let caddyData = await Caddy.newObject(item.resource, item.deal)
       //if res has an ID, it may confict with DB id, so we delete it before adding
       //if(res.id) delete res.id
@@ -167,7 +165,6 @@ module.exports = (sequelize, DataTypes) => {
       //let caddy = await Caddy.create(res)
       //add domains to Caddy Sources DB
       for (const domain of caddyData.match[0].host){
-        console.log(domain)
         await CaddySource.findOrCreate({
           where: {
             host: domain,

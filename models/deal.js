@@ -149,7 +149,7 @@ module.exports = (sequelize, DataTypes) => {
         return deals
     }
 
-    Deals.sync({force: true})
+    Deals.sync({force: false})
     return Deals
 
 }
