@@ -66,7 +66,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       unique: true
     },
-    resource_id: DataTypes.INTEGER,
+    deal_id: DataTypes.INTEGER,
   })
 
   Caddy.checkDomain = async (host) => {
@@ -83,8 +83,14 @@ module.exports = (sequelize, DataTypes) => {
     return sources
   }
 
-  Caddy.getHostname = (resource_id)  =>{
-    return resource_id + "." + env.host
+  Caddy.getHostname = (deal)  =>{
+    let hostnames = []
+    for (const domain of JSON.parse(deal.domains)) {
+      hostnames.push(deal.id + "." + domain[1])
+    }
+    //return deal.id + "." + env.host
+    console.log("Hostnames:", hostnames)
+    return hostnames
   }
 
   Caddy.getDHostname = (resource_id)  =>{
@@ -104,12 +110,10 @@ module.exports = (sequelize, DataTypes) => {
       ).toLowerCase();
   }
 
-  Caddy.newObject = async (res) => {
-    console.log("Res in new object: ", res)
-    let hostname = Caddy.getHostname(res.id)
-    let dHostname = Caddy.getDHostname(res.id)
-    let match = [hostname, dHostname]
-    console.log("match in caddy:", match)
+  Caddy.newObject = async (res, deal) => {
+    let hostname = Caddy.getHostname(deal)
+    //let dHostname = Caddy.getDHostname(res.id)
+    //let match = [hostname, dHostname]
     let splitted = res.origin.split(':');
     let protocol = res.protocol ? res.protocol : (splitted[1] === '443' || splitted[1] === '8443' ? "https" : "http"); //old resources didn't have protocol in json
     let transport = protocol === "https" ?  { "protocol": "http", "tls": {"insecure_skip_verify": true } } : { "protocol": "http" }
@@ -146,61 +150,59 @@ module.exports = (sequelize, DataTypes) => {
         "routes": routes
       }],
       "match": [{
-        "host": match
+        "host": hostname
       }],
       "terminal": true
     }
   }
 
-  Caddy.addRecords = async(resources, Caddyfile) => {
+  Caddy.addRecords = async(dealsResources, Caddyfile) => {
     let payload = []
-    for(const res of resources) {
-      let caddyData = await Caddy.newObject(res)
+    for(const item of dealsResources) {
+      console.log("CADYY:", item.resource)
+      let caddyData = await Caddy.newObject(item.resource, item.deal)
       //if res has an ID, it may confict with DB id, so we delete it before adding
       //if(res.id) delete res.id
       //add to Caddy DB
       //let caddy = await Caddy.create(res)
       //add domains to Caddy Sources DB
-      console.log("Caddy data: ", caddyData.match[0].host)
       for (const domain of caddyData.match[0].host){
-        console.log("Domain:", domain)
+        console.log(domain)
         await CaddySource.findOrCreate({
           where: {
             host: domain,
-            resource_id: res.id
+            deal_id: item.deal.id
           }
         })
       }
       //if resource has a custom domain
-      if(res.domain) {
-        let host = Caddy.getHostname(res.id);
+      if(item.resource.domain) {
+        let host = Caddy.getHostname(item.deal.id);
         //check if cname is pointing to the right target
-        let cname_is_valid = await Caddy.checkCname(res.domain, host)
+        let cname_is_valid = await Caddy.checkCname(item.resource.domain, host)
         if (cname_is_valid) {
           //find and delete cname from any other record
-          await Caddy.cleanUpCname(res.account, res.domain)
+          await Caddy.cleanUpCname(item.deal.id, item.resource.domain)
           //add cname to Caddy object
-          caddyData.match[0].host.push(res.domain)
+          caddyData.match[0].host.push(item.resource.domain)
           //add cnmae to CaddySources
           await CaddySource.findOrCreate({
             where: {
-              host: res.domain,
-              resource_id: res.id
+              host: item.resource.domain,
+              deal_id: item.deal.id
             }
           })
-          console.log("Added CaddySources for domain:", res.domain, res.id)
+          console.log("Added CaddySources for domain:", item.resource.domain, item.resource.id)
         } else { //if cname is not valid
           //if it's not on any queue already, add it
-          console.log("Adding domain to check queue.", res.domain, res.id)
-          if (!Caddy.isInQueue(res.id)) {
-            Caddy.queue[res.id] = res
+          console.log("Adding domain to check queue.", item.resource.domain, item.resource.id)
+          if (!Caddy.isInQueue(item.resource.id)) {
+            Caddy.queue[item.resource.id] = item.resource
           }
         }
       }
       //if resource is not on caddyfile already, add to payload
-      console.log("Res:", res)
-      let fileExist = !!Caddyfile.find(o => o["@id"] === res.id);
-      console.log("File exists:", fileExist)
+      let fileExist = !!Caddyfile.find(o => o["@id"] === item.resource.id);
       if(!fileExist) payload.push(caddyData)
     }
     //Add to caddy file
@@ -433,7 +435,7 @@ module.exports = (sequelize, DataTypes) => {
         config.caddyInitialApps,
         Caddy.caddyReqCfg
       )
-      await CaddySource.findOrCreate({
+      /*await CaddySource.findOrCreate({
         where: {
           host: Caddy.getHostname("media-api"),
           resource_id: 0
@@ -444,8 +446,8 @@ module.exports = (sequelize, DataTypes) => {
           host: Caddy.getHostname("appdev"),
           resource_id: 0
         }
-      })
-      console.log("Finished resetting Caddy records.", "\n\n")
+      })*/
+      console.log("Finished resetting Caddy records.", "\n")
       return true
     } catch (e){
       console.log(e)

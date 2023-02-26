@@ -66,7 +66,6 @@ module.exports = (sequelize, DataTypes) => {
         let d = new Date(calculatedEnd * 1000);
         const pad2 = (n) => { return (n < 10 ? '0' : '') + n }
         let formattedCalculatedEnd = pad2(d.getFullYear()) + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) + "T" + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
-        console.log("Formatted calculated end ", formattedCalculatedEnd)
 
         return Date.parse(formattedCalculatedEnd) > Date.now()
     }
@@ -82,7 +81,7 @@ module.exports = (sequelize, DataTypes) => {
             deal_record.save()
         } else {
             deal_record = await Deals.create(deal)
-            console.log("Created resource in evm table: ", deal.id)
+            console.log("Created deal in deals table: ", deal.id)
         }
         return deal_record
     }
@@ -141,7 +140,16 @@ module.exports = (sequelize, DataTypes) => {
 
     }
 
-    Deals.sync({force: false})
+    Deals.getDeals = async() => {
+        let deals = []
+        let dealsInDb =  await Deals.findAll({attributes: {exclude: ['createdAt', 'updatedAt']}})
+        dealsInDb.forEach(deal => {
+            deals.push(deal.dataValues)
+        })
+        return deals
+    }
+
+    Deals.sync({force: true})
     return Deals
 
 }

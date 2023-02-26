@@ -14,8 +14,6 @@ const init = async(ResourcesContract, MarketplaceContract, network)=>{
   //fetch resources and deals
   let resources = await db.Evm.getPaginatedResources(ResourcesContract, 0, 2);
 
-  let formattedResources = []
-
   let deals = await db.Deals.getPaginatedDeals(MarketplaceContract, 0, 2)
 
   let dealsToDelete = []
@@ -45,10 +43,11 @@ const init = async(ResourcesContract, MarketplaceContract, network)=>{
   }
 
   //upsert records in db
+  console.log("Resources lenght:", resources.length)
   for (const resource of resources) {
     let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data)
     //store formated resources to be use in caddy
-    formattedResources.push(resourceFormatted)
+    //formattedResources.push(resourceFormatted)
     await db.Evm.addRecord(resourceFormatted)
   }
 
@@ -73,10 +72,21 @@ const init = async(ResourcesContract, MarketplaceContract, network)=>{
   }
 
   let caddyRecords = await db.Caddy.getRecords()
-  await db.Caddy.addRecords(formattedResources, caddyRecords)
+  let dealsFromDB = await db.Deals.getDeals()
+  let resourcesFromDB = await db.Evm.getResources()
 
-  console.log("Caddy record:", await db.Caddy.getRecord(4))
+  let matchDealResources = []
 
+  dealsFromDB.forEach(deal => {
+    let matchDealResource = {}
+    matchDealResource.deal = deal
+    matchDealResource.resource = resourcesFromDB.find(resource => resource.id = deal.resourceId)
+    matchDealResources.push(matchDealResource)
+  })
+
+  console.log(matchDealResources)
+
+  await db.Caddy.addRecords(matchDealResources, caddyRecords)
 
 
   /*let dealResourcesIds = []

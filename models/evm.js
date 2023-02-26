@@ -182,7 +182,16 @@ module.exports = (sequelize, DataTypes) => {
         }
     }
 
-    Evm.sync({force: false})
+    Evm.getResources = async () => {
+        let resources = []
+        let resourcesInDb =  await Evm.findAll({attributes: {exclude: ['createdAt', 'updatedAt']}})
+        resourcesInDb.forEach(resource => {
+            resources.push(resource.dataValues)
+        })
+        return resources
+    }
+
+    Evm.sync({force: true})
     return Evm
 
 }
