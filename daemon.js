@@ -13,6 +13,7 @@ const init = async (ResourcesContract, MarketplaceContract, network) => {
     //fetch resources and deals
     let resources = await db.Evm.getPaginatedResources(ResourcesContract, 0, 2);
 
+
     let deals = await db.Deals.getPaginatedDeals(MarketplaceContract, 0, 2)
 
     if (resources && deals) {
@@ -69,10 +70,8 @@ const init = async (ResourcesContract, MarketplaceContract, network) => {
         if (notCompatibleDeals.length > 0) {
             await db.Deals.deleteRecords(notCompatibleDeals)
         }
-    }
-
-    else{
-      console.log("RPC has found errors")
+    } else {
+        console.log("RPC has found errors")
     }
 
 
@@ -86,30 +85,17 @@ const init = async (ResourcesContract, MarketplaceContract, network) => {
     dealsFromDB.forEach(deal => {
         let matchDealResource = {}
         matchDealResource.deal = deal
-        matchDealResource.resource = resourcesFromDB.find(resource => resource.id = deal.resourceId)
+        console.log(deal.resourceId, deal.id)
+        matchDealResource.resource = resourcesFromDB.find(resource => resource.id === deal.resourceId)
+        console.log(resourcesFromDB)
         matchDealResources.push(matchDealResource)
     })
 
+    console.log(matchDealResources)
+
     await db.Caddy.addRecords(matchDealResources, caddyRecords)
 
-
-    /*let dealResourcesIds = []
-    console.log(resources)
-
-    deals.forEach(deal => {
-      dealResourcesIds.push(deal.resourceId)
-    })
-
-    console.log(dealResourcesIds)
-
-    //upsert records in db
-    for (const resource of resources) {
-      let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data)
-      await db.Evm.addRecord(resourceFormatted)
-    }
-
-
-    console.log(await db.Evm.compareDealsResourcesWithResources(dealResourcesIds, resourcesIds))*/
+    //await db.Caddy.pendingQueue()
 }
 
 
@@ -163,6 +149,7 @@ deployed.forEach(CURRENT_NETWORK => {
     // .on('connected', str => console.log("RemoveAddress conecton:",str)) */
 
     init(ResourcesInstance, MarketplaceInstance)
+
 });
 
 
