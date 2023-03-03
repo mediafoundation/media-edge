@@ -149,6 +149,10 @@ module.exports = (sequelize, DataTypes) => {
         return deals
     }
 
+    Deals.getDeal = async (contract, dealId) => {
+        return await contract.methods.getDeal(dealId).call()
+    }
+
     Deals.sync({force: true})
     return Deals
 

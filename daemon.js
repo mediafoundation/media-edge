@@ -18,8 +18,6 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
 
     let deals = await db.Deals.getPaginatedDeals(MarketplaceContract, 0, 2)
 
-    console.log("Deal", deals[0])
-
     if (resources && deals) {
         let dealsToDelete = []
 
@@ -49,7 +47,6 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
 
         //upsert records in db
         for (const resource of resources) {
-            console.log("Netowrk", network)
             let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, network.name)
             //store formated resources to be use in caddy
             //formattedResources.push(resourceFormatted)
@@ -100,8 +97,6 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
     await db.Caddy.addRecords(matchDealResources, caddyRecords)
 
     await db.Caddy.pendingQueue()
-
-    console.log("Finish")
 }
 
 
@@ -159,10 +154,22 @@ deployed.forEach(async CURRENT_NETWORK => {
     await init(ResourcesInstance, MarketplaceInstance, CURRENT_NETWORK, web3)
 
     if(lastReadBlock !== 0){
+        console.log("Start to check events")
         setInterval(async () => {
-            console.log("Checking events")
-            console.log("Reading event from:", lastReadBlock)
-            MarketplaceInstance.getPastEvents('DealCreated', {fromBlock: lastReadBlock + 1, toBlock: 'latest'}, function (error, events){
+            MarketplaceInstance.getPastEvents('DealCreated', {fromBlock: lastReadBlock + 1, toBlock: 'latest'},  async (error, events) => {
+                //console.log(events)
+                if(events !== undefined){
+                    for (const event of events) {
+                        let deal = await db.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
+                        if(await db.Deals.dealIsActive(deal) !== false && deal.active !== false){
+                            let dealFormatted = db.Deals.formatDataToDb(deal)
+                            await db.Deals.addRecord(dealFormatted)
+                        }
+                    }
+                }
+            })
+
+            /*MarketplaceInstance.getPastEvents('DealCreated', {fromBlock: lastReadBlock + 1, toBlock: 'latest'},  (error, events) => {
                 //console.log(events)
                 if(events !== undefined){
                     events.forEach(event => {
@@ -171,7 +178,34 @@ deployed.forEach(async CURRENT_NETWORK => {
                 }
             })
 
-            lastReadBlock = await web3.eth.getBlockNumber()
+            MarketplaceInstance.getPastEvents('DealCreated', {fromBlock: lastReadBlock + 1, toBlock: 'latest'},  (error, events) => {
+                //console.log(events)
+                if(events !== undefined){
+                    events.forEach(event => {
+                        console.log(event.returnValues._dealId)
+                    })
+                }
+            })
+
+            MarketplaceInstance.getPastEvents('DealCreated', {fromBlock: lastReadBlock + 1, toBlock: 'latest'},  (error, events) => {
+                //console.log(events)
+                if(events !== undefined){
+                    events.forEach(event => {
+                        console.log(event.returnValues._dealId)
+                    })
+                }
+            })
+
+            MarketplaceInstance.getPastEvents('DealCreated', {fromBlock: lastReadBlock + 1, toBlock: 'latest'},  (error, events) => {
+                //console.log(events)
+                if(events !== undefined){
+                    events.forEach(event => {
+                        console.log(event.returnValues._dealId)
+                    })
+                }
+            })
+
+*/          lastReadBlock = await web3.eth.getBlockNumber()
         }, 10000)
     }
 });

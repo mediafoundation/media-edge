@@ -455,7 +455,6 @@ module.exports = (sequelize, DataTypes) => {
     if(Object.keys(queue).length > 0){
       console.log("Checking pending domains "+current+" started. On queue:",Object.keys(queue).length)
       for(const [res, val] of Object.entries(queue)){
-        console.log("In for queue:", res, val)
         if(!queue[res]["retry"]) queue[res]["retry"] = 0
         if(queue[res]["retry"] <= limit){
           queue[res]["retry"] = queue[res]["retry"] + 1
