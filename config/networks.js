@@ -21,6 +21,7 @@ module.exports = {
   } */
 
     ganache: {
+        name: "ganache",
         URL: "http://127.0.0.1:8545",
         WSS: "wss://127.0.0.1:8545",
         chain_id: 1337,

@@ -5,8 +5,10 @@ const Resources = require('./evm-contract/build/contracts/Resources.json');
 const Marketplace = require('./evm-contract/build/contracts/Marketplace.json')
 const Web3 = require('web3');
 
+let lastReadBlock = 0;
 
-const init = async (ResourcesContract, MarketplaceContract, network) => {
+
+const init = async (ResourcesContract, MarketplaceContract, network, web3Instance) => {
 
     await db.Caddy.initApps()
 
@@ -15,6 +17,8 @@ const init = async (ResourcesContract, MarketplaceContract, network) => {
 
 
     let deals = await db.Deals.getPaginatedDeals(MarketplaceContract, 0, 2)
+
+    console.log("Deal", deals[0])
 
     if (resources && deals) {
         let dealsToDelete = []
@@ -45,7 +49,8 @@ const init = async (ResourcesContract, MarketplaceContract, network) => {
 
         //upsert records in db
         for (const resource of resources) {
-            let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data)
+            console.log("Netowrk", network)
+            let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, network.name)
             //store formated resources to be use in caddy
             //formattedResources.push(resourceFormatted)
             await db.Evm.addRecord(resourceFormatted)
@@ -70,6 +75,9 @@ const init = async (ResourcesContract, MarketplaceContract, network) => {
         if (notCompatibleDeals.length > 0) {
             await db.Deals.deleteRecords(notCompatibleDeals)
         }
+
+        lastReadBlock = await web3Instance.eth.getBlockNumber()
+        console.log("Block:", lastReadBlock)
     } else {
         console.log("RPC has found errors")
     }
@@ -85,23 +93,21 @@ const init = async (ResourcesContract, MarketplaceContract, network) => {
     dealsFromDB.forEach(deal => {
         let matchDealResource = {}
         matchDealResource.deal = deal
-        console.log(deal.resourceId, deal.id)
         matchDealResource.resource = resourcesFromDB.find(resource => resource.id === deal.resourceId)
-        console.log(resourcesFromDB)
         matchDealResources.push(matchDealResource)
     })
 
-    console.log(matchDealResources)
-
     await db.Caddy.addRecords(matchDealResources, caddyRecords)
 
-    //await db.Caddy.pendingQueue()
+    await db.Caddy.pendingQueue()
+
+    console.log("Finish")
 }
 
 
 // let CURRENT_NETWORK = networks.bsc
 let deployed = [networks.ganache]
-deployed.forEach(CURRENT_NETWORK => {
+deployed.forEach(async CURRENT_NETWORK => {
 
     const web3 = new Web3(
         new Web3.providers.HttpProvider(CURRENT_NETWORK.URL)
@@ -148,8 +154,26 @@ deployed.forEach(CURRENT_NETWORK => {
     .on('error', err => console.warn("Error",err) )
     // .on('connected', str => console.log("RemoveAddress conecton:",str)) */
 
-    init(ResourcesInstance, MarketplaceInstance)
 
+
+    await init(ResourcesInstance, MarketplaceInstance, CURRENT_NETWORK, web3)
+
+    if(lastReadBlock !== 0){
+        setInterval(async () => {
+            console.log("Checking events")
+            console.log("Reading event from:", lastReadBlock)
+            MarketplaceInstance.getPastEvents('DealCreated', {fromBlock: lastReadBlock + 1, toBlock: 'latest'}, function (error, events){
+                //console.log(events)
+                if(events !== undefined){
+                    events.forEach(event => {
+                        console.log(event.returnValues._dealId)
+                    })
+                }
+            })
+
+            lastReadBlock = await web3.eth.getBlockNumber()
+        }, 10000)
+    }
 });
 
 

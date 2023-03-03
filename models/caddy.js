@@ -143,7 +143,7 @@ module.exports = (sequelize, DataTypes) => {
       })
     }
     return {
-      "@id": res.id,
+      "@id": deal.id,
       "handle": [{
         "handler": "subroute",
         "routes": routes
@@ -174,7 +174,6 @@ module.exports = (sequelize, DataTypes) => {
       }
       //if resource has a custom domain
       if(item.resource.domain) {
-        console.log("resource has domain: ", item.resource.domain)
         let host = caddyData.match[0].host
         //check if cname is pointing to the right target
         let cname_is_valid = await Caddy.checkCname(item.resource.domain, host)
@@ -194,13 +193,13 @@ module.exports = (sequelize, DataTypes) => {
         } else { //if cname is not valid
           //if it's not on any queue already, add it
           console.log("Adding domain to check queue.", item.resource.domain, item.resource.id)
-          if (!Caddy.isInQueue(item.resource.id)) {
-            Caddy.queue[item.resource.id] = item.resource
+          if (!Caddy.isInQueue(item.deal.id)) {
+            Caddy.queue[item.deal.id] = item
           }
         }
       }
       //if resource is not on caddyfile already, add to payload
-      let fileExist = !!Caddyfile.find(o => o["@id"] === item.resource.id);
+      let fileExist = !!Caddyfile.find(o => o["@id"] === item.deal.id);
       if(!fileExist) payload.push(caddyData)
     }
     //Add to caddy file
@@ -210,7 +209,7 @@ module.exports = (sequelize, DataTypes) => {
         payload,
         Caddy.caddyReqCfg
       )
-      console.log('Added to caddy:', payload.length, "resources")
+      console.log('Added to caddy:', payload.length, "deals")
     } catch (e){
       console.log("axios error", e)
       return false
@@ -388,34 +387,33 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   //patches hostnames on an existing caddyfile record
-  Caddy.patchRecord = async (res) => {
-    
-    if (res.domain) {
-      let host = Caddy.getHostname(res.resource_id);
-      let match = [host]
-      match.push(Caddy.getDHostname(res.resource_id))
-      let cname_is_valid = await Caddy.checkCname(res.domain, host)
+  Caddy.patchRecord = async (item) => {
+    if (item.resource.domain) {
+      let host = Caddy.getHostname(item.deal);
+      //let match = [host]
+      //match.push(Caddy.getDHostname(item.resource_id))
+      let cname_is_valid = await Caddy.checkCname(item.resource.domain, host)
       if (cname_is_valid) {
-        await Caddy.cleanUpCname(res.account, res.domain)
-        match.push(res.domain)
-        for (const domain of match){
+        await Caddy.cleanUpCname(item.deal.id, item.resource.domain)
+        host.push(item.resource.domain)
+        for (const domain of host){
           CaddySource.findOrCreate({
             where: {
               host: domain,
-              resource_id: res.resource_id
+              deal_id: item.deal.id
             }
           })
         }
         try{
-          console.log('Patching caddy domain', match)
+          console.log('Patching caddy domain', host)
           axios.patch(
-            Caddy.caddyBaseUrl + 'id/' + res.account + '/match/0/host',
-            JSON.stringify(match),
+            Caddy.caddyBaseUrl + 'id/' + item.deal.id + '/match/0/host',
+            JSON.stringify(host),
             Caddy.caddyReqCfg
           )
           return true
         } catch(_){
-          console.log("Error patching", res.account)
+          console.log("Error patching", item.deal.id)
           return false
         }
       } else {
@@ -457,13 +455,14 @@ module.exports = (sequelize, DataTypes) => {
     if(Object.keys(queue).length > 0){
       console.log("Checking pending domains "+current+" started. On queue:",Object.keys(queue).length)
       for(const [res, val] of Object.entries(queue)){
+        console.log("In for queue:", res, val)
         if(!queue[res]["retry"]) queue[res]["retry"] = 0
         if(queue[res]["retry"] <= limit){
           queue[res]["retry"] = queue[res]["retry"] + 1
-          if(env.debug) console.log("Retrying to apply custom domain", res, queue[res]["domain"], queue[res]["retry"])
+          if(env.debug) console.log("Retrying to apply custom domain", res, queue[res].resource.domain, queue[res]["retry"])
           let patched = await Caddy.patchRecord(queue[res])
           if(patched){
-            console.log("Removing pending domain from queue, patch success", queue[res]["domain"])
+            console.log("Removing pending domain from queue, patch success", queue[res].resource.domain)
             delete queue[res]
           } else {
             if(queue[res]["retry"] === limit){
@@ -481,7 +480,7 @@ module.exports = (sequelize, DataTypes) => {
                 Caddy.queueMonthly[res]["retry"] = 0
               }
               else { 
-                console.log("Domain exceeded retry limits, checked for 12 months without restart, how did I get here?.", queue[res]["domain"])
+                console.log("Domain exceeded retry limits, checked for 12 months without restart, how did I get here?.", queue[res].resource.domain)
               }
               delete queue[res]
             }
@@ -524,10 +523,10 @@ module.exports = (sequelize, DataTypes) => {
 
   Caddy.isResourceAlreadyAdded = async(id) =>{
     try {
-      let response = await axios.get(Caddy.caddyRoutesUrl)
-      for (const resource of response.data) {
-        if (resource["@id"] === id) {
-          console.log("Resource already added: "+resource["@id"])
+      let deals = await axios.get(Caddy.caddyRoutesUrl)
+      for (const deal of deals.data) {
+        if (deal["@id"] === id) {
+          console.log("Resource already added: "+deal["@id"])
           return true
         }
       } 
@@ -554,9 +553,9 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  Caddy.cleanUpCname = async(resource_id, cname) =>{
+  Caddy.cleanUpCname = async(deal_id, cname) =>{
     let added = await Caddy.isCnameAlreadyAdded(cname)
-    if(added && added !== resource_id) await Caddy.removeCname(added, cname)
+    if(added && added !== deal_id) await Caddy.removeCname(added, cname)
     return true
   }
 
@@ -565,7 +564,7 @@ module.exports = (sequelize, DataTypes) => {
       let response = await axios.get(Caddy.caddyRoutesUrl)
       for (const resource of response.data) {
         if (resource.match[0].host.includes(cname)) {
-          console.log("Cname already added to another resource: "+resource["@id"])
+          console.log("Cname already added to another deal: "+resource["@id"])
           return resource["@id"]
         }
       }
