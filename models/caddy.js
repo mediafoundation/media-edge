@@ -158,6 +158,7 @@ module.exports = (sequelize, DataTypes) => {
   Caddy.addRecords = async(dealsResources, Caddyfile) => {
     let payload = []
     for(const item of dealsResources) {
+      console.log("Item", item)
       let caddyData = await Caddy.newObject(item.resource, item.deal)
       //if res has an ID, it may confict with DB id, so we delete it before adding
       //if(res.id) delete res.id
@@ -216,47 +217,64 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  Caddy.addRecord = async (res, fileExist=false) => {
+  Caddy.addRecord = async (item) => {
     //check if requires update (if record present on database **OR** on caddyFile)
-    let requireUpdate = caddy || fileExist ? true : false
+    //let requireUpdate = !!(fileExist)
     //create caddy object
-    let caddyData = await Caddy.newObject(res)
-    //if there's no db record
-    if(!caddy) {
-      //if res has an ID, it may confict with DB id, so we delete it before adding
-      if(res.id) delete res.id
-      //add to Caddy DB
-      let caddy = await Caddy.create(res)
-      //add domains to Caddy Sources DB
-      for (const domain of caddyData.match[0].host){
-        await CaddySource.create({
+    let caddyData = await Caddy.newObject(item.resource, item.deal)
+    //if res has an ID, it may confict with DB id, so we delete it before adding
+    //if(res.id) delete res.id
+    //add to Caddy DB
+    //let caddy = await Caddy.create(res)
+    //add domains to Caddy Sources DB
+    for (const domain of caddyData.match[0].host){
+      await CaddySource.findOrCreate({
+        where: {
           host: domain,
-          resource_id: caddy.id
-        })
-      }
+          deal_id: item.deal.id
+        }
+      })
     }
     //if theres no caddyFile matching the ID
-    if(!fileExist){
+
       //Add to caddy file
-      try {
-        await axios.post(
-          Caddy.caddyRoutesUrl,
-          caddyData,
-          Caddy.caddyReqCfg
-        )
-        console.log('Added to caddy:', res.resource_id, res.wallet, res.account)
-      } catch (e){
-        console.log("axios error", e)
-        return false
-      }
-      //if caddy added succesfully, and theres a custom domain, add resource to pending queue
-      if (res.domain) {
-        Caddy.queue[res.resource_id] = res
+    try {
+      await axios.post(
+        Caddy.caddyRoutesUrl,
+        caddyData,
+        Caddy.caddyReqCfg
+      )
+      console.log('Added to caddy:', item.deal.id)
+    } catch (e){
+      console.log("axios error", e)
+      return false
+    }
+    //if caddy added succesfully, and theres a custom domain, add resource to pending queue
+    if(item.resource.domain) {
+      let host = caddyData.match[0].host
+      //check if cname is pointing to the right target
+      let cname_is_valid = await Caddy.checkCname(item.resource.domain, host)
+      if (cname_is_valid) {
+        //find and delete cname from any other record
+        await Caddy.cleanUpCname(item.deal.id, item.resource.domain)
+        //add cname to Caddy object
+        caddyData.match[0].host.push(item.resource.domain)
+        //add cnmae to CaddySources
+        await CaddySource.findOrCreate({
+          where: {
+            host: item.resource.domain,
+            deal_id: item.deal.id
+          }
+        })
+        console.log("Added CaddySources for domain:", item.resource.domain, item.resource.id)
+      } else { //if cname is not valid
+        //if it's not on any queue already, add it
+        console.log("Adding domain to check queue.", item.resource.domain, item.resource.id)
+        if (!Caddy.isInQueue(item.deal.id)) {
+          Caddy.queue[item.deal.id] = item
+        }
       }
     }
-
-    //update the resource in case there were previous data (db record or CaddyFile)
-    if(requireUpdate) await Caddy.updateRecord(res, fileExist)
 
     return true
   }
@@ -596,6 +614,6 @@ module.exports = (sequelize, DataTypes) => {
 
   }
 
-  CaddySource.sync({ force: true })
+  CaddySource.sync({ force: false })
   return Caddy;
 }

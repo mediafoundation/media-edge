@@ -153,7 +153,7 @@ module.exports = (sequelize, DataTypes) => {
         return await contract.methods.getDeal(dealId).call()
     }
 
-    Deals.sync({force: true})
+    Deals.sync({force: false})
     return Deals
 
 }

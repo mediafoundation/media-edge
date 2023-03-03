@@ -157,13 +157,18 @@ deployed.forEach(async CURRENT_NETWORK => {
         console.log("Start to check events")
         setInterval(async () => {
             MarketplaceInstance.getPastEvents('DealCreated', {fromBlock: lastReadBlock + 1, toBlock: 'latest'},  async (error, events) => {
-                //console.log(events)
                 if(events !== undefined){
                     for (const event of events) {
                         let deal = await db.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
+                        let resource = await db.Evm.getResource(ResourcesInstance, deal.resourceId)
                         if(await db.Deals.dealIsActive(deal) !== false && deal.active !== false){
                             let dealFormatted = db.Deals.formatDataToDb(deal)
+                            let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK.name)
+
+                            console.log(dealFormatted, resourceFormatted)
                             await db.Deals.addRecord(dealFormatted)
+                            await db.Evm.addRecord(resourceFormatted)
+                            await db.Caddy.addRecord({resource:resourceFormatted, deal: dealFormatted})
                         }
                     }
                 }

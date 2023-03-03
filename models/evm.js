@@ -192,7 +192,24 @@ module.exports = (sequelize, DataTypes) => {
         return resources
     }
 
-    Evm.sync({force: true})
+    Evm.getResource = async (contract, resourceId) => {
+        let resource = await contract.methods.getResource(resourceId, config.WALLET).call()
+        let attr = JSON.parse(resource.encryptedData)
+        let decryptedSharedKey = await ethSigDecrypt(
+            resource.encryptedSharedKey,
+            config.PRIVATE_KEY
+        );
+
+        let decrypted = await decrypt(
+            decryptedSharedKey,
+            attr.iv,
+            attr.tag,
+            attr.encryptedData
+        );
+        return {resource_id: resource.id, owner: resource.owner, data: decrypted}
+    }
+
+    Evm.sync({force: false})
     return Evm
 
 }
