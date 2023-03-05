@@ -4,13 +4,12 @@ const db = require('./models');
 const Resources = require('./evm-contract/build/contracts/Resources.json');
 const Marketplace = require('./evm-contract/build/contracts/Marketplace.json')
 const Web3 = require('web3');
+const {noRawAttributes} = require("sequelize/lib/utils/deprecations");
 
 let lastReadBlock = 0;
 
 
 const init = async (ResourcesContract, MarketplaceContract, network, web3Instance) => {
-
-    await db.Caddy.initApps()
 
     //fetch resources and deals
     let resources = await db.Evm.getPaginatedResources(ResourcesContract, 0, 2);
@@ -81,7 +80,13 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
 
 
     //add records to caddy
+
     let caddyRecords = await db.Caddy.getRecords()
+    if(!caddyRecords){
+        await db.Caddy.initApps()
+        caddyRecords = await db.Caddy.getRecords()
+    }
+
     let dealsFromDB = await db.Deals.getDeals()
     let resourcesFromDB = await db.Evm.getResources()
 
@@ -94,7 +99,23 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
         matchDealResources.push(matchDealResource)
     })
 
+    //console.log("Caddy records", caddyRecords)
     await db.Caddy.addRecords(matchDealResources, caddyRecords)
+
+    //delete records from caddy sources that are not in deals table
+
+    let caddySources = await db.Caddy.getCaddySources()
+
+    let difference = await db.Caddy.compareDbAndCaddyData(
+        dealsFromDB.map(deal => deal.id),
+        Array.from(new Set(caddySources.map(caddySource => caddySource.deal_id)))
+    )
+
+    console.log("Difference", difference)
+
+    for (const deal of difference) {
+        await db.Caddy.deleteRecord(deal)
+    }
 
     await db.Caddy.pendingQueue()
 }
