@@ -153,6 +153,15 @@ module.exports = (sequelize, DataTypes) => {
         return await contract.methods.getDeal(dealId).call()
     }
 
+    Deals.dealsThatHasResource = async (resourceId) => {
+        return await Deals.findAll({
+            where: {
+                resourceId: resourceId
+            },
+            attributes: {exclude: ['createdAt', 'updatedAt']}
+        })
+    }
+
     Deals.sync({force: false})
     return Deals
 

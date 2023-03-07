@@ -210,7 +210,7 @@ module.exports = (sequelize, DataTypes) => {
     let host = caddyData.match[0].host
     //check if cname is pointing to the right target
     let cname_is_valid = await Caddy.checkCname(item.resource.domain, host)
-    if (true) {
+    if (cname_is_valid) {
       //find and delete cname from any other record
       await Caddy.cleanUpCname(item.deal.id, item.resource.domain)
       //add cname to Caddy object
@@ -276,7 +276,7 @@ module.exports = (sequelize, DataTypes) => {
   //we allow these parameters to be sent so we don't make n requests to the caddy configuration for checking.
   Caddy.updateRecord = async (item, prevDomain) => {
     //Destroy previous records associated to deal id
-    let destroyed = CaddySource.destroy({
+    let destroyed = await CaddySource.destroy({
       where: {
         host: prevDomain,
         deal_id: item.deal.id
@@ -330,7 +330,7 @@ module.exports = (sequelize, DataTypes) => {
       return resp.data
     } catch(e){
       //console.log("Axios error, status: " + e.response.status + " on " + url);
-      console.log(e.msg)
+      console.log(e.response.status, e.response.statusText)
       return false;
     }
   }
@@ -355,13 +355,15 @@ module.exports = (sequelize, DataTypes) => {
 
   Caddy.deleteRecord = async (dealId) => {
     try {
-      await axios.delete(
-        Caddy.caddyBaseUrl +'id/'+ dealId,
-        Caddy.caddyReqCfg
-      )
       await CaddySource.destroy({ where: { deal_id: dealId } })
       
       await Caddy.deletefromAllQueues(dealId)
+
+      await axios.delete(
+          Caddy.caddyBaseUrl +'id/'+ dealId,
+          Caddy.caddyReqCfg
+      )
+
       console.log('Deleted from caddy:', dealId)
       //await Caddy.destroy({ where: { account:caddy.account }})
       return true

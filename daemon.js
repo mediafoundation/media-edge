@@ -74,7 +74,8 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
 
         lastReadBlock = await web3Instance.eth.getBlockNumber()
         console.log("Block:", lastReadBlock)
-    } else {
+    }
+    else {
         console.log("RPC has found errors")
     }
 
@@ -111,8 +112,6 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
         Array.from(new Set(caddySources.map(caddySource => caddySource.deal_id)))
     )
 
-    console.log("Difference", difference)
-
     for (const deal of difference) {
         await db.Caddy.deleteRecord(deal)
     }
@@ -141,97 +140,63 @@ deployed.forEach(async CURRENT_NETWORK => {
         Marketplace.networks[CURRENT_NETWORK.network_id].address
     )
 
-    /* ResourcesInstance.events.NewResource({filter: {value: []}})
-    .on('data', event => {
-      console.log("New Resources:",event.returnValues[0],event.returnValues[1],
-      event.returnValues.servardata)
-      // Evm.upsert({address: res.toLowerCase()}, {index: index.toString()})
-    })
-    .on('changed', changed => console.log("Changed!",changed))
-    .on('error', err => console.warn("Error",err) )
-    // .on('connected', str => console.log("NewResource conection:",str))
-
-    ResourcesInstance.events.RemoveResource({filter: {value: []}})
-    .on('data', event => {console.log("RemoveResource:",event.returnValues)})
-    .on('changed', changed => console.log("Changed!",changed))
-    .on('error', err => console.warn("Error",err) )
-    // .on('connected', str => console.log("RemoveResource conection:",str))
-
-    ResourcesInstance.events.NewAddress({filter: {value: []}})
-    .on('data', event => {console.log("NewAddress:",event.returnValues)})
-    .on('changed', changed => console.log("Changed!",changed))
-    .on('error', err => console.warn("Error",err) )
-    // .on('connected', str => console.log("NewAddress conecton:",str))
-
-
-    ResourcesInstance.events.RemoveAddress({filter: {value: []}})
-    .on('data', event => {console.log("RemoveAddress:",event.returnValues)})
-    .on('changed', changed => console.log("Changed!",changed))
-    .on('error', err => console.warn("Error",err) )
-    // .on('connected', str => console.log("RemoveAddress conecton:",str)) */
-
-
-
     await init(ResourcesInstance, MarketplaceInstance, CURRENT_NETWORK, web3)
 
     if(lastReadBlock !== 0){
-        console.log("Start to check events")
+        //console.log("Start to check events")
         setInterval(async () => {
-            MarketplaceInstance.getPastEvents('DealCreated', {fromBlock: lastReadBlock + 1, toBlock: 'latest'},  async (error, events) => {
-                if(events !== undefined){
+            await MarketplaceInstance.getPastEvents('DealCreated', {
+                fromBlock: lastReadBlock + 1,
+                toBlock: 'latest'
+            }, async (error, events) => {
+                if (events !== undefined) {
                     for (const event of events) {
                         let deal = await db.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
                         let resource = await db.Evm.getResource(ResourcesInstance, deal.resourceId)
-                        if(await db.Deals.dealIsActive(deal) !== false && deal.active !== false){
+                        if (await db.Deals.dealIsActive(deal) !== false && deal.active !== false) {
                             let dealFormatted = db.Deals.formatDataToDb(deal)
                             let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK.name)
 
                             console.log(dealFormatted, resourceFormatted)
                             await db.Deals.addRecord(dealFormatted)
                             await db.Evm.addRecord(resourceFormatted)
-                            await db.Caddy.addRecord({resource:resourceFormatted, deal: dealFormatted})
+                            await db.Caddy.addRecord({resource: resourceFormatted, deal: dealFormatted})
                         }
                     }
                 }
             })
 
-            /*MarketplaceInstance.getPastEvents('DealCreated', {fromBlock: lastReadBlock + 1, toBlock: 'latest'},  (error, events) => {
-                //console.log(events)
-                if(events !== undefined){
-                    events.forEach(event => {
-                        console.log(event.returnValues._dealId)
-                    })
+            await ResourcesInstance.getPastEvents('UpdatedResource', {
+                fromBlock: lastReadBlock + 1,
+                toBlock: 'latest'
+            }, async (error, events) => {
+                if (events !== undefined) {
+                    for (const event of events) {
+                        let deals = await db.Deals.dealsThatHasResource(event.returnValues._id)
+                        if(deals.length > 0){
+                            let resource = await db.Evm.getResource(ResourcesInstance, event.returnValues._id)
+                            let formattedResource = await db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK.name)
+                            await db.Evm.addRecord(formattedResource)
+
+                            for (const deal of deals) {
+                                //Check if cname is added or deleted
+                                let caddyRecords = await db.Caddy.getRecord(deal.id)
+                                let dbRecords = []
+                                if(formattedResource.domain){
+                                    dbRecords.push(formattedResource.domain)
+                                }
+                                dbRecords.push(...(await db.Caddy.getHostname(deal)))
+
+                                if(!db.Caddy.areArraysEqual(dbRecords, caddyRecords)){
+                                    await db.Caddy.updateRecord({resource: formattedResource, deal: deal.dataValues}, caddyRecords)
+                                }
+                            }
+                        }
+                    }
                 }
             })
 
-            MarketplaceInstance.getPastEvents('DealCreated', {fromBlock: lastReadBlock + 1, toBlock: 'latest'},  (error, events) => {
-                //console.log(events)
-                if(events !== undefined){
-                    events.forEach(event => {
-                        console.log(event.returnValues._dealId)
-                    })
-                }
-            })
-
-            MarketplaceInstance.getPastEvents('DealCreated', {fromBlock: lastReadBlock + 1, toBlock: 'latest'},  (error, events) => {
-                //console.log(events)
-                if(events !== undefined){
-                    events.forEach(event => {
-                        console.log(event.returnValues._dealId)
-                    })
-                }
-            })
-
-            MarketplaceInstance.getPastEvents('DealCreated', {fromBlock: lastReadBlock + 1, toBlock: 'latest'},  (error, events) => {
-                //console.log(events)
-                if(events !== undefined){
-                    events.forEach(event => {
-                        console.log(event.returnValues._dealId)
-                    })
-                }
-            })
-
-*/          lastReadBlock = await web3.eth.getBlockNumber()
+            lastReadBlock = await web3.eth.getBlockNumber()
         }, 10000)
     }
 });
