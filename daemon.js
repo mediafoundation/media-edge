@@ -11,6 +11,9 @@ let lastReadBlock = 0;
 
 const init = async (ResourcesContract, MarketplaceContract, network, web3Instance) => {
 
+    let rpcStatus
+    let edgeStatus
+
     //fetch resources and deals
     let resources = await db.Evm.getPaginatedResources(ResourcesContract, 0, 2);
 
@@ -74,8 +77,10 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
 
         lastReadBlock = await web3Instance.eth.getBlockNumber()
         console.log("Block:", lastReadBlock)
+        rpcStatus = true
     }
     else {
+        rpcStatus = false
         console.log("RPC has found errors")
     }
 
@@ -117,6 +122,10 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
     }
 
     await db.Caddy.pendingQueue()
+
+    edgeStatus = true
+
+    return edgeStatus && rpcStatus
 }
 
 
@@ -140,7 +149,12 @@ deployed.forEach(async CURRENT_NETWORK => {
         Marketplace.networks[CURRENT_NETWORK.network_id].address
     )
 
-    await init(ResourcesInstance, MarketplaceInstance, CURRENT_NETWORK, web3)
+    let initResult = await init(ResourcesInstance, MarketplaceInstance, CURRENT_NETWORK, web3)
+    //should set an interval and then cancel it when init is successful
+    if(initResult){
+        console.log("Edge started correctly")
+
+    }
 
     if(lastReadBlock !== 0){
         //console.log("Start to check events")
