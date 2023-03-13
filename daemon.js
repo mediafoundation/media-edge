@@ -1,6 +1,4 @@
 const networks = require('./config/networks')
-const env = require('./config/env')
-const db = require('./models');
 const Resources = require('./evm-contract/build/contracts/Resources.json');
 const Marketplace = require('./evm-contract/build/contracts/Marketplace.json')
 const Web3 = require('web3');
@@ -74,60 +72,13 @@ deployed.forEach(async CURRENT_NETWORK => {
     if(lastReadBlock !== 0){
         console.log("Start to check events")
         setInterval(async () => {
-            /*await MarketplaceInstance.getPastEvents('DealCreated', {
-                fromBlock: lastReadBlock + 1,
-                toBlock: 'latest'
-            }, async (error, events) => {
-                if (events !== undefined) {
-                    for (const event of events) {
-                        let deal = await db.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
-                        let resource = await db.Evm.getResource(ResourcesInstance, deal.resourceId)
-                        if (await db.Deals.dealIsActive(deal) !== false && deal.active !== false) {
-                            let dealFormatted = db.Deals.formatDataToDb(deal)
-                            let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK.name)
 
-                            console.log(dealFormatted, resourceFormatted)
-                            await db.Deals.addRecord(dealFormatted)
-                            await db.Evm.addRecord(resourceFormatted)
-                            await db.Caddy.addRecord({resource: resourceFormatted, deal: dealFormatted})
-                        }
-                    }
-                }
-            })
+            let eventsResult = await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK)
 
-            await ResourcesInstance.getPastEvents('UpdatedResource', {
-                fromBlock: lastReadBlock + 1,
-                toBlock: 'latest'
-            }, async (error, events) => {
-                if (events !== undefined) {
-                    for (const event of events) {
-                        let deals = await db.Deals.dealsThatHasResource(event.returnValues._id)
-                        if(deals.length > 0){
-                            let resource = await db.Evm.getResource(ResourcesInstance, event.returnValues._id)
-                            let formattedResource = await db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK.name)
-                            await db.Evm.addRecord(formattedResource)
-
-                            for (const deal of deals) {
-                                //Check if cname is added or deleted
-                                let caddyRecords = await db.Caddy.getRecord(deal.id)
-                                let dbRecords = []
-                                if(formattedResource.domain){
-                                    dbRecords.push(formattedResource.domain)
-                                }
-                                dbRecords.push(...(await db.Caddy.getHostname(deal)))
-
-                                if(!db.Caddy.areArraysEqual(dbRecords, caddyRecords)){
-                                    await db.Caddy.updateRecord({resource: formattedResource, deal: deal.dataValues}, caddyRecords)
-                                }
-                            }
-                        }
-                    }
-                }
-            })*/
-
-            await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK)
-
-            lastReadBlock = await web3.eth.getBlockNumber()
+            //if events run correctly update the lasReadBlock variable
+            if(eventsResult){
+                lastReadBlock = await web3.eth.getBlockNumber()
+            }
         }, 10000)
     }
 });
