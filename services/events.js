@@ -1,11 +1,12 @@
 const models = require("../models");
-let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock) => {
+let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK) => {
     //Marketplace events
     await MarketplaceInstance.getPastEvents('DealCreated', {
         fromBlock: lastReadBlock + 1,
         toBlock: 'latest'
     }, async (error, events) => {
-        if (events !== undefined) {
+        //console.log("Deal created", events, events.length > 0)
+        if (events.length > 0) {
             for (const event of events) {
                 let deal = await models.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
                 let resource = await models.Evm.getResource(ResourcesInstance, deal.resourceId)
@@ -22,12 +23,38 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock) 
         }
     })
 
+    await MarketplaceInstance.getPastEvents('DealCancelled', {
+        fromBlock: lastReadBlock + 1,
+        toBlock: 'latest'
+    }, async (error, events) => {
+        //console.log("Cancelled deal:", events, events.length > 0)
+        if(events.length > 0){
+            //console.log(events)
+            //await models.Caddy.deleteRecord()
+            for (const event of events) {
+                //delete deal from caddy and db
+                await models.Caddy.deleteRecord(event.returnValues._dealId)
+                await models.Deals.deleteRecords(event.returnValues._dealId)
+
+                //Check if the resource associated to that deal has any other deals or need to be removed
+                let deal = await models.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
+                let dealsOfResource = await models.Deals.dealsThatHasResource(deal.resourceId)
+
+                if(dealsOfResource.length === 0){
+                    console.log("Resource Id", deal.resourceId)
+                    await models.Evm.deleteRecords(deal.resourceId)
+                }
+            }
+        }
+    })
+
     //Resources events
     await ResourcesInstance.getPastEvents('UpdatedResource', {
         fromBlock: lastReadBlock + 1,
         toBlock: 'latest'
     }, async (error, events) => {
-        if (events !== undefined) {
+        //console.log("Updated resource:", events, events.length > 0)
+        if (events.length > 0) {
             for (const event of events) {
                 let deals = await models.Deals.dealsThatHasResource(event.returnValues._id)
                 if(deals.length > 0){
@@ -87,4 +114,4 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock) 
 
 }
 
-module.exports = checkEvents
+module.exports = {checkEvents}

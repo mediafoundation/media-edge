@@ -6,6 +6,7 @@ const Marketplace = require('./evm-contract/build/contracts/Marketplace.json')
 const Web3 = require('web3');
 const {initDatabase} = require("./services/database");
 const {initCaddy} = require("./services/caddy");
+const {checkEvents} = require("./services/events");
 
 let lastReadBlock = 0;
 
@@ -73,7 +74,7 @@ deployed.forEach(async CURRENT_NETWORK => {
     if(lastReadBlock !== 0){
         console.log("Start to check events")
         setInterval(async () => {
-            await MarketplaceInstance.getPastEvents('DealCreated', {
+            /*await MarketplaceInstance.getPastEvents('DealCreated', {
                 fromBlock: lastReadBlock + 1,
                 toBlock: 'latest'
             }, async (error, events) => {
@@ -122,7 +123,9 @@ deployed.forEach(async CURRENT_NETWORK => {
                         }
                     }
                 }
-            })
+            })*/
+
+            await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK)
 
             lastReadBlock = await web3.eth.getBlockNumber()
         }, 10000)
