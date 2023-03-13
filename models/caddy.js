@@ -7,19 +7,6 @@ const resolver = new doh.DohResolver('https://1.1.1.1/dns-query')
 // const resolver3 = new doh.DohResolver('https://dns.quad9.net/dns-query')
 // const resolver4 = new doh.DohResolver('https://doh.opendns.com/dns-query')
 
-async function updateOrCreate(model, where, newItem) {
-  // First try to find the record
- const foundItem = await model.findOne({where});
- if (!foundItem) {
-      // Item not found, create a new one
-      const item = await model.create(newItem)
-      return  {item, created: true};
-  }
-  // Found an item, update it
-  const item = await model.update(newItem, {where});
-  return {item, created: false};
-}
-
 module.exports = (sequelize, DataTypes) => {
   const Caddy = sequelize.define('Caddy', {
     id: {
@@ -74,13 +61,12 @@ module.exports = (sequelize, DataTypes) => {
       where: { host: host },
       raw: true 
     })
-    if(env.debug) console.log('Checking if domain', host, 'is added to Caddy Database ->', domain ? true : false)
-    return domain ? true : false;
+    if(env.debug) console.log('Checking if domain', host, 'is added to Caddy Database ->', !!domain)
+    return !!domain;
   }
 
   Caddy.getCaddySources = async() => {
-    let sources = await CaddySource.findAll({ raw: true })
-    return sources
+    return await CaddySource.findAll({raw: true})
   }
 
   Caddy.getHostname = (deal)  =>{
