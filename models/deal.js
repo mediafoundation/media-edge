@@ -1,7 +1,4 @@
 const config = require('../config/env')
-const crypto = require('crypto');
-const ethSigUtil = require('@metamask/eth-sig-util');
-const Web3RequestManager = require('web3-core-requestmanager');
 const {BigNumber} = require("ethers");
 
 module.exports = (sequelize, DataTypes) => {
@@ -67,7 +64,7 @@ module.exports = (sequelize, DataTypes) => {
         const pad2 = (n) => { return (n < 10 ? '0' : '') + n }
         let formattedCalculatedEnd = pad2(d.getFullYear()) + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) + "T" + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
 
-        return Date.parse(formattedCalculatedEnd) > Date.now()
+        return Date.parse(formattedCalculatedEnd) > Date.now() && deal.isActive === true
     }
 
     Deals.addRecord = async (deal) => {
@@ -140,7 +137,7 @@ module.exports = (sequelize, DataTypes) => {
 
     }
 
-    Deals.getDeals = async() => {
+    Deals.getDealsFromDb = async() => {
         let deals = []
         let dealsInDb =  await Deals.findAll({attributes: {exclude: ['createdAt', 'updatedAt']}})
         dealsInDb.forEach(deal => {
