@@ -27,7 +27,6 @@ let initCaddy = async function(){
 
     let caddyFile = await models.Caddy.getRecords()
 
-    console.log(caddyFile)
     console.log(caddyFile.find(o => o["@id"]))
     let difference = await models.Caddy.compareDbAndCaddyData(
         dealsFromDB.map(deal => deal.id),
