@@ -3,7 +3,7 @@ const Resources = require('./evm-contract/build/contracts/Resources.json');
 const Marketplace = require('./evm-contract/build/contracts/Marketplace.json')
 const Web3 = require('web3');
 const {initDatabase} = require("./services/database");
-const {initCaddy} = require("./services/caddy");
+const {initCaddy, checkDealsShouldBeActive} = require("./services/caddy");
 const {checkEvents} = require("./services/events");
 
 let lastReadBlock = 0;
@@ -17,6 +17,8 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
         await initDatabase(ResourcesContract, MarketplaceContract, network, web3Instance)
     } catch (e) {
         databaseInitStatus = false
+        console.log("Error when init database", e)
+
     }
 
     //add records to caddy
@@ -24,6 +26,7 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
     try{
         await initCaddy()
     }catch (e) {
+        console.log("Error when init caddy", e)
         caddyInitStatus = false
     }
 
@@ -31,6 +34,7 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
         lastReadBlock = await web3Instance.eth.getBlockNumber()
     }catch (e){
         lastReadBlock = 0
+        console.log("Error when getting last block", e)
         blockReadStatus = false
     }
 
@@ -66,7 +70,6 @@ deployed.forEach(async CURRENT_NETWORK => {
     //should set an interval and then cancel it when init is successful
     if(initResult){
         console.log("Edge started correctly")
-
     }
 
     if(lastReadBlock !== 0){
@@ -81,6 +84,11 @@ deployed.forEach(async CURRENT_NETWORK => {
             }
         }, 10000)
     }
+
+    //console.log("Check deals")
+    /*setInterval(async () => {
+        await checkDealsShouldBeActive()
+    }, 10000)*/
 });
 
 
