@@ -64,7 +64,7 @@ module.exports = (sequelize, DataTypes) => {
         const pad2 = (n) => { return (n < 10 ? '0' : '') + n }
         let formattedCalculatedEnd = pad2(d.getFullYear()) + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) + "T" + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
 
-        return Date.parse(formattedCalculatedEnd) > Date.now() && deal.isActive === true
+        return Date.parse(formattedCalculatedEnd) > Date.now()
     }
 
     Deals.addRecord = async (deal) => {
