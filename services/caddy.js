@@ -1,13 +1,13 @@
-const db = require("../models");
+const models = require("../models");
 let initCaddy = async function(){
-    let caddyRecords = await db.Caddy.getRecords()
+    let caddyRecords = await models.Caddy.getRecords()
     if(!caddyRecords){
-        await db.Caddy.initApps()
-        caddyRecords = await db.Caddy.getRecords()
+        await models.Caddy.initApps()
+        caddyRecords = await models.Caddy.getRecords()
     }
 
-    let dealsFromDB = await db.Deals.getDeals()
-    let resourcesFromDB = await db.Evm.getResources()
+    let dealsFromDB = await models.Deals.getDealsFromDb()
+    let resourcesFromDB = await models.Evm.getResources()
 
     let matchDealResources = []
 
@@ -19,22 +19,53 @@ let initCaddy = async function(){
     })
 
     //console.log("Caddy records", caddyRecords)
-    await db.Caddy.addRecords(matchDealResources, caddyRecords)
+    await models.Caddy.addRecords(matchDealResources, caddyRecords)
 
     //delete records from caddy sources that are not in deals table
 
-    let caddySources = await db.Caddy.getCaddySources()
+    //let caddySources = await models.Caddy.getCaddySources()
 
-    let difference = await db.Caddy.compareDbAndCaddyData(
+    let caddyFile = await models.Caddy.getRecords()
+
+    console.log(caddyFile)
+    console.log(caddyFile.find(o => o["@id"]))
+    let difference = await models.Caddy.compareDbAndCaddyData(
         dealsFromDB.map(deal => deal.id),
-        Array.from(new Set(caddySources.map(caddySource => caddySource.deal_id)))
+        caddyFile.find(o => o["@id"])
     )
 
     for (const deal of difference) {
-        await db.Caddy.deleteRecord(deal)
+        await models.Caddy.deleteRecord(deal)
     }
 
-    await db.Caddy.pendingQueue()
+    await models.Caddy.pendingQueue()
 }
 
-module.exports = {initCaddy}
+let checkDealsShouldBeActive = async function(){
+    //get all deals
+    let deals = await models.Deals.getDealsFromDb()
+    let dealsToDelete = []
+    for (const deal of deals) {
+        let dealIsActive = await models.Deals.dealIsActive(deal)
+        if(!dealIsActive){
+            dealsToDelete.push(deal.id)
+            //Check if deleted deal's resource has another deals or need to be removed
+            let dealsOfResource = await models.Deals.dealsThatHasResource(deal.resourceId)
+            if(dealsOfResource.length === 1){
+                //remove resource too
+                await models.Evm.deleteRecord(deal.resourceId)
+            }
+        }
+    }
+
+    //Delete deals from db
+    await models.Deals.deleteRecords(dealsToDelete)
+
+
+    //Delete deals from caddy
+    for (const dealToDelete of dealsToDelete) {
+        models.Caddy.deleteRecord(dealToDelete)
+    }
+}
+
+module.exports = {initCaddy, checkDealsShouldBeActive}
