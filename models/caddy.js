@@ -601,9 +601,11 @@ module.exports = (sequelize, DataTypes) => {
   Caddy.compareDbAndCaddyData = (dbDealIds, caddyDealIds) => {
     let difference = [];
     let set1 = new Set(dbDealIds);
-    for (let i = 0; i < caddyDealIds.length; i++) {
-      if (!set1.has(caddyDealIds[i])) {
-        difference.push(caddyDealIds[i]);
+    if(caddyDealIds !== undefined){
+      for (let i = 0; i < caddyDealIds.length; i++) {
+        if (!set1.has(caddyDealIds[i])) {
+          difference.push(caddyDealIds[i]);
+        }
       }
     }
     return difference;
