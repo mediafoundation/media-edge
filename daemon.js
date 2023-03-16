@@ -17,7 +17,7 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
         await initDatabase(ResourcesContract, MarketplaceContract, network, web3Instance)
     } catch (e) {
         databaseInitStatus = false
-        console.log("Error when init database", e)
+        console.log("Error when init database:", e)
 
     }
 
@@ -86,9 +86,9 @@ deployed.forEach(async CURRENT_NETWORK => {
     }
 
     //console.log("Check deals")
-    /*setInterval(async () => {
+    setInterval(async () => {
         await checkDealsShouldBeActive()
-    }, 10000)*/
+    }, 10000)
 });
 
 

@@ -6,6 +6,10 @@ const initDatabase = async function (ResourcesContract, MarketplaceContract, net
 
     let deals = await db.Deals.getPaginatedDeals(MarketplaceContract, 0, 2)
 
+    if(resources === undefined || deals === undefined){
+        throw "Error fetching deals and resources"
+    }
+
     let dealsToDelete = []
 
     //add to an array all the deal's id to delete

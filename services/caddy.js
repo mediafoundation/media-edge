@@ -27,7 +27,6 @@ let initCaddy = async function(){
 
     let caddyFile = await models.Caddy.getRecords()
 
-    console.log(caddyFile.find(o => o["@id"]))
     let difference = await models.Caddy.compareDbAndCaddyData(
         dealsFromDB.map(deal => deal.id),
         caddyFile.find(o => o["@id"])
@@ -42,8 +41,10 @@ let initCaddy = async function(){
 
 let checkDealsShouldBeActive = async function(){
     //get all deals
+    //console.log("Checking deal")
     let deals = await models.Deals.getDealsFromDb()
     let dealsToDelete = []
+    let resourcesToDelete = []
     for (const deal of deals) {
         let dealIsActive = await models.Deals.dealIsActive(deal)
         if(!dealIsActive){
@@ -52,18 +53,23 @@ let checkDealsShouldBeActive = async function(){
             let dealsOfResource = await models.Deals.dealsThatHasResource(deal.resourceId)
             if(dealsOfResource.length === 1){
                 //remove resource too
-                await models.Evm.deleteRecord(deal.resourceId)
+                //await models.Evm.deleteRecords(deal.resourceId)
+                resourcesToDelete.push(deal.resourceId)
             }
         }
     }
 
     //Delete deals from db
-    await models.Deals.deleteRecords(dealsToDelete)
 
+    if(dealsToDelete.length > 0){
+        console.log("Deals id to delete:", dealsToDelete)
+        await models.Deals.deleteRecords(dealsToDelete)
+        await models.Evm.deleteRecords(resourcesToDelete)
 
-    //Delete deals from caddy
-    for (const dealToDelete of dealsToDelete) {
-        models.Caddy.deleteRecord(dealToDelete)
+        //Delete deals from caddy
+        for (const dealToDelete of dealsToDelete) {
+            models.Caddy.deleteRecord(dealToDelete)
+        }
     }
 }
 
