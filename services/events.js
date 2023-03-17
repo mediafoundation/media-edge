@@ -1,5 +1,5 @@
 const models = require("../models");
-let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK) => {
+let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK, web3) => {
 
     let blockNumber = await web3.eth.getBlockNumber()
 

@@ -76,7 +76,7 @@ deployed.forEach(async CURRENT_NETWORK => {
         console.log("Start to check events")
         setInterval(async () => {
             try {
-                lastReadBlock = await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK)
+                lastReadBlock = await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK, web3)
             } catch(e){
                 console.log("Something failed while checking events", e)
             }
