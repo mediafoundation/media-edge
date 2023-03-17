@@ -6,7 +6,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
         toBlock: 'latest'
     }, async (error, events) => {
         //console.log("Updated resource:", events, events.length > 0)
-        if (events.length > 0) {
+        if (typeof events !== "undefined" && events.length > 0) {
             for (const event of events) {
                 let deals = await models.Deals.dealsThatHasResource(event.returnValues._id)
                 if(deals.length > 0){
@@ -29,6 +29,8 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
                     }
                 }
             }
+        } else {
+            console.log("No events found.")
         }
     })
 
