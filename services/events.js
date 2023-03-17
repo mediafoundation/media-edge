@@ -60,7 +60,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
     }
 
     if (typeof createdDeals !== "undefined" && createdDeals.length > 0) {
-        await manageDealCreatedOrAccepted(MarketplaceInstance, ResourcesInstance, events, CURRENT_NETWORK)
+        await manageDealCreatedOrAccepted(MarketplaceInstance, ResourcesInstance, createdDeals, CURRENT_NETWORK)
     }
 
     if(typeof cancelledDeals !== "undefined" && cancelledDeals.length > 0){
@@ -83,7 +83,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
     }
 
     if (typeof acceptedDeals !== "undefined" && acceptedDeals.length > 0) {
-        await manageDealCreatedOrAccepted(MarketplaceInstance, ResourcesInstance, events, CURRENT_NETWORK)
+        await manageDealCreatedOrAccepted(MarketplaceInstance, ResourcesInstance, acceptedDeals, CURRENT_NETWORK)
     }
     
     return blockNumber
