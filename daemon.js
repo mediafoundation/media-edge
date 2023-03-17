@@ -75,12 +75,10 @@ deployed.forEach(async CURRENT_NETWORK => {
     if(lastReadBlock !== 0){
         console.log("Start to check events")
         setInterval(async () => {
-
-            let eventsResult = await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK)
-
-            //if events run correctly update the lasReadBlock variable
-            if(eventsResult){
-                lastReadBlock = await web3.eth.getBlockNumber()
+            try {
+                lastReadBlock = await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK)
+            } catch(e){
+                console.log("Something failed while checking events", e)
             }
         }, 10000)
     }
