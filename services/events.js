@@ -29,70 +29,70 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
             toBlock: blockNumber
         })
 
-        if (typeof updatedResources !== "undefined" && updatedResources.length > 0) {
-            for (const event of updatedResources) {
-                let deals = await models.Deals.dealsThatHasResource(event.returnValues._id)
-                if(deals.length > 0){
-                    let resource = await models.Evm.getResource(ResourcesInstance, event.returnValues._id)
-                    let formattedResource = await models.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK.name)
-                    await models.Evm.addRecord(formattedResource)
-
-                    for (const deal of deals) {
-                        //Check if cname is added or deleted
-                        let caddyRecords = await models.Caddy.getRecord(deal.id)
-                        let dbRecords = []
-                        if(formattedResource.domain){
-                            dbRecords.push(formattedResource.domain)
-                        }
-                        dbRecords.push(...(await models.Caddy.getHostname(deal)))
-
-                        if(!models.Caddy.areArraysEqual(dbRecords, caddyRecords)){
-                            await models.Caddy.updateRecord({resource: formattedResource, deal: deal.dataValues}, caddyRecords)
-                        }
-                    }
-                }
-            }
-        }
-
-        if (typeof removedResources !== "undefined" && removedResources.length > 0) {
-            for (const event of removedResources) {
-                await models.Evm.deleteRecords(event.returnValues._id)
-            }
-        }
-
-        if (typeof createdDeals !== "undefined" && createdDeals.length > 0) {
-            await manageDealCreatedOrAccepted(MarketplaceInstance, ResourcesInstance, createdDeals, CURRENT_NETWORK)
-        }
-
-        if(typeof cancelledDeals !== "undefined" && cancelledDeals.length > 0){
-            //console.log(events)
-            //await models.Caddy.deleteRecord()
-            for (const event of cancelledDeals) {
-                //delete deal from caddy and db
-                await models.Caddy.deleteRecord(event.returnValues._dealId)
-                await models.Deals.deleteRecords([event.returnValues._dealId])
-
-                //Check if the resource associated to that deal has any other deals or need to be removed
-                let deal = await models.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
-                let dealsOfResource = await models.Deals.dealsThatHasResource(deal.resourceId)
-
-                if(dealsOfResource.length === 0){
-                    console.log("Resource Id", deal.resourceId)
-                    await models.Evm.deleteRecords(deal.resourceId)
-                }
-            }
-        }
-
-        if (typeof acceptedDeals !== "undefined" && acceptedDeals.length > 0) {
-            await manageDealCreatedOrAccepted(MarketplaceInstance, ResourcesInstance, acceptedDeals, CURRENT_NETWORK)
-        }
-        
-        return blockNumber
-
     } catch(e){
         console.log(e)
         return false
     }
+
+    if (typeof updatedResources !== "undefined" && updatedResources.length > 0) {
+        for (const event of updatedResources) {
+            let deals = await models.Deals.dealsThatHasResource(event.returnValues._id)
+            if(deals.length > 0){
+                let resource = await models.Evm.getResource(ResourcesInstance, event.returnValues._id)
+                let formattedResource = await models.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK.name)
+                await models.Evm.addRecord(formattedResource)
+
+                for (const deal of deals) {
+                    //Check if cname is added or deleted
+                    let caddyRecords = await models.Caddy.getRecord(deal.id)
+                    let dbRecords = []
+                    if(formattedResource.domain){
+                        dbRecords.push(formattedResource.domain)
+                    }
+                    dbRecords.push(...(await models.Caddy.getHostname(deal)))
+
+                    if(!models.Caddy.areArraysEqual(dbRecords, caddyRecords)){
+                        await models.Caddy.updateRecord({resource: formattedResource, deal: deal.dataValues}, caddyRecords)
+                    }
+                }
+            }
+        }
+    }
+
+    if (typeof removedResources !== "undefined" && removedResources.length > 0) {
+        for (const event of removedResources) {
+            await models.Evm.deleteRecords(event.returnValues._id)
+        }
+    }
+
+    if (typeof createdDeals !== "undefined" && createdDeals.length > 0) {
+        await manageDealCreatedOrAccepted(MarketplaceInstance, ResourcesInstance, createdDeals, CURRENT_NETWORK)
+    }
+
+    if(typeof cancelledDeals !== "undefined" && cancelledDeals.length > 0){
+        //console.log(events)
+        //await models.Caddy.deleteRecord()
+        for (const event of cancelledDeals) {
+            //delete deal from caddy and db
+            await models.Caddy.deleteRecord(event.returnValues._dealId)
+            await models.Deals.deleteRecords([event.returnValues._dealId])
+
+            //Check if the resource associated to that deal has any other deals or need to be removed
+            let deal = await models.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
+            let dealsOfResource = await models.Deals.dealsThatHasResource(deal.resourceId)
+
+            if(dealsOfResource.length === 0){
+                console.log("Resource Id", deal.resourceId)
+                await models.Evm.deleteRecords(deal.resourceId)
+            }
+        }
+    }
+
+    if (typeof acceptedDeals !== "undefined" && acceptedDeals.length > 0) {
+        await manageDealCreatedOrAccepted(MarketplaceInstance, ResourcesInstance, acceptedDeals, CURRENT_NETWORK)
+    }
+    
+    return blockNumber
 }
 
 let manageDealCreatedOrAccepted = async (MarketplaceInstance, ResourcesInstance, events, CURRENT_NETWORK) => {
