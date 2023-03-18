@@ -86,8 +86,12 @@ module.exports = (sequelize, DataTypes) => {
     Deals.deleteRecords = async (ids) => {
         for (const id of ids) {
             console.log("Deleted resource in deals table: ", id)
-            let row = await Deals.findOne({where: {["id"] : id}})
-            await row.destroy()
+            let row = await Deals.findOne({
+                where: { id: id }
+            })
+            if(row){
+                await row.destroy()
+            }
         }
     }
 

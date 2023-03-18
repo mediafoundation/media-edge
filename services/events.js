@@ -70,7 +70,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
             for (const event of cancelledDeals) {
                 //delete deal from caddy and db
                 await models.Caddy.deleteRecord(event.returnValues._dealId)
-                await models.Deals.deleteRecords(event.returnValues._dealId)
+                await models.Deals.deleteRecords([event.returnValues._dealId])
 
                 //Check if the resource associated to that deal has any other deals or need to be removed
                 let deal = await models.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
