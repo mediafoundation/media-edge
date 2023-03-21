@@ -316,7 +316,7 @@ module.exports = (sequelize, DataTypes) => {
       return resp.data
     } catch(e){
       //console.log("Axios error, status: " + e.response.status + " on " + url);
-      console.log(e.response.status, e.response.statusText)
+      console.log(e)
       return false;
     }
   }

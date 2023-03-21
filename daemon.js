@@ -3,10 +3,9 @@ const Resources = require('./evm-contract/build/contracts/Resources.json');
 const Marketplace = require('./evm-contract/build/contracts/Marketplace.json')
 const Web3 = require('web3');
 const models = require("./models");
-let state = require('./models/state')
 
 const {initDatabase} = require("./services/database");
-const {initCaddy, checkDealsShouldBeActive} = require("./services/caddy");
+const {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy} = require("./services/caddy");
 const {checkEvents} = require("./services/events");
 
 // Initialize the lastReadBlock variable to 0
@@ -27,6 +26,7 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
     let caddyInitStatus = true
     let blockReadStatus = true
 
+    //Check if daemon needs to run a full reset
     const resetIndex = process.argv.indexOf('--reset');
     if(resetIndex !== -1){
         try{
@@ -45,6 +45,7 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
         }
     }
 
+    //Init database (get data from blockchain)
     try{
         await initDatabase(ResourcesContract, MarketplaceContract, network, web3Instance)
     } catch (e) {
@@ -52,7 +53,8 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
         console.log("Error when init database:", e)
 
     }
-    
+
+    //Init caddy (get data from db)
     try{
         await initCaddy(network)
     }catch (e) {
@@ -60,6 +62,7 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
         caddyInitStatus = false
     }
 
+    //Read block to use in events
     try {
         lastReadBlock = await web3Instance.eth.getBlockNumber()
     }catch (e){
@@ -113,10 +116,16 @@ deployed.forEach(async CURRENT_NETWORK => {
         }, 10000)
     }
 
-    //console.log("Check deals")
+    //Check if deals has balance to remain
     setInterval(async () => {
         await checkDealsShouldBeActive()
     }, 10000)
+
+    checkQueue()
+
+    setInterval(async () => {
+        await checkCaddy(CURRENT_NETWORK)
+    }, 60000)
 });
 
 

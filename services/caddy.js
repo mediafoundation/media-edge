@@ -1,4 +1,9 @@
 const models = require("../models");
+const env = require("../config/env")
+const http = require('http');
+
+let caddyNeedsUpdate = false
+
 let initCaddy = async function(){
     let caddyRecords = await models.Caddy.getRecords()
     if(!caddyRecords){
@@ -77,4 +82,61 @@ let checkDealsShouldBeActive = async function(network){
     }
 }
 
-module.exports = {initCaddy, checkDealsShouldBeActive}
+let checkQueue = () => {
+    setInterval(()=>{
+        models.Caddy.pendingQueue()
+    },60000)
+
+    setInterval(()=>{
+        models.Caddy.pendingQueueHourly()
+    },3600000)
+
+    setInterval(()=>{
+        models.Caddy.pendingQueueDaily()
+    },86400*1000)
+
+    setInterval(()=>{
+        models.Caddy.pendingQueueMonthly()
+    },259200*1000)
+}
+
+let checkCaddy = async (network) => {
+    let url = new URL(env.caddyUrl)
+    let host = url.hostname
+    let port = url.port
+    const options = {
+        host: host,
+        port: port,
+        path: '/config'
+    };
+
+
+    try {
+        const request = http.request(options);
+        await new Promise((resolve, reject) => {
+            request.on('response', (response) => {
+                resolve(response.statusCode === 200);
+            });
+            request.on('error', (error) => {
+                reject(error);
+            });
+            request.end();
+        });
+        if(caddyNeedsUpdate){
+            try{
+                console.log("Caddy failed, trying to restart")
+                await initCaddy()
+                caddyNeedsUpdate = false
+            }catch (e) {
+                console.log("Error restarting caddy:", e)
+                caddyNeedsUpdate = true
+            }
+        }
+    } catch (error) {
+        console.error('Error checking Caddy server:', error);
+        caddyNeedsUpdate = true
+
+    }
+}
+
+module.exports = {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy}
