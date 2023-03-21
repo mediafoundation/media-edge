@@ -18,7 +18,8 @@ module.exports = (sequelize, DataTypes) => {
             active: DataTypes.STRING,
             cancelled: DataTypes.STRING,
             metadata: DataTypes.STRING,
-            domains: DataTypes.STRING
+            domains: DataTypes.STRING,
+            network: DataTypes.STRING
         }, {freezeTableName: true}
     )
 
@@ -91,13 +92,13 @@ module.exports = (sequelize, DataTypes) => {
         }
     }
 
-    Deals.formatDataToDb = (deal) => {
+    Deals.formatDataToDb = (deal, network) => {
         let parsedData = {}
-        parsedData.id = deal.id
+        parsedData.id = deal.id + "_" + network.network_id + "_" + network.chain_id
         parsedData.offerId = deal.offerId
         parsedData.client = deal.client
         parsedData.provider = deal.provider
-        parsedData.resourceId = deal.resourceId
+        parsedData.resourceId = deal.resourceId + "_" + network.network_id + "_" + network.chain_id
         parsedData.totalBlockedBalance = deal.totalBlockedBalance
         parsedData.blockedBalance = deal.blockedBalance
         parsedData.pricePerSecond = deal.pricePerSecond
@@ -108,6 +109,7 @@ module.exports = (sequelize, DataTypes) => {
         parsedData.cancelled = deal.cancelled
         parsedData.metadata = deal.metadata
         parsedData.domains = JSON.stringify(deal.domains)
+        parsedData.network = network.name ? network.name : ""
 
         return parsedData
     }
@@ -159,7 +161,7 @@ module.exports = (sequelize, DataTypes) => {
         })
     }
 
-    Deals.sync({force: false})
+    Deals.sync({force: true})
     return Deals
 
 }

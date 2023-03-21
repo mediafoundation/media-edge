@@ -38,26 +38,27 @@ const initDatabase = async function (ResourcesContract, MarketplaceContract, net
 
     //upsert records in db
     for (const resource of resources) {
-        let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, network.name)
+        let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, network)
         //store formated resources to be use in caddy
         //formattedResources.push(resourceFormatted)
         await db.Evm.addRecord(resourceFormatted)
     }
 
     for (const deal of deals) {
-        let dealFormatted = db.Deals.formatDataToDb(deal)
+        let dealFormatted = db.Deals.formatDataToDb(deal, network)
         await db.Deals.addRecord(dealFormatted)
     }
 
     //delete records that are in db but not in blockchain
-    resourcesIds = resources.map(obj => obj.resource_id)
+    resourcesIds = resources.map(obj => obj.resource_id + "_" + network.network_id + "_" + network.chain_id)
     let notCompatibleResources = await db.Evm.compareBlockchainAndDbData(resourcesIds)
 
     if (notCompatibleResources.length > 0) {
+        console.log("Not compatible resource")
         await db.Evm.deleteRecords(notCompatibleResources)
     }
 
-    let dealsIds = deals.map(obj => obj.id)
+    let dealsIds = deals.map(obj => obj.id + "_" + network.network_id + "_" + network.chain_id)
     let notCompatibleDeals = await db.Deals.compareBlockchainAndDbData(dealsIds)
 
     if (notCompatibleDeals.length > 0) {

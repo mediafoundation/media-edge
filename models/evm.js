@@ -138,14 +138,14 @@ module.exports = (sequelize, DataTypes) => {
 
     Evm.formatDataToDb = (resource_id, owner, data, network) => {
         let parsedData = JSON.parse(data)
-        parsedData.id = resource_id
+        parsedData.id = resource_id + "_" + network.network_id + "_" + network.chain_id
         parsedData.owner = owner
         parsedData.label = parsedData.label ? parsedData.label : ""
         parsedData.protocol = parsedData.protocol ? parsedData.protocol : ""
         parsedData.origin = parsedData.origin ? parsedData.origin : ""
         parsedData.path = parsedData.path ? parsedData.path : ""
         parsedData.domain = parsedData.domain ? parsedData.domain : ""
-        parsedData.network = network ? network : ""
+        parsedData.network = network.name ? network.name : ""
 
         return parsedData
     }

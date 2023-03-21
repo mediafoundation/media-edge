@@ -33,12 +33,12 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
             let deals = await models.Deals.dealsThatHasResource(event.returnValues._id)
             if(deals.length > 0){
                 let resource = await models.Evm.getResource(ResourcesInstance, event.returnValues._id)
-                let formattedResource = await models.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK.name)
+                let formattedResource = await models.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK)
                 await models.Evm.addRecord(formattedResource)
 
                 for (const deal of deals) {
                     //Check if cname is added or deleted
-                    let caddyRecords = await models.Caddy.getRecord(deal.id)
+                    let caddyRecords = await models.Caddy.getRecord(deal.id, CURRENT_NETWORK)
                     let dbRecords = []
                     if(formattedResource.domain){
                         dbRecords.push(formattedResource.domain)
@@ -46,7 +46,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
                     dbRecords.push(...(await models.Caddy.getHostname(deal)))
 
                     if(!models.Caddy.areArraysEqual(dbRecords, caddyRecords)){
-                        await models.Caddy.updateRecord({resource: formattedResource, deal: deal.dataValues}, caddyRecords)
+                        await models.Caddy.updateRecord({resource: formattedResource, deal: deal.dataValues}, caddyRecords, CURRENT_NETWORK)
                     }
                 }
             }
@@ -68,7 +68,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
         //await models.Caddy.deleteRecord()
         for (const event of cancelledDeals) {
             //delete deal from caddy and db
-            await models.Caddy.deleteRecord(event.returnValues._dealId)
+            await models.Caddy.deleteRecord(event.returnValues._dealId, CURRENT_NETWORK)
             await models.Deals.deleteRecords(event.returnValues._dealId)
 
             //Check if the resource associated to that deal has any other deals or need to be removed
@@ -94,13 +94,13 @@ let manageDealCreatedOrAccepted = async (MarketplaceInstance, ResourcesInstance,
         let deal = await models.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
         let resource = await models.Evm.getResource(ResourcesInstance, deal.resourceId)
         if (await models.Deals.dealIsActive(deal) !== false && deal.active !== false) {
-            let dealFormatted = models.Deals.formatDataToDb(deal)
-            let resourceFormatted = models.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK.name)
+            let dealFormatted = models.Deals.formatDataToDb(deal, CURRENT_NETWORK)
+            let resourceFormatted = models.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK)
 
             //console.log(dealFormatted, resourceFormatted)
             await models.Deals.addRecord(dealFormatted)
             await models.Evm.addRecord(resourceFormatted)
-            await models.Caddy.addRecord({resource: resourceFormatted, deal: dealFormatted})
+            await models.Caddy.addRecord({resource: resourceFormatted, deal: dealFormatted}, CURRENT_NETWORK)
         }
     }
 }

@@ -24,7 +24,7 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
     //add records to caddy
 
     try{
-        await initCaddy()
+        await initCaddy(network)
     }catch (e) {
         console.log("Error when init caddy", e)
         caddyInitStatus = false

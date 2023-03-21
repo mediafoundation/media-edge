@@ -1,4 +1,5 @@
 const models = require("../models");
+const {networks} = require("../evm-contract/truffle-config");
 let initCaddy = async function(){
     let caddyRecords = await models.Caddy.getRecords()
     if(!caddyRecords){
@@ -32,10 +33,10 @@ let initCaddy = async function(){
 	caddyFile.map(obj => obj['@id']).filter(id => id)
     )
 
-	console.log(dealsFromDB.map(deal => deal.id))
-	console.log(caddyFile.map(obj => obj['@id']).filter(id => id))
+	//console.log(dealsFromDB.map(deal => deal.id))
+	//console.log(caddyFile.map(obj => obj['@id']).filter(id => id))
 
-	console.log("Difference", difference)
+	//console.log("Difference", difference)
     for (const deal of difference) {
         await models.Caddy.deleteRecord(deal)
     }
@@ -43,7 +44,7 @@ let initCaddy = async function(){
     await models.Caddy.pendingQueue()
 }
 
-let checkDealsShouldBeActive = async function(){
+let checkDealsShouldBeActive = async function(network){
     //get all deals
     //console.log("Checking deal")
     let deals = await models.Deals.getDealsFromDb()
@@ -72,7 +73,7 @@ let checkDealsShouldBeActive = async function(){
 
         //Delete deals from caddy
         for (const dealToDelete of dealsToDelete) {
-            models.Caddy.deleteRecord(dealToDelete)
+            models.Caddy.deleteRecord(dealToDelete, network)
         }
     }
 }
