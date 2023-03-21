@@ -1,5 +1,4 @@
 const models = require("../models");
-const {networks} = require("../evm-contract/truffle-config");
 let initCaddy = async function(){
     let caddyRecords = await models.Caddy.getRecords()
     if(!caddyRecords){

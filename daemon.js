@@ -2,6 +2,9 @@ const networks = require('./config/networks')
 const Resources = require('./evm-contract/build/contracts/Resources.json');
 const Marketplace = require('./evm-contract/build/contracts/Marketplace.json')
 const Web3 = require('web3');
+const models = require("./models");
+let state = require('./models/state')
+
 const {initDatabase} = require("./services/database");
 const {initCaddy, checkDealsShouldBeActive} = require("./services/caddy");
 const {checkEvents} = require("./services/events");
@@ -17,10 +20,31 @@ let lastReadBlock = 0;
  * @param {Object} web3Instance - The web3 provider instance
  * @returns {boolean} - True if initialization was successful, false otherwise
  */
+
 const init = async (ResourcesContract, MarketplaceContract, network, web3Instance) => {
+
     let databaseInitStatus = true
     let caddyInitStatus = true
     let blockReadStatus = true
+
+    const resetIndex = process.argv.indexOf('--reset');
+    if(resetIndex !== -1){
+        try{
+            await models.Evm.sync({force: true})
+            await models.Deals.sync({force: true})
+        } catch (e) {
+            console.log("Error syncing db", e)
+            databaseInitStatus = false
+        }
+
+        try{
+            await models.Caddy.initApps()
+        }catch (e){
+            console.log("Error syncing caddy", e)
+            caddyInitStatus = false
+        }
+    }
+
     try{
         await initDatabase(ResourcesContract, MarketplaceContract, network, web3Instance)
     } catch (e) {

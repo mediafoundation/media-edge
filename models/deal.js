@@ -1,5 +1,6 @@
 const config = require('../config/env')
 const {BigNumber} = require("ethers");
+const state = require("./../models/state")
 
 module.exports = (sequelize, DataTypes) => {
 
@@ -165,7 +166,7 @@ module.exports = (sequelize, DataTypes) => {
         })
     }
 
-    Deals.sync({force: false})
+    //Deals.sync({force: state.resetDb})
     return Deals
 
 }

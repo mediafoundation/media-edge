@@ -404,6 +404,7 @@ module.exports = (sequelize, DataTypes) => {
         config.caddyInitialApps,
         Caddy.caddyReqCfg
       )
+      await CaddySource.destroy({where: {}})
       /*await CaddySource.findOrCreate({
         where: {
           host: Caddy.getHostname("media-api"),
@@ -611,6 +612,6 @@ module.exports = (sequelize, DataTypes) => {
     return difference;
   }
 
-  CaddySource.sync({ force: false })
+  //CaddySource.sync({ force: false })
   return Caddy;
 }

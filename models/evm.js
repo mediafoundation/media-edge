@@ -1,8 +1,7 @@
 const config = require('../config/env')
 const crypto = require('crypto');
 const ethSigUtil = require('@metamask/eth-sig-util');
-const Web3RequestManager = require('web3-core-requestmanager');
-const {BigNumber} = require("ethers");
+const state = require("./../models/state")
 
 module.exports = (sequelize, DataTypes) => {
 
@@ -209,7 +208,7 @@ module.exports = (sequelize, DataTypes) => {
         return {resource_id: resource.id, owner: resource.owner, data: decrypted}
     }
 
-    Evm.sync({force: false})
+    //Evm.sync({force: state.resetDb})
     return Evm
 
 }
