@@ -54,7 +54,6 @@ const initDatabase = async function (ResourcesContract, MarketplaceContract, net
     let notCompatibleResources = await db.Evm.compareBlockchainAndDbData(resourcesIds)
 
     if (notCompatibleResources.length > 0) {
-        console.log("Not compatible resource")
         await db.Evm.deleteRecords(notCompatibleResources)
     }
 

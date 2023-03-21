@@ -165,7 +165,7 @@ module.exports = (sequelize, DataTypes) => {
         })
     }
 
-    Deals.sync({force: true})
+    Deals.sync({force: false})
     return Deals
 
 }
