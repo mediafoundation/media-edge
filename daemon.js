@@ -6,9 +6,17 @@ const {initDatabase} = require("./services/database");
 const {initCaddy, checkDealsShouldBeActive} = require("./services/caddy");
 const {checkEvents} = require("./services/events");
 
+// Initialize the lastReadBlock variable to 0
 let lastReadBlock = 0;
 
-
+/**
+ * Initializes the dApp on a specific network
+ * @param {Object} ResourcesContract - The Resources smart contract instance
+ * @param {Object} MarketplaceContract - The Marketplace smart contract instance
+ * @param {Object} network - The network configuration object
+ * @param {Object} web3Instance - The web3 provider instance
+ * @returns {boolean} - True if initialization was successful, false otherwise
+ */
 const init = async (ResourcesContract, MarketplaceContract, network, web3Instance) => {
     let databaseInitStatus = true
     let caddyInitStatus = true
@@ -20,9 +28,7 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
         console.log("Error when init database:", e)
 
     }
-
-    //add records to caddy
-
+    
     try{
         await initCaddy(network)
     }catch (e) {
