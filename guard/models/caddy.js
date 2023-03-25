@@ -289,7 +289,7 @@ module.exports = (sequelize, DataTypes) => {
           caddyData,
           Caddy.caddyReqCfg
       )
-      console.log('Updated Caddyfile resource:', item.deal.id)
+      console.log('Updated Caddyfile.j2 resource:', item.deal.id)
       for (const domain of caddyData.match[0].host){
         await CaddySource.findOrCreate({
           where: {

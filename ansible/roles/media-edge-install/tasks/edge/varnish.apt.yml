@@ -36,6 +36,7 @@
     owner: vcache
     group: vcache
     mode: 0664
+  when: install_option == 'Client'
 
 - name: Copy Varnish systemd service file
   ansible.builtin.template:
@@ -44,6 +45,25 @@
     owner: root
     group: root
     mode: 0664
+  when: install_option == 'Client'
+
+- name: Copy Varnish config file
+  ansible.builtin.template:
+    src: files/guard_files/varnish/default.vcl.j2
+    dest: /etc/varnish/default.vcl
+    owner: vcache
+    group: vcache
+    mode: 0664
+  when: install_option == 'Server'
+
+- name: Copy Varnish systemd service file
+  ansible.builtin.template:
+    src: files/guard_files/varnish/varnish.service.j2
+    dest: /etc/systemd/system/varnish.service
+    owner: root
+    group: root
+    mode: 0664
+  when: install_option == 'Server'
 
 - name: Copy Varnishncsa systemd service file
   ansible.builtin.copy:
@@ -52,6 +72,7 @@
     owner: root
     group: root
     mode: 0664
+  when: install_option == 'Client'
 
 - name: Enable and start Varnish service
   ansible.builtin.systemd:

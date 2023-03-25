@@ -54,15 +54,32 @@
     path: /usr/bin/caddy
     mode: '0755'
 
+#Copy files for Client or Server
 - name: Copy CaddyFile to /etc/caddy/Caddyfile
   template:
     src: files/edge/caddy/Caddyfile.j2
     dest: /etc/caddy/Caddyfile
+  when: install_option == 'Client'
+
+- name: Copy CaddyFile to /etc/caddy/Caddyfile
+  template:
+    src: files/guard_files/caddy/Caddyfile.j2
+    dest: /etc/caddy/Caddyfile
+  when: install_option == 'Server'
 
 - name: Copy caddy service file to /etc/systemd/system/caddy.service
   template:
     src: files/edge/caddy/caddy.service.j2
     dest: /etc/systemd/system/caddy.service
+  when: install_option == 'Client'
+
+- name: Copy caddy service file to /etc/systemd/system/caddy.service
+  template:
+    src: files/guard_files/caddy/caddy.service.j2
+    dest: /etc/systemd/system/caddy.service
+  when: install_option == 'Server'
+
+#Init caddy
 
 - name: Enable and start caddy service
   systemd:
