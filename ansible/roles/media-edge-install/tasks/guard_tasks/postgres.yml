@@ -1,0 +1,47 @@
+- name: Print install option
+  debug:
+    msg: "Selected install option: {{install_option}}"
+
+- name: Add postgresql sources
+  ansible.builtin.shell: sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+
+- name: Add apt key for postgres
+  ansible.builtin.shell: wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+
+- name: Install postgres 14 from apt
+
+  apt: pkg={{ item }} state=latest update_cache=yes install_recommends=yes
+  with_items:
+  - postgresql-server-dev-14
+  - postgresql-client-14
+  - postgresql-contrib
+
+# caddy service managment
+
+- name: Enabling postgresql service and ensure it is not masked
+  ansible.builtin.systemd:
+    name: postgresql
+    enabled: yes    
+
+- name: Restart postgresql service, in all cases, also issue daemon-reload to pick up config changes
+  ansible.builtin.systemd:
+    state: restarted
+    daemon_reload: yes
+    name: postgresql
+
+- name: Create a new database with name "guard"
+  community.postgresql.postgresql_db:
+    name: guard
+  become: true
+  become_method: su
+  become_user: postgres
+
+- name: Create guard user, and grant access to database and table
+  community.postgresql.postgresql_user:
+    db: guard
+    name: guard
+    password: '{{postgresPassword}}'
+    expires: "Jan 31 2420"
+  become: true
+  become_method: su
+  become_user: postgres    

@@ -1,0 +1,108 @@
+- name: Remove conflicting packages
+  apt:
+    name: grafana
+    state: absent
+    autoremove: yes
+
+- name: Clean up previous Grafana folders
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/grafana/
+    - /var/lib/grafana/ 
+    - /usr/share/grafana/
+    - /var/log/grafana/
+
+- name: Import Grafana GPG signing key
+  apt_key:
+    url: "https://packages.grafana.com/gpg.key"
+    state: present
+
+- name: Add Grafana repository
+  apt_repository:
+    repo: "deb https://packages.grafana.com/oss/deb stable main"
+    state: present
+    update_cache: true
+
+- name: Install Grafana package
+  apt:
+    name: grafana
+    state: present
+    update_cache: true
+
+- name: Provision Prometheus datasource
+  copy:
+    src: files/edge/grafana/prometheus-datasources.yaml
+    dest: /etc/grafana/provisioning/datasources/
+
+- name: Configure Grafana
+  copy:
+    src: files/edge/grafana/grafana.ini
+    dest: /etc/grafana/
+
+- name: Create Caddy Grafana Dashboard
+  block:
+    - name: Create Caddy Dashboard Directory
+      file:
+        path: /etc/grafana/provisioning/dashboards/caddy-dashboard
+        state: directory
+        recurse: yes
+    - name: Copy Caddy Dashboard YAML file
+      copy:
+        src: files/edge/grafana/caddy-dashboard.yaml
+        dest: /etc/grafana/provisioning/dashboards/
+    - name: Copy Caddy Dashboard JSON file
+      copy:
+        src: files/edge/grafana/caddy_rev2.json
+        dest: /etc/grafana/provisioning/dashboards/caddy-dashboard
+
+
+- name: Create Prometheus System Grafana Dashboard
+  block:
+    - name: Create Prometheus System Dashboard Directory
+      file:
+        path: /etc/grafana/provisioning/dashboards/prometheus_system-dashboard
+        state: directory
+        recurse: yes
+    - name: Copy Prometheus System Dashboard YAML file
+      copy:
+        src: files/edge/grafana/prometheus_system-dashboard.yaml
+        dest: /etc/grafana/provisioning/dashboards/prometheus_system-dashboard/
+    - name: Copy Prometheus System Dashboard JSON file
+      copy:
+        src: files/edge/grafana/prometheus_system-dashboard.json
+        dest: /etc/grafana/provisioning/dashboards/prometheus_system-dashboard/
+
+
+- name: Create Prometheus Varnish Exporter Grafana Dashboard
+  block:
+    - name: Create Prometheus Varnish Exporter Dashboard Directory
+      file:
+        path: /etc/grafana/provisioning/dashboards/prometheus_varnish_exporter-dashboard
+        state: directory
+        recurse: yes
+    - name: Copy Prometheus Varnish Exporter Dashboard YAML file
+      copy:
+        src: files/edge/grafana/prometheus_varnish_exporter-dashboard.yaml
+        dest: /etc/grafana/provisioning/dashboards/prometheus_varnish_exporter-dashboard/
+    - name: Copy Prometheus Varnish Exporter Dashboard JSON file
+      copy:
+        src: files/edge/grafana/prometheus_varnish_exporter-dashboard.json
+        dest: /etc/grafana/provisioning/dashboards/prometheus_system-dashboard/       
+
+- name: Start and enable Grafana service
+  systemd:
+    name: grafana-server
+    enabled: true
+    state: started
+
+- name: Wait for Grafana to fully start
+  pause:
+    seconds: 30
+
+- name: Check Grafana service status
+  shell: systemctl status grafana-server
+
+- name: Check Grafana service log
+  shell: journalctl -u grafana-server

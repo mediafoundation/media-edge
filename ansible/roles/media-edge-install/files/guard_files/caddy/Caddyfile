@@ -1,0 +1,11 @@
+{
+    admin 127.0.0.1:2020
+    auto_https off
+    log {
+        output file /var/lib/caddy/access.log {
+            roll_size 1gb
+            roll_keep 5
+            roll_keep_for 720h
+        }
+    }    
+}

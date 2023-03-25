@@ -1,0 +1,10 @@
+[Unit]
+Description=Prometheus Varnish Exporter
+After=network.target
+ 
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/prometheus_varnish_exporter --web.listen-address="localhost:9131"
+ 
+[Install]
+WantedBy=multi-user.target

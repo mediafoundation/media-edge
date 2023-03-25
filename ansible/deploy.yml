@@ -1,0 +1,30 @@
+- name: media-edge
+  hosts: edges
+  user: root
+
+  vars_prompt:
+    - name: install_option
+      prompt: "What would you like to install?\n- Server\n- Client\n"
+      private: false
+      default: "Server"
+
+    - name: public_key
+      prompt: "Place your public key to retrieve resources. Server only."
+      private: false
+
+    - name: private_key
+      prompt: "Place your private key to decrypt resources. Server only."
+      private: true
+
+    - name: postgres_password
+      prompt: "Place your postgres password. Server only."
+      private: true
+
+
+  roles:
+    - media-edge-install
+  vars_files:
+    - user_config.yml
+    - vars/variables.yml
+  gather_facts: no
+

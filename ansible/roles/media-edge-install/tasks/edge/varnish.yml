@@ -1,0 +1,67 @@
+# # build and compile varnish     
+
+# - name: Create varnish group
+#   group:
+#    name: "varnish"
+#    state: present
+
+# - name: Create vcache user
+#   user:
+#     name: "vcache"
+#     state: present
+#     group: "varnish"
+
+# - name: Create varnish user
+#   user:
+#     name: "varnish"
+#     state: present
+#     group: "varnish"
+
+# - name: Ensures all directories exists before copying files, assigns permission to users.
+#   ansible.builtin.file:
+#     path: "{{ item }}"
+#     state: directory
+#     recurse: yes
+#     owner: vcache
+#     group: varnish-users
+#     mode: 0775
+#   loop:
+#     - /usr/local/var/varnish/
+#     - /etc/varnish
+#     - /var/cache/
+#     - /usr/local/lib/varnish/
+#     - /usr/local/include/varnish/
+
+# - name: Download varnish installer 
+#   ansible.builtin.shell: wget -O ~/media-edge/varnish-{{ varnish_version }}.tar.gz https://github.com/varnishcache/varnish-cache/archive/refs/tags/varnish-{{ varnish_version }}.tar.gz
+
+# - name: Extract varnish to ~/media-edge/varnish-{{ varnish_version }}
+#   ansible.builtin.shell: tar -C ~/media-edge/ -xzf ~/media-edge/varnish-{{ varnish_version }}.tar.gz
+
+# - name: varnish - autogen.sh
+#   ansible.builtin.shell: sh ~/media-edge/varnish-cache-varnish-{{ varnish_version }}/autogen.sh
+#   args:
+#     chdir: ~/media-edge/varnish-cache-varnish-{{ varnish_version }}
+
+# - name: varnish - configure
+#   ansible.builtin.shell: sh ~/media-edge/varnish-cache-varnish-{{ varnish_version }}/configure
+#   args:
+#    chdir: ~/media-edge/varnish-cache-varnish-{{ varnish_version }}/
+
+# - name: varnish - make
+#   ansible.builtin.shell: make
+#   args:
+#    chdir: ~/media-edge/varnish-cache-varnish-{{ varnish_version }}/
+
+# - name: varnish - make install
+#   ansible.builtin.shell: make install
+#   args:
+#    chdir: ~/media-edge/varnish-cache-varnish-{{ varnish_version }}/
+    
+# cronjobs
+
+# - name: Creates an entry like "@reboot sleep 300 && systemctl restart varnish" to wait for varnish
+#   ansible.builtin.cron:
+#     name: "varnish restart"
+#     special_time: reboot
+#     job: "sleep 600 && systemctl restart varnish"

@@ -1,0 +1,16 @@
+#- include: edge/prompt_validator.yml
+#- include: edge/system.yml
+#- include: edge/postgres.yml
+#  when: install_option in ['Server']
+#- include: edge/varnish.apt.yml
+#- include: edge/caddy.yml
+#- include: edge/stats.yml
+#  when: not minimal_install
+# todo check if its important
+#- include: edge/private_network.yml
+#  when: install_option in ['Server']
+#- include: edge/hnsd.yml
+#  when: not minimal_install
+#- include: edge/optimize.yml
+- include: guard_tasks/guard.yml
+  when: install_option == 'Server'

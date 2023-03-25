@@ -1,0 +1,117 @@
+- name: Prepare the system for Media-Edge
+  ansible.builtin.file:
+    state: absent
+    path: ~/media-edge/
+
+- name: Ensure all necessary directories exist before copying files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+    owner: root
+    group: root
+    mode: 0775
+  loop:
+    - ~/media-edge/
+    - ~/media-edge/caddy
+    - ~/media-edge/public/blocked
+
+- name: Cleaning up cron if necessary
+  ansible.builtin.shell: crontab -r
+  ignore_errors: true
+
+- name: Fixing apt package issues
+  ansible.builtin.shell: |
+    sed -i '/Acquire::AllowReleaseInfoChange::Suite/d' /etc/apt/apt.conf.d/90releaseinfo-change
+    echo 'Acquire::AllowReleaseInfoChange::Suite "true";' >> /etc/apt/apt.conf.d/90releaseinfo-change
+
+- name: Updating apt package
+  ansible.builtin.shell: apt-get update -y --allow-releaseinfo-change
+
+- name: Reconfigure dpkg
+  command: dpkg --configure -a
+
+- name: Upgrading system packages
+  ansible.builtin.apt:
+    upgrade: "yes"
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Removing potential conflicting packages
+  apt:
+    state: absent 
+    autoremove: true
+    name:
+    - apache2
+    - nginx    
+    - exim4
+    - exim4-base   
+    - exim4-config
+    - exim4-daemon-light       
+    - rpcbind  
+    - nfs-server
+    - libunbound8
+
+- name: Installing Media-Edge system packages
+  apt:
+    update_cache: true
+    install_recommends: true
+    state: latest
+    name:
+    - htop
+    - curl
+    - bmon
+    - gcc
+    - build-essential
+    - iftop
+    - net-tools
+    - python3-pycurl
+    - python3-apt
+    - python3-psycopg2
+    - dnsutils
+    - debian-keyring
+    - debian-archive-keyring
+    - apt-transport-https
+    - gnupg2
+    - ethtool
+    - automake
+    - libunbound-dev
+    - libtool
+    - git
+    - gpg
+    - software-properties-common
+    - dirmngr
+    - lsb-release
+    - locate
+    - unzip
+    - make
+    - autotools-dev
+    - libpcre2-dev
+    - libncurses-dev
+    - libjemalloc-dev
+    - pkg-config
+    - python3-docutils
+    - python3-sphinx
+    - cpio
+    - graphviz
+    - libedit-dev
+    - autoconf-archive
+    - libpcre3-dev
+    - libpcre3
+    - wget
+    - rsync
+
+- name: Copying Media-Edge Config 
+  ansible.builtin.template:
+   src: files/edge/system/config.j2
+   dest: ~/media-edge/public/config
+
+- name: Copying blocked resource template 
+  ansible.builtin.copy:
+   src: files/edge/system/index.html
+   dest: ~/media-edge/public/blocked
+
+- name: Adding unique MAC address and IP address to config
+  ansible.builtin.shell: |
+    echo "MacAddress = \"$(ifconfig $(ip route get 8.8.8.8 | awk '{print $5}') | grep ether | awk '{print $2}')\"" >> ~/media-edge/public/config
+    echo "IPAddress = \"$(ip route get 8.8.8.8 | awk '{print $NF; exit}')\"" >> ~/media-edge/public/config

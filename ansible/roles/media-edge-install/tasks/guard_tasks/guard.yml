@@ -1,0 +1,22 @@
+- name: Create program directory
+  file:
+    path: /root/guard
+    state: directory
+
+- name: Copy program folder
+  copy:
+    src: ../guard/
+    dest: /root/guard
+
+#- name: Copy env file to program folder
+#  copy:
+#    src: "{{ env_file_path }}"
+#    dest: "{{ program_path }}/{{ program_folder_name }}/.env"
+#    owner: myuser
+#    group: mygroup
+#    mode: "0644"
+
+#- name: Run yarn install in program folder
+#  command: yarn install
+#  args:
+#    chdir: /root/guard/
