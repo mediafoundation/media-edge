@@ -42,26 +42,31 @@ module.exports = (sequelize, DataTypes) => {
 
         let paginatorIndex = start
         let steps = count
-
+        let result = await contract.methods.getPaginatedResources(config.WALLET, paginatorIndex, steps).call()
 
         try {
-            let result = await contract.methods.getPaginatedResources(config.WALLET, paginatorIndex, steps).call()
             //resources.push(...result._resources)
             for (const resource of result._resources) {
-                let attr = JSON.parse(resource.encryptedData)
-                let decryptedSharedKey = await ethSigDecrypt(
-                    resource.encryptedSharedKey,
-                    config.PRIVATE_KEY
-                );
+                try{
+                    let attr = JSON.parse(resource.encryptedData)
+                    let decryptedSharedKey = await ethSigDecrypt(
+                        resource.encryptedSharedKey,
+                        config.PRIVATE_KEY
+                    );
 
-                let decrypted = await decrypt(
-                    decryptedSharedKey,
-                    attr.iv,
-                    attr.tag,
-                    attr.encryptedData
-                );
+                    let decrypted = await decrypt(
+                        decryptedSharedKey,
+                        attr.iv,
+                        attr.tag,
+                        attr.encryptedData
+                    );
 
-                resources.push({resource_id: resource.id, owner: resource.owner, data: decrypted})
+                    resources.push({resource_id: resource.id, owner: resource.owner, data: decrypted})
+                } catch(e){
+                    console.log("Couldn't decrypt resource. Raw data ", resource)
+                    resources.push("")
+                }
+                
             }
 
             if(result._totalResources > resources.length){
@@ -69,45 +74,55 @@ module.exports = (sequelize, DataTypes) => {
                 for (let i = 1; i * steps < totalResources; i++) {
                     let result = await contract.methods.getPaginatedResources(config.WALLET, steps * i, steps).call()
                     for (const resource of result._resources) {
-                        let attr = JSON.parse(resource.encryptedData)
-                        let decryptedSharedKey = await ethSigDecrypt(
-                            resource.encryptedSharedKey,
-                            config.PRIVATE_KEY
-                        );
-
-                        let decrypted = await decrypt(
-                            decryptedSharedKey,
-                            attr.iv,
-                            attr.tag,
-                            attr.encryptedData
-                        );
-
-                        resources.push({resource_id: resource.id, owner: resource.owner, data: decrypted})
+                        try{
+                            let attr = JSON.parse(resource.encryptedData)
+                            let decryptedSharedKey = await ethSigDecrypt(
+                                resource.encryptedSharedKey,
+                                config.PRIVATE_KEY
+                            );
+        
+                            let decrypted = await decrypt(
+                                decryptedSharedKey,
+                                attr.iv,
+                                attr.tag,
+                                attr.encryptedData
+                            );
+        
+                            resources.push({resource_id: resource.id, owner: resource.owner, data: decrypted})
+                        } catch(e){
+                            console.log("Couldn't decrypt resource. Raw data ", resource)
+                            resources.push("")
+                        }
                     }
                 }
 
                 if(totalResources > resources.length){
                     let result = await contract.methods.getPaginatedResources(config.WALLET, resources.length, totalResources - resources.length).call()
                     for (const resource of result._resources) {
-                        let attr = JSON.parse(resource.encryptedData)
-                        let decryptedSharedKey = await ethSigDecrypt(
-                            resource.encryptedSharedKey,
-                            config.PRIVATE_KEY
-                        );
-
-                        let decrypted = await decrypt(
-                            decryptedSharedKey,
-                            attr.iv,
-                            attr.tag,
-                            attr.encryptedData
-                        );
-
-                        resources.push({resource_id: resource.id, owner: resource.owner, data: decrypted})
+                        try{
+                            let attr = JSON.parse(resource.encryptedData)
+                            let decryptedSharedKey = await ethSigDecrypt(
+                                resource.encryptedSharedKey,
+                                config.PRIVATE_KEY
+                            );
+        
+                            let decrypted = await decrypt(
+                                decryptedSharedKey,
+                                attr.iv,
+                                attr.tag,
+                                attr.encryptedData
+                            );
+        
+                            resources.push({resource_id: resource.id, owner: resource.owner, data: decrypted})
+                        } catch(e){
+                            console.log("Couldn't decrypt resource. Raw data", resource)
+                            resources.push("")
+                        }
                     }
                 }
             }
 
-            return resources
+            return resources.filter((str) => str !== '')
         } catch (e) {
             if(e.message === "Internal JSON-RPC error.") {
                 e.message = e.data.message;
@@ -195,19 +210,26 @@ module.exports = (sequelize, DataTypes) => {
 
     Evm.getResource = async (contract, resourceId) => {
         let resource = await contract.methods.getResource(resourceId, config.WALLET).call()
-        let attr = JSON.parse(resource.encryptedData)
-        let decryptedSharedKey = await ethSigDecrypt(
-            resource.encryptedSharedKey,
-            config.PRIVATE_KEY
-        );
+        try{
+            let attr = JSON.parse(resource.encryptedData)
+            let decryptedSharedKey = await ethSigDecrypt(
+                resource.encryptedSharedKey,
+                config.PRIVATE_KEY
+            );
 
-        let decrypted = await decrypt(
-            decryptedSharedKey,
-            attr.iv,
-            attr.tag,
-            attr.encryptedData
-        );
-        return {resource_id: resource.id, owner: resource.owner, data: decrypted}
+            let decrypted = await decrypt(
+                decryptedSharedKey,
+                attr.iv,
+                attr.tag,
+                attr.encryptedData
+            );
+
+            return {resource_id: resource.id, owner: resource.owner, data: decrypted}
+        } catch(e){
+            console.log("Couldn't decrypt resource. Raw data", resource)
+            return false
+        }
+        
     }
 
     //Evm.sync({force: state.resetDb})

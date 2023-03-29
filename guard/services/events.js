@@ -47,28 +47,30 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
             let deals = await models.Deals.dealsThatHasResource(formatIdForDB(event.returnValues._id, CURRENT_NETWORK))
             if(deals.length > 0){
                 let resource = await models.Evm.getResource(ResourcesInstance, event.returnValues._id)
-                let formattedResource = await models.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK)
-                let evmRecord = await models.Evm.addRecord(formattedResource)
+                if(resource !== false){
+                    let formattedResource = await models.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK)
+                    let evmRecord = await models.Evm.addRecord(formattedResource)
 
-                for (const deal of deals) {
-                    //Check if cname is added or deleted
-                    let caddyRecords = await models.Caddy.getRecord(deal.id, CURRENT_NETWORK)
-                    let dbRecords = []
-                    if(formattedResource.domain){
-                        dbRecords.push(formattedResource.domain)
-                    }
-                    dbRecords.push(...(await models.Caddy.getHostname(deal)))
+                    for (const deal of deals) {
+                        //Check if cname is added or deleted
+                        let caddyRecords = await models.Caddy.getRecord(deal.id, CURRENT_NETWORK)
+                        let dbRecords = []
+                        if(formattedResource.domain){
+                            dbRecords.push(formattedResource.domain)
+                        }
+                        dbRecords.push(...(await models.Caddy.getHostname(deal)))
 
-                    //Check change of domain
-                    if(!models.Caddy.areArraysEqual(dbRecords, caddyRecords)){
-                        await models.Caddy.updateRecord({resource: formattedResource, deal: deal.dataValues}, caddyRecords, CURRENT_NETWORK)
-                    }
-                    
-                    //Check change of resource data
-                    if(evmRecord.length > 0){
-                        if (evmRecord.includes('origin') || evmRecord.includes('protocol') || evmRecord.includes('path')) {
-                            let caddyHosts = await models.Caddy.getRecord(deal.id)
-                            await models.Caddy.updateRecord({resource: formattedResource, deal: deal}, caddyHosts)
+                        //Check change of domain
+                        if(!models.Caddy.areArraysEqual(dbRecords, caddyRecords)){
+                            await models.Caddy.updateRecord({resource: formattedResource, deal: deal.dataValues}, caddyRecords, CURRENT_NETWORK)
+                        }
+                        
+                        //Check change of resource data
+                        if(evmRecord.length > 0){
+                            if (evmRecord.includes('origin') || evmRecord.includes('protocol') || evmRecord.includes('path')) {
+                                let caddyHosts = await models.Caddy.getRecord(deal.id)
+                                await models.Caddy.updateRecord({resource: formattedResource, deal: deal}, caddyHosts)
+                            }
                         }
                     }
                 }
@@ -117,14 +119,16 @@ let manageDealCreatedOrAccepted = async (MarketplaceInstance, ResourcesInstance,
     for (const event of events) {
         let deal = await models.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
         let resource = await models.Evm.getResource(ResourcesInstance, deal.resourceId)
-        if (await models.Deals.dealIsActive(deal) !== false && deal.active !== false) {
-            let dealFormatted = models.Deals.formatDataToDb(deal, CURRENT_NETWORK)
-            let resourceFormatted = models.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK)
-
-            //console.log(dealFormatted, resourceFormatted)
-            await models.Deals.addRecord(dealFormatted)
-            await models.Evm.addRecord(resourceFormatted)
-            await models.Caddy.addRecord({resource: resourceFormatted, deal: dealFormatted}, CURRENT_NETWORK)
+        if(resource !== false){
+            if (await models.Deals.dealIsActive(deal) !== false && deal.active !== false) {
+                let dealFormatted = models.Deals.formatDataToDb(deal, CURRENT_NETWORK)
+                let resourceFormatted = models.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK)
+    
+                //console.log(dealFormatted, resourceFormatted)
+                await models.Deals.addRecord(dealFormatted)
+                await models.Evm.addRecord(resourceFormatted)
+                await models.Caddy.addRecord({resource: resourceFormatted, deal: dealFormatted}, CURRENT_NETWORK)
+            }
         }
     }
 }
