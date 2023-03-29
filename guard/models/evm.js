@@ -127,12 +127,14 @@ module.exports = (sequelize, DataTypes) => {
         })
         if(evm_record){
             await evm_record.set(resource)
+            let changed = evm_record.changed()
             evm_record.save()
+            return changed
         } else {
             evm_record = await Evm.create(resource)
             console.log("Created resource in evm table: ", resource.id)
         }
-        return evm_record
+        return true
     }
 
     Evm.formatDataToDb = (resource_id, owner, data, network) => {

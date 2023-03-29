@@ -42,12 +42,13 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
     }
 
     if (typeof updatedResources !== "undefined" && updatedResources.length > 0) {
+        console.log("Update resource");
         for (const event of updatedResources) {
             let deals = await models.Deals.dealsThatHasResource(formatIdForDB(event.returnValues._id, CURRENT_NETWORK))
             if(deals.length > 0){
                 let resource = await models.Evm.getResource(ResourcesInstance, event.returnValues._id)
                 let formattedResource = await models.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK)
-                await models.Evm.addRecord(formattedResource)
+                let evmRecord = await models.Evm.addRecord(formattedResource)
 
                 for (const deal of deals) {
                     //Check if cname is added or deleted
@@ -58,8 +59,17 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
                     }
                     dbRecords.push(...(await models.Caddy.getHostname(deal)))
 
+                    //Check change of domain
                     if(!models.Caddy.areArraysEqual(dbRecords, caddyRecords)){
                         await models.Caddy.updateRecord({resource: formattedResource, deal: deal.dataValues}, caddyRecords, CURRENT_NETWORK)
+                    }
+                    
+                    //Check change of resource data
+                    if(evmRecord.length > 0){
+                        if (evmRecord.includes('origin') || evmRecord.includes('protocol') || evmRecord.includes('path')) {
+                            let caddyHosts = await models.Caddy.getRecord(deal.id)
+                            await models.Caddy.updateRecord({resource: formattedResource, deal: deal}, caddyHosts)
+                        }
                     }
                 }
             }
