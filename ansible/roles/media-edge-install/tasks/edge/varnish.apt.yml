@@ -85,3 +85,4 @@
     name: varnishncsa
     enabled: true
     state: started
+  when: install_option == 'Client'

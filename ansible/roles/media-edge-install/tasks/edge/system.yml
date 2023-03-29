@@ -2,6 +2,7 @@
   ansible.builtin.file:
     state: absent
     path: ~/media-edge/
+  when: install_option == 'Client'
 
 - name: Ensure all necessary directories exist before copying files
   ansible.builtin.file:
@@ -15,6 +16,7 @@
     - ~/media-edge/
     - ~/media-edge/caddy
     - ~/media-edge/public/blocked
+  when: install_option == 'Client'
 
 - name: Cleaning up cron if necessary
   ansible.builtin.shell: crontab -r
@@ -58,60 +60,115 @@
     install_recommends: true
     state: latest
     name:
-    - htop
-    - curl
-    - bmon
-    - gcc
-    - build-essential
-    - iftop
-    - net-tools
-    - python3-pycurl
-    - python3-apt
-    - python3-psycopg2
-    - dnsutils
-    - debian-keyring
-    - debian-archive-keyring
-    - apt-transport-https
-    - gnupg2
-    - ethtool
-    - automake
-    - libunbound-dev
-    - libtool
-    - git
-    - gpg
-    - software-properties-common
-    - dirmngr
-    - lsb-release
-    - locate
-    - unzip
-    - make
-    - autotools-dev
-    - libpcre2-dev
-    - libncurses-dev
-    - libjemalloc-dev
-    - pkg-config
-    - python3-docutils
-    - python3-sphinx
-    - cpio
-    - graphviz
-    - libedit-dev
-    - autoconf-archive
-    - libpcre3-dev
-    - libpcre3
-    - wget
-    - rsync
+      - git
+      - htop
+      - vim
+      - curl
+      - bmon
+      - gcc
+      - nfs-common
+      - build-essential
+      - iftop
+      - net-tools
+      - python3-pycurl
+      - python3-apt
+      - python3-psycopg2
+      - dnsutils
+      - debian-keyring
+      - debian-archive-keyring
+      - apt-transport-https
+      - gnupg2
+      - libedit-dev
+      - libjemalloc-dev
+      - libncurses-dev
+      - libtool
+      - pkg-config
+      - ethtool
+      - rsync
+
+- name: Installing Media-Edge system packages
+  apt:
+    update_cache: true
+    install_recommends: true
+    state: latest
+    name:
+      - tmux
+      - fzf
+      - jq
+      - python3-docutils
+      - python3-sphinx
+  when: install_option == 'Client'
+
+- name: Installing Media-Guard system packages
+  apt:
+    update_cache: true
+    install_recommends: true
+    state: latest
+    name:
+      - libunbound-dev
+      - gpg
+      - software-properties-common
+      - dirmngr
+      - lsb-release
+      - locate
+      - unzip
+      - autotools-dev
+      - libpcre2-dev
+      - cpio
+      - graphviz
+      - autoconf-archive
+      - libpcre3
+      - wget
+  when: install_option == 'Server'
 
 - name: Copying Media-Edge Config 
   ansible.builtin.template:
    src: files/edge/system/config.j2
    dest: ~/media-edge/public/config
+  when: install_option == 'Client'
 
 - name: Copying blocked resource template 
   ansible.builtin.copy:
    src: files/edge/system/index.html
    dest: ~/media-edge/public/blocked
+  when: install_option == 'Client'
 
 - name: Adding unique MAC address and IP address to config
   ansible.builtin.shell: |
     echo "MacAddress = \"$(ifconfig $(ip route get 8.8.8.8 | awk '{print $5}') | grep ether | awk '{print $2}')\"" >> ~/media-edge/public/config
     echo "IPAddress = \"$(ip route get 8.8.8.8 | awk '{print $NF; exit}')\"" >> ~/media-edge/public/config
+  when: install_option == 'Client'
+
+- name: Download and apply NodeJS sources
+  shell: curl -sL https://deb.nodesource.com/{{node_version}} | bash -
+  when: install_option == 'Server'
+
+- name: Install NodeJS from apt
+  apt: pkg=nodejs state=latest update_cache=yes install_recommends=yes
+  when: install_option == 'Server'
+
+- name: Install PM2
+  shell: npm install -g pm2
+  when: install_option == 'Server'
+
+- name: Install yarn
+  shell: npm -g install yarn
+  when: install_option == 'Server'
+
+- name: Adds hostname to /etc/hostname based on IP
+  ansible.builtin.shell: |
+    echo "media-origin-$(wget -q whatismyip.akamai.com -O -)" > /etc/hostname.tmp 
+    sed 's/\./-/g' /etc/hostname.tmp > /etc/hostname
+    hostname -F /etc/hostname
+  when: install_option == 'Server'
+
+- name: Preventing services to start after installed
+  ansible.builtin.shell: "{{ item }}"
+  loop:
+    - echo '#!/bin/sh' > /usr/sbin/policy-rc.d
+    - echo 'exit 101' >> /usr/sbin/policy-rc.d
+  when: install_option == 'Server'
+
+- name: Prevent services from starting automatically
+  ansible.builtin.shell: chmod +x /usr/sbin/policy-rc.d
+  when: install_option == 'Server'
