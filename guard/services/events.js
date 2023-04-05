@@ -103,7 +103,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
 
             if(dealsOfResource.length === 0){
                 console.log("Resource Id", deal.resourceId)
-                await models.Evm.deleteRecords( formatIdForDB(deal.resourceId, CURRENT_NETWORK))
+                await models.Evm.deleteRecords([formatIdForDB(deal.resourceId, CURRENT_NETWORK)])
             }
         }
     }
