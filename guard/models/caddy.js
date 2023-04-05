@@ -195,7 +195,8 @@ module.exports = (sequelize, DataTypes) => {
   Caddy.manageDomain = async (caddyData, item) => {
     let host = caddyData.match[0].host
     //check if cname is pointing to the right target
-    let cname_is_valid = await Caddy.checkCname(item.resource.domain, host)
+    //TODO: make the web2 domains dynamic, cause there can be mutiple
+    let cname_is_valid = await Caddy.checkCname(item.resource.domain, host[0])
     if (cname_is_valid) {
       //find and delete cname from any other record
       await Caddy.cleanUpCname(item.deal.id, item.resource.domain)
@@ -365,7 +366,7 @@ module.exports = (sequelize, DataTypes) => {
       let host = Caddy.getHostname(item.deal);
       //let match = [host]
       //match.push(Caddy.getDHostname(item.resource_id))
-      let cname_is_valid = await Caddy.checkCname(item.resource.domain, host)
+      let cname_is_valid = await Caddy.checkCname(item.resource.domain, host[0])
       if (cname_is_valid) {
         await Caddy.cleanUpCname(item.deal.id, item.resource.domain)
         host.push(item.resource.domain)
