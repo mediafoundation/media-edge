@@ -198,7 +198,7 @@ module.exports = (sequelize, DataTypes) => {
                 await row.destroy()
                 if(env.debug) console.log("Deleted resource in evm table: ", id)
             } else {
-                if(env.debug) console.log("Could not found resource ID", id);
+                if(env.debug) console.log("Resource not found ID", id);
             }
         }
     }

@@ -355,7 +355,14 @@ module.exports = (sequelize, DataTypes) => {
       //await Caddy.destroy({ where: { account:caddy.account }})
       return true
     } catch (e){
-      console.log("axios error", e)
+      let data = e?.response?.data?.error;
+      if(data.includes("unknown object")){
+        if(env.debug) console.log('Deal already deleted:', dealId)
+        return true
+      } else {
+        console.log("axios error", e)
+        return false
+      }
       return false
     }
   }
