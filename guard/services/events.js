@@ -1,4 +1,6 @@
-const models = require("../models");
+const models = require("../models")
+const env = require("../config/env")
+
 let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK, web3) => {
     let blockNumber = lastReadBlock + 1
     let updatedResources = undefined
@@ -10,6 +12,9 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
     try {
 
         blockNumber = await web3.eth.getBlockNumber()
+        
+        if(env.debug) console.log("Last readed block", lastReadBlock)
+        if(env.debug) console.log("Current block", blockNumber)
 
         updatedResources = await ResourcesInstance.getPastEvents('UpdatedResource', {
             fromBlock: lastReadBlock + 1,

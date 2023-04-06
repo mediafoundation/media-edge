@@ -1,7 +1,7 @@
-const config = require('../config/env')
 const crypto = require('crypto');
 const ethSigUtil = require('@metamask/eth-sig-util');
 const state = require("./../models/state")
+const env = require("../config/env")
 
 module.exports = (sequelize, DataTypes) => {
 
@@ -42,7 +42,7 @@ module.exports = (sequelize, DataTypes) => {
 
         let paginatorIndex = start
         let steps = count
-        let result = await contract.methods.getPaginatedResources(config.WALLET, paginatorIndex, steps).call()
+        let result = await contract.methods.getPaginatedResources(env.WALLET, paginatorIndex, steps).call()
 
         try {
             //resources.push(...result._resources)
@@ -51,7 +51,7 @@ module.exports = (sequelize, DataTypes) => {
                     let attr = JSON.parse(resource.encryptedData)
                     let decryptedSharedKey = await ethSigDecrypt(
                         resource.encryptedSharedKey,
-                        config.PRIVATE_KEY
+                        env.PRIVATE_KEY
                     );
 
                     let decrypted = await decrypt(
@@ -72,13 +72,13 @@ module.exports = (sequelize, DataTypes) => {
             if(result._totalResources > resources.length){
                 let totalResources = result._totalResources
                 for (let i = 1; i * steps < totalResources; i++) {
-                    let result = await contract.methods.getPaginatedResources(config.WALLET, steps * i, steps).call()
+                    let result = await contract.methods.getPaginatedResources(env.WALLET, steps * i, steps).call()
                     for (const resource of result._resources) {
                         try{
                             let attr = JSON.parse(resource.encryptedData)
                             let decryptedSharedKey = await ethSigDecrypt(
                                 resource.encryptedSharedKey,
-                                config.PRIVATE_KEY
+                                env.PRIVATE_KEY
                             );
         
                             let decrypted = await decrypt(
@@ -97,13 +97,13 @@ module.exports = (sequelize, DataTypes) => {
                 }
 
                 if(totalResources > resources.length){
-                    let result = await contract.methods.getPaginatedResources(config.WALLET, resources.length, totalResources - resources.length).call()
+                    let result = await contract.methods.getPaginatedResources(env.WALLET, resources.length, totalResources - resources.length).call()
                     for (const resource of result._resources) {
                         try{
                             let attr = JSON.parse(resource.encryptedData)
                             let decryptedSharedKey = await ethSigDecrypt(
                                 resource.encryptedSharedKey,
-                                config.PRIVATE_KEY
+                                env.PRIVATE_KEY
                             );
         
                             let decrypted = await decrypt(
@@ -193,9 +193,13 @@ module.exports = (sequelize, DataTypes) => {
 
     Evm.deleteRecords = async (ids) => {
         for (const id of ids) {
-            console.log("Deleted resource in evm table: ", id)
-            let row = await Evm.findOne({where: {["id"] : id}})
-            await row.destroy()
+            let row = await Evm.findOne({where: { id: id }})
+            if(row){
+                await row.destroy()
+                if(env.debug) console.log("Deleted resource in evm table: ", id)
+            } else {
+                if(env.debug) console.log("Could not found resource ID", id);
+            }
         }
     }
 
@@ -209,12 +213,12 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     Evm.getResource = async (contract, resourceId) => {
-        let resource = await contract.methods.getResource(resourceId, config.WALLET).call()
+        let resource = await contract.methods.getResource(resourceId, env.WALLET).call()
         try{
             let attr = JSON.parse(resource.encryptedData)
             let decryptedSharedKey = await ethSigDecrypt(
                 resource.encryptedSharedKey,
-                config.PRIVATE_KEY
+                env.PRIVATE_KEY
             );
 
             let decrypted = await decrypt(

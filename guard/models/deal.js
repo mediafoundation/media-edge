@@ -93,6 +93,9 @@ module.exports = (sequelize, DataTypes) => {
             })
             if(row){
                 await row.destroy()
+                if(env.debug) console.log("Deleted deal ID: ", id)
+            } else {
+                if(env.debug) console.log("Could not found deal ID", id);
             }
         }
     }
