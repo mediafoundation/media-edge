@@ -12,10 +12,11 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
     try {
 
         blockNumber = await web3.eth.getBlockNumber()
-        
-        if(env.debug) console.log("Last readed block", lastReadBlock)
-        if(env.debug) console.log("Current block", blockNumber)
 
+        if(env.debug && blockNumber != lastReadBlock) {
+            console.log("Last readed block", lastReadBlock)
+            console.log("Current block", blockNumber)
+        }
         updatedResources = await ResourcesInstance.getPastEvents('UpdatedResource', {
             fromBlock: lastReadBlock + 1,
             toBlock: blockNumber
