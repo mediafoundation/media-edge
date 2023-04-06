@@ -3,22 +3,10 @@
   user: root
 
   vars_prompt:
-    - name: install_option
-      prompt: "What would you like to install?\n- Server\n- Client\n"
-      private: false
-      default: "Server"
-
-    - name: public_key
-      prompt: "Place your public key to retrieve resources. Server only."
-      private: false
-
-    - name: private_key
-      prompt: "Place your private key to decrypt resources. Server only."
-      private: true
-
-    - name: postgres_password
-      prompt: "Place your postgres password. Server only."
-      private: true
+    - name: selected_install_option
+      prompt: "\nSelect if you want to create a media edge or a media edge origin?\n0- Media edge origin\n1- Media edge\nDefault"
+      private: no
+      default: 0
 
 
   roles:

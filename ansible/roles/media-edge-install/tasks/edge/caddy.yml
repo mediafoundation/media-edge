@@ -13,7 +13,7 @@
     group: root
     mode: 0775
   loop:
-    - /root/media-edge/caddy/go
+    - /root/caddy/go
     - /root/.local/share/caddy
     - /usr/local/go
     - /etc/caddy
@@ -21,11 +21,11 @@
 - name: Download Go installer
   get_url:
     url: https://golang.org/dl/go{{ go_version }}.linux-amd64.tar.gz
-    dest: /root/media-edge/caddy
+    dest: /root/caddy
 
 - name: Extract Go installer to /usr/local
   unarchive:
-    src: /root/media-edge/caddy/go{{ go_version }}.linux-amd64.tar.gz
+    src: /root/caddy/go{{ go_version }}.linux-amd64.tar.gz
     dest: /usr/local/
     remote_src: true
 
@@ -34,18 +34,18 @@
   environment:
     PATH: '/usr/local/go/bin:$PATH'
     GOROOT: '/usr/local/go'
-    GOPATH: '/root/media-edge/caddy/go'
+    GOPATH: '/root/caddy/go'
 
 - name: Build XCaddy with DNS support for certificates
-  shell: /root/media-edge/caddy/go/bin/xcaddy build --with github.com/caddy-dns/lego-deprecated
+  shell: /root/caddy/go/bin/xcaddy build --with github.com/caddy-dns/lego-deprecated
   environment:
     PATH: '/usr/local/go/bin:$PATH'
     GOROOT: '/usr/local/go'
-    GOPATH: '/root/media-edge/caddy/go'
+    GOPATH: '/root/caddy/go'
 
 - name: Copy caddy executable to /usr/bin
   copy:
-    src: /root/caddy
+    src: /root/caddy/caddy
     dest: /usr/bin
     remote_src: true
 

@@ -66,6 +66,7 @@
 
 - name: Create 1GB file for speed tests
   shell: dd if=/dev/zero of=/root/media-edge/public/1GB.bin bs=1 count=0 seek=1G
+  when: install_option == 'Client'
 
 - name: Configure iptables
   iptables:

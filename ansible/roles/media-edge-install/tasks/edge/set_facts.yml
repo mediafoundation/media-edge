@@ -1,0 +1,87 @@
+- name: Validate input
+  fail:
+    msg: "Invalid option: {{ selected_install_option }}"
+  when: selected_install_option not in ['1', '0']
+
+- name: 
+  set_fact:
+    install_option: 'Server'
+  when: selected_install_option == '0'
+
+- name: 
+  set_fact:
+    install_option: 'Client'
+  when: selected_install_option == '1'
+
+- name: Ask user if they want to use server in testing mode
+  pause:
+    prompt: "Do you want to use the server in testing mode? (yes/no) [no]: "
+    echo: yes
+  register: testing_mode
+  when: install_option == 'Server'
+
+- name: Validate testing mode input
+  assert:
+    that:
+      - testing_mode.user_input == 'yes' or testing_mode.user_input == 'no'
+    fail_msg: "Invalid input: {{ testing_mode.user_input }}. Please enter either 'yes' or 'no'."
+  when: install_option == "Server"
+
+- name:
+  pause:
+    prompt: "\nEnter your postgresql password"
+    echo: no
+  register: postgres_password
+  when: install_option == 'Server'
+
+- name:
+  pause:
+    prompt: "\nEnter your public key"
+    echo: no
+  register: public_key
+  when: install_option == 'Server'
+
+- name:
+  pause:
+    prompt: "\nEnter your private key"
+    echo: no
+  register: private_key
+  when: install_option == 'Server'
+
+- name:
+  pause:
+    prompt: "\nEnter your wallet public key"
+    echo: no
+  register: wallet_address
+  when: install_option == 'Client'
+
+- name:
+  pause:
+    prompt: "\nEnter your wallet network"
+    echo: no
+  register: wallet_network
+  when: install_option == 'Client'
+
+- name:
+  pause:
+    prompt: "\nEnter your server disk space capability in Gigabytes"
+  register: disk_space
+  when: install_option == 'Client'
+
+- name:
+  pause:
+    prompt: "\nEnter your server cpu cores capability"
+  register: cpu_cores
+  when: install_option == 'Client'
+
+- name:
+  pause:
+    prompt: "\nEnter your server system ram capability in Gigabytes"
+  register: system_ram
+  when: install_option == 'Client'
+
+- name:
+  pause:
+    prompt: "\nEnter you public ssh key"
+    echo: no
+  register: public_ssh_key

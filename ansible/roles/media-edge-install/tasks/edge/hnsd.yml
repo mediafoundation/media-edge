@@ -1,6 +1,6 @@
-- name: Install hnsd Update package index
-  apt:
-    update_cache: true
+#- name: Install hnsd Update package index
+#  apt:
+#    update_cache: true
 
 - name: Install build dependencies
   apt:

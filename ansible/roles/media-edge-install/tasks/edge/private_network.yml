@@ -4,19 +4,23 @@
   ansible.builtin.copy:
    src: files/edge/system/authorized_keys
    dest: ~/.ssh/authorized_keys
+  when: install_option == 'Client'
 
 # caddy custom domain certificate managment / ssh keys for later
 
 - name: generate local ssh keys
   ansible.builtin.shell: rm -f ~/.ssh/id_rsa && ssh-keygen -m PEM -t rsa -b 4096 -N '' -f ~/.ssh/id_rsa
+  when: install_option == 'Server'
 
 - name: Display public key to paste into remote default media-edges
   ansible.builtin.shell: cat ~/.ssh/id_rsa.pub chdir=~/.ssh/
   register: command_output
+  when: install_option == 'Server'
 
 - name: Print ssh key to console. Put this inside ~/.ssh/authorized_keys into remote default media-edges
   ansible.builtin.debug:
     msg: "{{command_output.stdout}}"
+  when: install_option == 'Server'
 
 #- name: confirm keys are into default media-edges
   #ansible.builtin.pause:
@@ -30,6 +34,7 @@
     name: "rsync for certificate updates from default edge (lets encrypt), every 1 minute"
     minute: "*/1"
     job: "rsync -aure 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' root@edge-default.guard.media:/root/.local/share/caddy /root/.local/share/"
+  when: install_option == 'Server'
 
 - name: Copy DANE cert files (HNS)
   ansible.builtin.copy:
@@ -38,3 +43,4 @@
   with_items:
   - cert-dcdn.crt
   - cert-dcdn.key
+  when: install_option == 'Client'
