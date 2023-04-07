@@ -177,9 +177,9 @@ module.exports = (sequelize, DataTypes) => {
       }
 
       //if resource has a custom domain
-      /*if(item.resource.domain) {
+      if(item.resource.domain) {
         await Caddy.manageDomain(caddyData, item)
-      }*/
+      }
     }
     //Add to caddy file
     try {
