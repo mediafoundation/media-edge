@@ -45,7 +45,7 @@ let initCaddy = async function(){
         await models.Caddy.deleteRecord(deal)
     }
 
-    await models.Caddy.pendingQueue()
+    await models.Caddy.checkQueue(models.Caddy.queues.Minutely, "Minutely", 60)
 }
 
 let checkDealsShouldBeActive = async function(network){
