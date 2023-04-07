@@ -82,6 +82,12 @@
 
 - name:
   pause:
+    prompt: "\nEnter the ip address of your media origin"
+  register: media_origins
+  when: install_option == 'Client'
+
+- name:
+  pause:
     prompt: "\nEnter you public ssh key"
     echo: no
   register: public_ssh_key
