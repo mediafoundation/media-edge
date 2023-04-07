@@ -83,21 +83,10 @@ let checkDealsShouldBeActive = async function(network){
 }
 
 let checkQueue = () => {
-    setInterval(()=>{
-        models.Caddy.pendingQueue()
-    },60000)
-
-    setInterval(()=>{
-        models.Caddy.pendingQueueHourly()
-    },3600000)
-
-    setInterval(()=>{
-        models.Caddy.pendingQueueDaily()
-    },86400*1000)
-
-    setInterval(()=>{
-        models.Caddy.pendingQueueMonthly()
-    },259200*1000)
+    setInterval(() => models.Caddy.checkQueue(models.Caddy.queues.Minutely, "Minutely", 60), 60000);
+    setInterval(() => models.Caddy.checkQueue(models.Caddy.queues.Hourly, "Hourly", 24), 3600000);
+    setInterval(() => models.Caddy.checkQueue(models.Caddy.queues.Daily, "Daily", 30), 86400*1000);
+    setInterval(() => models.Caddy.checkQueue(models.Caddy.queues.Monthly, "Monthly", 12), 259200*1000);
 }
 
 let checkCaddy = async (network) => {

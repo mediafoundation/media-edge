@@ -30,10 +30,13 @@ module.exports = (sequelize, DataTypes) => {
   }, { freezeTableName: true })
 
   //Caddy globals
-  Caddy.queue = []
-  Caddy.queueHourly = []
-  Caddy.queueDaily = []
-  Caddy.queueMonthly = []
+  Caddy.queues = {
+    Minutely: [],
+    Hourly: [],
+    Daily: [],
+    Monthly: []
+  };
+  
   Caddy.caddyBaseUrl = env.caddyUrl
   Caddy.caddyRoutesUrl = Caddy.caddyBaseUrl+'config/apps/http/servers/srv0/routes'
   Caddy.caddyReqCfg = {
@@ -434,72 +437,47 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   Caddy.checkQueue = async(queue, current, limit) =>{
-    if(Object.keys(queue).length > 0){
-      console.log("Checking pending domains "+current+" started. On queue:",Object.keys(queue).length)
-      for(const [res, val] of Object.entries(queue)){
-        if(!queue[res]["retry"]) queue[res]["retry"] = 0
-        if(queue[res]["retry"] <= limit){
-          queue[res]["retry"] = queue[res]["retry"] + 1
-          if(env.debug) console.log("Retrying to apply custom domain", res, queue[res].resource.domain, queue[res]["retry"])
-          let patched = await Caddy.patchRecord(queue[res])
-          if(patched){
-            console.log("Removing pending domain from queue, patch success", queue[res].resource.domain)
-            delete queue[res]
-          } else {
-            if(queue[res]["retry"] === limit){
-              if(env.debug) console.log("Domain exceeded retry limits, sending to next stage.", queue[res]["domain"])
-              if (current === "Minutely") {
-                Caddy.queueHourly[res] = val
-                Caddy.queueHourly[res]["retry"] = 0
-              }
-              else if(current === "Hourly") {
-                Caddy.queueDaily[res] = val
-                Caddy.queueDaily[res]["retry"] = 0
-              }
-              else if(current === "Daily") {
-                Caddy.queueMonthly[res] = val
-                Caddy.queueMonthly[res]["retry"] = 0
-              }
-              else { 
-                console.log("Domain exceeded retry limits, checked for 12 months without restart, how did I get here?.", queue[res].resource.domain)
-              }
-              delete queue[res]
-            }
+    if (queue.length > 0) {
+      console.log(`Checking pending domains ${current} started. On queue: ${queue.length}`);
+      for (let i = queue.length - 1; i >= 0; i--) {
+        const item = queue[i];
+        if (!item.retry) item.retry = 0;
+        if (item.retry <= limit) {
+          item.retry++;
+          if (env.debug) console.log(`Retrying to apply custom domain ${item.resource.domain} (${item.retry})`);
+          const patched = await Caddy.patchRecord(item);
+          if (patched) {
+            console.log(`Removing pending domain from queue, patch success: ${item.resource.domain}`);
+            queue.splice(i, 1);
+          } else if (item.retry === limit) {
+            if (env.debug) console.log(`Domain exceeded retry limits, sending to next stage: ${item.resource.domain}`);
+            if (current === "Minutely") Caddy.queues.Hourly.push(item);
+            else if (current === "Hourly") Caddy.queues.Daily.push(item);
+            else if (current === "Daily") Caddy.queues.Monthly.push(item);
+            else console.log(`Domain exceeded retry limits, checked for 12 months without restart: ${item.resource.domain}`);
+            queue.splice(i, 1);
           }
         }
       }
-      console.log("Checking pending domains "+current+" ended. On queue:",Object.keys(queue).length)
+      console.log(`Checking pending domains ${current} ended. On queue: ${queue.length}`);
     }
   }
 
-  Caddy.pendingQueue = async() =>{
-    Caddy.checkQueue(Caddy.queue, "Minutely", 60)
-  }
-
-  Caddy.pendingQueueHourly = async() =>{
-    Caddy.checkQueue(Caddy.queueHourly, "Hourly", 24)
-  }
-
-  Caddy.pendingQueueDaily = async() =>{
-    Caddy.checkQueue(Caddy.queueDaily, "Daily", 30)
-  }
-
-  Caddy.pendingQueueMonthly = async() =>{
-    Caddy.checkQueue(Caddy.queueMonthly, "Monthly", 12)
-  }
-
   Caddy.isInQueue = (id) => {
-    return !!(Caddy.queue[id] ||
-        Caddy.queueHourly[id] ||
-        Caddy.queueDaily[id] ||
-        Caddy.queueMonthly[id]);
+    return Object.values(Caddy.queues).some(queue => queue.some(item => item.id === id));
   }
 
   Caddy.deletefromAllQueues = async(id) => {
-    delete Caddy.queue[id]
-    delete Caddy.queueHourly[id]
-    delete Caddy.queueDaily[id]
-    delete Caddy.queueMonthly[id]
+    for (const queue of Object.values(Caddy.queues)) {
+      const index = queue.findIndex(item => item.id === id);
+      if (index !== -1) queue.splice(index, 1);
+    }
+  }
+
+  Caddy.addtoQueue = async(queue, id, item) =>{
+    if (!isInQueue(id)) {
+      queue.push({...item, id});
+    }
   }
 
   Caddy.isResourceAlreadyAdded = async(id) =>{
