@@ -216,9 +216,7 @@ module.exports = (sequelize, DataTypes) => {
     } else { //if cname is not valid
       //if it's not on any queue already, add it
       console.log("Adding domain to check queue.", item.resource.domain, item.resource.id)
-      if (!Caddy.isInQueue(item.deal.id)) {
-        Caddy.queue[item.deal.id] = item
-      }
+      Caddy.addToQueue(Caddy.queues.Minutely, item.deal.id, item);
     }
   }
 
@@ -275,10 +273,8 @@ module.exports = (sequelize, DataTypes) => {
     if(destroyed) console.log("Removing CaddySources for:", item.deal.id)
 
     //Remove deal from queue
-    if(Caddy.isInQueue(item.deal.id)){
-      await Caddy.deletefromAllQueues(item.deal.id)
-    }
-    //}
+    await Caddy.deletefromAllQueues(item.deal.id)
+
     //create Caddy object required to be posted on caddyFile
     let caddyData = await Caddy.newObject(item.resource, item.deal)
     //if the resource has a custom cname
