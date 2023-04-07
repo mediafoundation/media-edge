@@ -1,0 +1,101 @@
+- name: Configure Linux system settings - fs.file-max
+  ansible.builtin.sysctl:
+    name: fs.file-max
+    value: 999999
+    state: present
+
+- name: Configure Linux system settings - fs.inotify.max_user_watches
+  ansible.builtin.sysctl:
+    name: fs.inotify.max_user_watches
+    value: 999999
+    state: present
+
+- name: Configure Linux system settings - fs.inotify.max_user_instances
+  ansible.builtin.sysctl:
+    name: fs.inotify.max_user_instances
+    value: 999999
+    state: present
+
+- name: Configure Linux system settings - net.ipv4.tcp_fin_timeout
+  ansible.builtin.sysctl:
+    name: net.ipv4.tcp_fin_timeout
+    value: 30
+    state: present
+
+- name: Configure Linux system settings - net.core.somaxconn
+  ansible.builtin.sysctl:
+    name: net.core.somaxconn
+    value: 65535
+    state: present
+
+- name: Configure Linux system settings - net.core.netdev_max_backlog
+  ansible.builtin.sysctl:
+    name: net.core.netdev_max_backlog
+    value: 65535
+    state: present
+
+- name: Configure Linux system settings - net.ipv4.ip_local_port_range
+  ansible.builtin.sysctl:
+    name: net.ipv4.ip_local_port_range
+    value: 15000 61000
+    state: present
+
+# - name: Configure Linux system settings - net.ipv4.netfilter.ip_conntrack_tcp_timeout_time_wait
+#   ansible.builtin.sysctl:
+#     name: net.ipv4.netfilter.ip_conntrack_tcp_timeout_time_wait
+#     value: 1
+#     state: present
+
+- name: Configure systemd settings - DefaultLimitNOFILE in system.conf
+  ansible.builtin.ini_file:
+    path: /etc/systemd/system.conf
+    section: DefaultLimitNOFILE
+    option: DefaultLimitNOFILE
+    value: 999999
+    state: present
+- name: Configure systemd settings - DefaultLimitNOFILE in user.conf
+  ansible.builtin.ini_file:
+    path: /etc/systemd/user.conf
+    section: DefaultLimitNOFILE
+    option: DefaultLimitNOFILE
+    value: 999999
+    state: present
+
+- name: Set the system's maximum open file limit
+  shell: ulimit -n 999999
+
+- name: Create 1GB file for speed tests
+  shell: dd if=/dev/zero of=/root/media-edge/public/1GB.bin bs=1 count=0 seek=1G
+  when: install_option == 'Client'
+
+- name: Configure iptables
+  iptables:
+    chain: INPUT
+    jump: ACCEPT
+    protocol: tcp
+    match: multiport
+    dports: 80,443,422,420,22,3000
+    state: present
+  ignore_errors: true
+
+- name: Configure ufw
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  with_items:
+    - 80
+    - 443
+    - 422
+    - 420
+    - 22
+    - 3000
+  ignore_errors: true
+
+- name: Reboot the host
+  reboot:
+    msg: "Reboot initiated by Ansible"
+    connect_timeout: 5
+    reboot_timeout: 600
+    pre_reboot_delay: 0
+    post_reboot_delay: 600

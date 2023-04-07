@@ -1,0 +1,87 @@
+{
+    auto_https disable_redirects
+    on_demand_tls {
+        ask http://{{ media_origins[0] }}:8080/domains
+        interval 2m
+        burst 5
+    }
+}
+
+:422 {
+	root * /root/media-edge/public/
+    file_server
+}
+
+# Blocked resources
+# resource.medianetwork.cloud {
+#     root * /root/media-edge/public/blocked
+#     file_server
+# }
+
+{% if media_network == "legacy" %}
+media.network {
+    header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
+    redir https://www.media.network{uri} permanent
+}
+media.network:80 {
+    header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
+    redir https://www.media.network{uri} permanent
+}
+*.dcdn {
+    header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
+    reverse_proxy http://localhost:8080
+    log {
+        output file /var/log/caddy/caddy.log {
+            roll_size 1gb
+            roll_keep 5
+            roll_keep_for 720h
+        }
+    }
+    tls /root/media-edge/cert-dcdn.crt /root/media-edge/cert-dcdn.key
+}
+{% endif %}
+
+{% if domain is defined %}
+*.{{domain}} {
+    header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
+    reverse_proxy http://localhost:8080
+    log {
+        output file /var/log/caddy/caddy.log {
+            roll_size 1gb
+            roll_keep 5
+            roll_keep_for 720h
+        }
+    }
+    tls {
+        dns lego_deprecated cloudns
+        resolvers 1.1.1.1
+    }
+}
+{% endif %}
+
+https:// {
+    header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
+    reverse_proxy http://localhost:8080
+    log {
+        output file /var/log/caddy/caddy.log {
+            roll_size 1gb
+            roll_keep 5
+            roll_keep_for 720h
+        }
+    }
+    tls {
+        on_demand
+    }
+}
+
+http:// {
+    header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
+    reverse_proxy http://localhost:8080
+    log {
+        output file /var/log/caddy/caddy.log {
+            roll_size 1gb
+            roll_keep 5
+            roll_keep_for 720h
+        }
+    }
+}

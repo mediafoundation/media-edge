@@ -1,0 +1,93 @@
+---
+- name: Remove existing Go installation
+  file:
+    path: /usr/local/go
+    state: absent
+
+- name: Create necessary directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+    owner: root
+    group: root
+    mode: 0775
+  loop:
+    - /root/caddy/go
+    - /root/.local/share/caddy
+    - /usr/local/go
+    - /etc/caddy
+
+- name: Download Go installer
+  get_url:
+    url: https://golang.org/dl/go{{ go_version }}.linux-amd64.tar.gz
+    dest: /root/caddy
+
+- name: Extract Go installer to /usr/local
+  unarchive:
+    src: /root/caddy/go{{ go_version }}.linux-amd64.tar.gz
+    dest: /usr/local/
+    remote_src: true
+
+- name: Install XCaddy
+  shell: go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+  environment:
+    PATH: '/usr/local/go/bin:$PATH'
+    GOROOT: '/usr/local/go'
+    GOPATH: '/root/caddy/go'
+
+- name: Build XCaddy with DNS support for certificates
+  shell: /root/caddy/go/bin/xcaddy build --with github.com/caddy-dns/lego-deprecated
+  environment:
+    PATH: '/usr/local/go/bin:$PATH'
+    GOROOT: '/usr/local/go'
+    GOPATH: '/root/caddy/go'
+
+- name: Copy caddy executable to /usr/bin
+  copy:
+    src: /root/caddy/caddy
+    dest: /usr/bin
+    remote_src: true
+
+- name: Change caddy executable permissions
+  file:
+    path: /usr/bin/caddy
+    mode: '0755'
+
+#Copy files for Client or Server
+- name: Copy CaddyFile to /etc/caddy/Caddyfile
+  template:
+    src: files/edge/caddy/Caddyfile.j2
+    dest: /etc/caddy/Caddyfile
+  when: install_option == 'Client'
+
+- name: Copy CaddyFile to /etc/caddy/Caddyfile
+  template:
+    src: files/guard_files/caddy/Caddyfile.j2
+    dest: /etc/caddy/Caddyfile
+  when: install_option == 'Server'
+
+- name: Copy caddy service file to /etc/systemd/system/caddy.service
+  template:
+    src: files/edge/caddy/caddy.service.j2
+    dest: /etc/systemd/system/caddy.service
+  when: install_option == 'Client'
+
+- name: Copy caddy service file to /etc/systemd/system/caddy.service
+  template:
+    src: files/guard_files/caddy/caddy.service.j2
+    dest: /etc/systemd/system/caddy.service
+  when: install_option == 'Server'
+
+#Init caddy
+
+- name: Enable and start caddy service
+  systemd:
+    name: caddy
+    enabled: true
+
+- name: Create cron job to restart caddy on reboot
+  cron:
+    name: "caddy restart"
+    special_time: reboot
+    job: "sleep 600 && systemctl restart caddy"

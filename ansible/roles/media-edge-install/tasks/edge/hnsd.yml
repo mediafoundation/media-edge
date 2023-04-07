@@ -1,0 +1,107 @@
+#- name: Install hnsd Update package index
+#  apt:
+#    update_cache: true
+
+- name: Install build dependencies
+  apt:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - git
+      - build-essential
+      - libgmp-dev
+      - libssl-dev
+      - pkg-config
+      - libboost-all-dev
+      - libunbound-dev
+      - libcap2-bin
+
+- name: Clone hnsd repository
+  git:
+    repo: https://github.com/handshake-org/hnsd.git
+    dest: /opt/hnsd
+
+- name: Run autogen.sh
+  command: ./autogen.sh
+  args:
+    chdir: /opt/hnsd
+
+- name: Run configure
+  command: ./configure
+  args:
+    chdir: /opt/hnsd
+
+- name: Build hnsd
+  command: make
+  args:
+    chdir: /opt/hnsd
+
+- name: Install hnsd
+  command: make install
+  args:
+    chdir: /opt/hnsd
+
+- name: Allow hnsd to listen on low ports
+  command: setcap 'cap_net_bind_service=+ep' /opt/hnsd/hnsd
+
+- name: check if resolvconf package is installed
+  apt:
+    name: resolvconf
+    state: present
+  register: resolvconf_check
+
+- name: Block resolvconf from overwriting resolv.conf
+  lineinfile:
+    path: /etc/resolvconf.conf
+    regexp: "^name_servers="
+    line: 'name_servers="127.0.0.1"'
+  when: resolvconf_check.changed
+  ignore_errors: true
+
+- name: Block dhcpcd from overwriting resolv.conf
+  lineinfile:
+    path: /etc/dhcpcd.conf
+    regexp: "^option domain_name_servers"
+    line: "# option domain_name_servers"
+  ignore_errors: true
+
+- name: Block NetworkManager from overwriting resolv.conf
+  lineinfile:
+    path: /etc/NetworkManager/NetworkManager.conf
+    regexp: "^dns="
+    line: "dns=none"
+  notify:
+    - disable connectivity check
+  ignore_errors: true
+
+- name: Disable connectivity check
+  lineinfile:
+    path: /etc/NetworkManager/NetworkManager.conf
+    regexp: "^interval="
+    line: "interval=604800"
+  ignore_errors: true
+
+- name: Alter resolv.conf with handshake support. Beware of your OS replacing this file at every boot.
+  template:
+    src: files/edge/hnsd/resolv.conf.j2
+    dest: /etc/resolv.conf
+
+- name: create hnsd systemd service unit file
+  template:
+    src: files/edge/hnsd/hnsd.service.j2
+    dest: /etc/systemd/system/hnsd.service
+
+- name: reload systemd
+  command: systemctl daemon-reload
+
+- name: enable and start hnsd
+  systemd:
+    name: hnsd
+    state: started
+    enabled: yes
+
+- name: check hnsd status
+  command: systemctl status hnsd
+
+

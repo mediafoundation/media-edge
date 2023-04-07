@@ -1,0 +1,10 @@
+[Unit]
+Description=HNSD - Handshake Daemon
+
+[Service]
+ExecStart=/opt/hnsd/hnsd -p 4 -r 127.0.0.1:53
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target
