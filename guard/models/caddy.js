@@ -470,7 +470,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  Caddy.addtoQueue = async(queue, id, item) =>{
+  Caddy.addToQueue = async(queue, id, item) =>{
     if (!isInQueue(id)) {
       queue.push({...item, id});
     }
