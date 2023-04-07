@@ -12,7 +12,7 @@
   roles:
     - media-edge-install
   vars_files:
-    - user_config.yml
+#    - user_config.yml
     - vars/variables.yml
   gather_facts: no
 
