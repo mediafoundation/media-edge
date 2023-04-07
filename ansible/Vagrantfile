@@ -12,11 +12,24 @@ Vagrant.configure("2") do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
-  config.vm.box = "bento/debian-10.13"
-  config.vm.provision :shell, path: "scripts/provission.sh"
-  config.vm.provider "virtualbox" do |v|
-    v.memory = 8000
-    v.cpus = 4
+  config.vm.define "origin" do |origin|
+    origin.vm.box = "bento/debian-10.13"
+    origin.vm.provision :shell, path: "scripts/provission.sh"
+    origin.vm.provider "virtualbox" do |v|
+      v.memory = 8000
+      v.cpus = 4
+    end
+  end
+
+
+  config.vm.define "edge" do |edge|
+    edge.vm.box = "bento/debian-10.13"
+    edge.vm.provision :shell, path: "scripts/provission.sh"
+  end
+
+  config.vm.define "edge2" do |edge2|
+    edge2.vm.box = "bento/debian-10.13"
+    edge2.vm.provision :shell, path: "scripts/provission.sh"
   end
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
