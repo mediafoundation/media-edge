@@ -6,7 +6,7 @@ evm-contract/.env
 evm-contract/config/env.js
 evm-contract/yarn-error.log
 .idea/
-.vagrant/
+ansible/.vagrant/
 yarn.lock
 package-lock.json
 ansible/hosts/edges
