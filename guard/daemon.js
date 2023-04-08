@@ -1,6 +1,6 @@
 const networks = require('./config/networks')
-const Resources = require('../evm-contract/build/contracts/Resources.json');
-const Marketplace = require('../evm-contract/build/contracts/Marketplace.json')
+const Resources = require('../media-evm-abis/Resources.json');
+const Marketplace = require('../media-evm-abis/Marketplace.json')
 const Web3 = require('web3');
 const models = require("./models");
 

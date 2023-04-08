@@ -1,3 +1,13 @@
+- name: Remove existing guard
+  file:
+    path: /root/guard
+    state: absent
+
+- name: Remove existing abis
+  file:
+    path: /root/media-evm-abis
+    state: absent
+
 - name: Create program directory
   file:
     path: /root/guard
@@ -7,6 +17,11 @@
   copy:
     src: ../guard/
     dest: /root/guard
+
+- name: Copy abis folder
+  copy:
+    src: ../media-evm-abis/
+    dest: /root/media-evm-abis
 
 - name: Create .env file
   copy:
