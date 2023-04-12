@@ -115,9 +115,13 @@ module.exports = (sequelize, DataTypes) => {
           "request": { 
             "set": { 
               "Host": ["{http.reverse_proxy.upstream.hostport}"],
+            } 
+          },
+          "response": {
+            "set": {
               "X-Deal-ID": [deal.id],
               "X-Bandwidth-Limit": ["Yes"]
-            } 
+            }
           }
         },
         "transport": transport,
