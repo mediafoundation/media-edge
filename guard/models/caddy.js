@@ -107,28 +107,25 @@ module.exports = (sequelize, DataTypes) => {
     } : { 
       "protocol": "http" 
     }
-  
+
     let routes = [{
       "handle": [{
         "handler": "reverse_proxy",
-        "headers": {
-          "request": {
-            "set": {
+        "headers": { 
+          "request": { 
+            "set": { 
               "Host": ["{http.reverse_proxy.upstream.hostport}"],
-              "X-Deal-ID": [deal.id] // Add the custom header with the deal ID
-            }
+              "X-Deal-ID": [deal.id],
+              "X-Bandwidth-Limit": ["Yes"]
+            } 
           }
         },
         "transport": transport,
         "upstreams": [{
           "dial": res.origin
         }],
-      }],
-      "match": [{
-        "host": hostname
-      }],
-      "terminal": true
-    }];
+      }]
+    }]
     
     if (res.path && res.path !== "/") {
       let path = res.path.endsWith("/") ? res.path.slice(0, -1) : res.path
