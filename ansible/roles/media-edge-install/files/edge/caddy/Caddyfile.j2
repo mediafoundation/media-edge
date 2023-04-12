@@ -7,28 +7,16 @@
     }
 }
 
-:422 {
-	root * /root/media-edge/public/
-    file_server
-}
 
-# Blocked resources
-# resource.medianetwork.cloud {
-#     root * /root/media-edge/public/blocked
-#     file_server
-# }
-
-{% if media_network == "legacy" %}
-media.network {
+{% if domain is defined %}
+*.{{domain}} {
     header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
-    redir https://www.media.network{uri} permanent
-}
-media.network:80 {
-    header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
-    redir https://www.media.network{uri} permanent
-}
-*.dcdn {
-    header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
+    @has_bandwidth_limit header_regexp X-Bandwidth-Limit .+
+    handle @has_bandwidth_limit {
+        bandwidth {
+            limit 100000
+        }
+    }
     reverse_proxy http://localhost:8080
     log {
         output file /var/log/caddy/caddy.log {
@@ -36,20 +24,12 @@ media.network:80 {
             roll_keep 5
             roll_keep_for 720h
         }
-    }
-    tls /root/media-edge/cert-dcdn.crt /root/media-edge/cert-dcdn.key
-}
-{% endif %}
-
-{% if domain is defined %}
-*.{{domain}} {
-    header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
-    reverse_proxy http://localhost:8080
-    log {
-        output file /var/log/caddy/caddy.log {
-            roll_size 1gb
-            roll_keep 5
-            roll_keep_for 720h
+        format filter {
+            wrap json
+            fields {
+                deal_id {http.request.header.X-Deal-ID}
+                common_log
+            }
         }
     }
     tls {
@@ -59,14 +39,28 @@ media.network:80 {
 }
 {% endif %}
 
+
 https:// {
     header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
+    @has_bandwidth_limit header_regexp X-Bandwidth-Limit .+
+    handle @has_bandwidth_limit {
+        bandwidth {
+            limit 100000
+        }
+    }
     reverse_proxy http://localhost:8080
     log {
         output file /var/log/caddy/caddy.log {
             roll_size 1gb
             roll_keep 5
             roll_keep_for 720h
+        }
+        format filter {
+            wrap json
+            fields {
+                deal_id {http.request.header.X-Deal-ID}
+                common_log
+            }
         }
     }
     tls {
@@ -76,12 +70,25 @@ https:// {
 
 http:// {
     header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
+    @has_bandwidth_limit header_regexp X-Bandwidth-Limit .+
+    handle @has_bandwidth_limit {
+        bandwidth {
+            limit 100000
+        }
+    }
     reverse_proxy http://localhost:8080
     log {
         output file /var/log/caddy/caddy.log {
             roll_size 1gb
             roll_keep 5
             roll_keep_for 720h
+        }
+        format filter {
+            wrap json
+            fields {
+                deal_id {http.request.header.X-Deal-ID}
+                common_log
+            }
         }
     }
 }

@@ -148,12 +148,13 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     Deals.getDealsFromDb = async() => {
-        let deals = []
-        let dealsInDb =  await Deals.findAll({attributes: {exclude: ['createdAt', 'updatedAt']}})
-        dealsInDb.forEach(deal => {
-            deals.push(deal.dataValues)
+        const dealsInDb = await Deals.findAll({ 
+            attributes: {
+                exclude: ['createdAt', 'updatedAt']
+            },
+            raw: true
         })
-        return deals
+        return dealsInDb
     }
 
     Deals.getDeal = async (contract, dealId) => {

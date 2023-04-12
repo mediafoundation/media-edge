@@ -100,34 +100,42 @@ module.exports = (sequelize, DataTypes) => {
 
   Caddy.newObject = async (res, deal) => {
     let hostname = Caddy.getHostname(deal)
-    //let dHostname = Caddy.getDHostname(res.id)
-    //let match = [hostname, dHostname]
-    let splitted = res.origin.split(':');
-    let protocol = res.protocol ? res.protocol : (splitted[1] === '443' || splitted[1] === '8443' ? "https" : "http"); //old resources didn't have protocol in json
-    let transport = protocol === "https" ?  { "protocol": "http", "tls": {"insecure_skip_verify": true } } : { "protocol": "http" }
-
+    let transport = res.protocol === "https" ? 
+    { 
+      "protocol": "http", 
+      "tls": { "insecure_skip_verify": true } 
+    } : { 
+      "protocol": "http" 
+    }
+  
     let routes = [{
       "handle": [{
         "handler": "reverse_proxy",
-        "headers": { 
-          "request": { 
-            "set": { 
-              "Host": ["{http.reverse_proxy.upstream.hostport}"] 
-            } 
-          } 
+        "headers": {
+          "request": {
+            "set": {
+              "Host": ["{http.reverse_proxy.upstream.hostport}"],
+              "X-Deal-ID": [deal.id] // Add the custom header with the deal ID
+            }
+          }
         },
         "transport": transport,
         "upstreams": [{
           "dial": res.origin
         }],
-      }]
-    }]
+      }],
+      "match": [{
+        "host": hostname
+      }],
+      "terminal": true
+    }];
+    
     if (res.path && res.path !== "/") {
       let path = res.path.endsWith("/") ? res.path.slice(0, -1) : res.path
       routes.unshift({
         "handle": [{
           "handler": "rewrite",
-          "uri": path+"{http.request.uri}"
+          "uri": path + "{http.request.uri}"
         }]
       })
     }
