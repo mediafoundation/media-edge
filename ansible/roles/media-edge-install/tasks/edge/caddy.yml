@@ -43,16 +43,35 @@
     GOROOT: '/usr/local/go'
     GOPATH: '/root/caddy/go'
 
-- name: Copy caddy executable to /usr/bin
+- name: Create caddy group
+  ansible.builtin.group:
+    name: caddy
+    system: yes
+
+- name: Create caddy user
+  ansible.builtin.user:
+    name: caddy
+    system: yes
+    home: /var/lib/caddy
+    shell: /usr/sbin/nologin
+    comment: Caddy web server
+
+- name: Change owner of /etc/caddy to caddy user
+  file:
+    path: /etc/caddy
+    owner: caddy
+    group: caddy
+    state: directory
+
+- name: Copy caddy executable to /usr/local/bin
   copy:
     src: /root/caddy/caddy
-    dest: /usr/bin
+    dest: /usr/local/bin/caddy
+    owner: root
+    group: root
+    mode: '0755'
     remote_src: true
 
-- name: Change caddy executable permissions
-  file:
-    path: /usr/bin/caddy
-    mode: '0755'
 
 #Copy files for Client or Server
 - name: Copy CaddyFile to /etc/caddy/Caddyfile
@@ -71,12 +90,18 @@
   template:
     src: files/edge/caddy/caddy.service.j2
     dest: /etc/systemd/system/caddy.service
+    owner: root
+    group: root
+    mode: '0644'
   when: install_option == 'Client'
 
 - name: Copy caddy service file to /etc/systemd/system/caddy.service
   template:
     src: files/guard_files/caddy/caddy.service.j2
     dest: /etc/systemd/system/caddy.service
+    owner: root
+    group: root
+    mode: '0644'
   when: install_option == 'Server'
 
 #Init caddy
