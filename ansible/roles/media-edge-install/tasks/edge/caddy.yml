@@ -43,6 +43,13 @@
     GOROOT: '/usr/local/go'
     GOPATH: '/root/caddy/go'
 
+- name: Build XCaddy with DNS support for certificates
+  shell: /root/caddy/go/bin/xcaddy build --with github.com/mediafoundation/caddy-bandwidth@latest
+  environment:
+    PATH: '/usr/local/go/bin:$PATH'
+    GOROOT: '/usr/local/go'
+    GOPATH: '/root/caddy/go'
+
 - name: Create caddy group
   ansible.builtin.group:
     name: caddy

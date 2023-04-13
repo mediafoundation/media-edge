@@ -82,9 +82,17 @@
 
 - name:
   pause:
-    prompt: "\nEnter the ip address of your media origin"
-  register: media_origins
+    prompt: "\nEnter the ip address of your media origin separated by comma"
+  register: media_origins_input
   when: install_option == 'Client'
+
+- name:
+  set_fact:
+    media_origins: "{{media_origins_input.user_input.split(',')}}"
+
+- name: Display the first IP address
+  debug:
+    msg: "The first IP address is: {{ media_origins[0] }}"
 
 - name:
   pause:
