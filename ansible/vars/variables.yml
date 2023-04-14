@@ -4,4 +4,3 @@ media_edge_version: 0.2
 node_version: setup_16.x
 hsd_version: 4.0.2
 ansible_python_interpreter: /usr/bin/python3
-install_options: "{{install_options}}"

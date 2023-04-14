@@ -28,7 +28,7 @@
     dest: "/root/origin/config/env.js"
     content: |
       module.exports = {
-        WALLET: "{{public_key}}",
+        WALLET: "{{wallet_address}}",
         PRIVATE_KEY: "{{private_key}}",
         dbstring: "postgres://origin:{{postgres_password.user_input}}@127.0.0.1:5432/origin",
         caddyUrl: "http://127.0.0.1:2020/",

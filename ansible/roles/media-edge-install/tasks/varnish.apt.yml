@@ -36,7 +36,7 @@
     owner: vcache
     group: vcache
     mode: 0664
-  when: install_option == 'edge'
+  when: "'edge' in group_names"
 
 - name: Copy Varnish systemd service file
   ansible.builtin.template:
@@ -45,7 +45,7 @@
     owner: root
     group: root
     mode: 0664
-  when: install_option == 'edge'
+  when: "'edge' in group_names"
 
 - name: Copy Varnish config file
   ansible.builtin.template:
@@ -54,7 +54,7 @@
     owner: vcache
     group: vcache
     mode: 0664
-  when: install_option == 'origin'
+  when: "'origin' in group_names"
 
 - name: Copy Varnish systemd service file
   ansible.builtin.template:
@@ -63,7 +63,7 @@
     owner: root
     group: root
     mode: 0664
-  when: install_option == 'origin'
+  when: "'origin' in group_names"
 
 - name: Copy Varnishncsa systemd service file
   ansible.builtin.copy:
@@ -72,7 +72,7 @@
     owner: root
     group: root
     mode: 0664
-  when: install_option == 'edge'
+  when: "'edge' in group_names"
 
 - name: Enable and start Varnish service
   ansible.builtin.systemd:

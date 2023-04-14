@@ -9,6 +9,6 @@ evm-contract/yarn-error.log
 ansible/.vagrant/
 yarn.lock
 package-lock.json
-ansible/hosts/edges
+ansible/hosts
 ansible/user_config.yml
 ansible/.DS_Store

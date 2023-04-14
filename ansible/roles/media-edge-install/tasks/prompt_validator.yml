@@ -1,4 +1,0 @@
-- name: Validate input
-  fail:
-    msg: "Invalid option: {{ install_option }}"
-  when: install_option not in ['1', 'Client']

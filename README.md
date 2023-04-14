@@ -78,35 +78,25 @@ Follow these simple example steps to get your Media Edge setup and running in no
    git clone https://github.com/mediafoundation/media-edge-deploy.git
    ```
 
-2. Navigate to `media-edge-deploy` folder
+2. Navigate to `ansible` folder
    ```sh
-   cd media-edge-deploy
+   cd ansible
    ```
 
-4. Copy `media-edge-deploy/hosts/edges.example` to `media-edge-deploy/hosts/edges` and edit the file: replace `xxx.xxx.xxx.xxx` with your server's IP address. You can add multiple servers (one per line).
+4. Copy `ansible/hosts.example` to `ansible/hosts` and edit the file: replace `xxx.xxx.xxx.xxx` with your server's IP address. You can add multiple servers (one per line).
     ```sh
-    [edges]
-    127.0.0.1 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_user=root ansible_port=22
+    [origin]
+    origin ansible_host=127.0.0.1 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_user=root ansible_port=22
+    [edge]
+    edge ansible_host=127.0.0.1 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_user=root ansible_port=22
+    edge ansible_host=127.0.0.1 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_user=root ansible_port=22
     ```
 
-5. Edit `media-edge-deploy/user_config.yml` file with your MEDIA wallet address and network (SOL, ETH, POLYGON, BSC, AVAX, RSK). This is required to verify that your wallet owns the server. Also you can tune up your system resources here.
+5. Deploy Media Edge
     ```sh
-      wallet_address: xxxxxxxxxxxxxxxxxxxxxxxxxx
-      wallet_network: SOL
-      ...
+    ansible-playbook deploy.yml -i hosts
     ```
 
-6. Deploy Media Edge
-    ```sh
-    ansible-playbook deploy.yml -i hosts/edges
-    ```
-
-7. Make sure your Media Edge is running:
-    ```sh
-    root@hostname:~# curl http://localhost:422/config
-    WalletAddress = "xxxxxxxxxxxxxxxxxxxxxxxxxx"
-    WalletNetwork = "SOL"
-    ```
 
 <!-- USAGE EXAMPLES -->
 ## Usage & Troubleshooting

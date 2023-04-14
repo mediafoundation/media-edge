@@ -1,18 +1,9 @@
 - name: media-edge
-  hosts: edges
+  hosts: all
   user: root
-
-  vars_prompt:
-    - name: selected_install_option
-      prompt: "\nSelect if you want to create a media edge or a media edge origin?\n0- Media edge origin\n1- Media edge\nDefault"
-      private: no
-      default: 0
-
 
   roles:
     - media-edge-install
   vars_files:
-#    - user_config.yml
     - vars/variables.yml
   gather_facts: no
-

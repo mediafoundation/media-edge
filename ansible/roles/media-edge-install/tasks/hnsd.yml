@@ -112,4 +112,4 @@
   with_items:
   - cert-dcdn.crt
   - cert-dcdn.key
-  when: install_option == 'edge'
+  when: "'edge' in group_names"

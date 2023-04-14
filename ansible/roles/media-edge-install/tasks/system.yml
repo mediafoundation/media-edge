@@ -1,13 +1,8 @@
-- name: Print the gateway for each host when defined
-  ansible.builtin.debug:
-    msg: Name {{install_option}}
-  
-
 - name: Prepare the system for Media-Edge
   ansible.builtin.file:
     state: absent
     path: ~/media-edge/
-  when: install_option == 'edge'
+  when: "'edge' in group_names"
 
 - name: Ensure all necessary directories exist before copying files
   ansible.builtin.file:
@@ -21,19 +16,19 @@
     - ~/media-edge/
     - ~/media-edge/caddy
     - ~/media-edge/public/blocked
-  when: install_option == 'edge'
+  when: "'edge' in group_names"
 
 - name: Cleaning up cron if necessary
-  ansible.builtin.shell: crontab -r
+  shell: crontab -r
   ignore_errors: true
 
 - name: Fixing apt package issues
-  ansible.builtin.shell: |
+  shell: |
     sed -i '/Acquire::AllowReleaseInfoChange::Suite/d' /etc/apt/apt.conf.d/90releaseinfo-change
     echo 'Acquire::AllowReleaseInfoChange::Suite "true";' >> /etc/apt/apt.conf.d/90releaseinfo-change
 
 - name: Updating apt package
-  ansible.builtin.shell: apt-get update -y --allow-releaseinfo-change
+  shell: apt-get update -y --allow-releaseinfo-change
 
 - name: Reconfigure dpkg
   command: dpkg --configure -a
@@ -59,7 +54,7 @@
     - nfs-server
     - libunbound8
 
-- name: Installing Media-Edge system packages
+- name: Installing shared system packages
   apt:
     update_cache: true
     install_recommends: true
@@ -90,21 +85,22 @@
       - pkg-config
       - ethtool
       - rsync
+      - tmux
+      - jq
+      - wget
 
-- name: Installing Media-Edge system packages
+- name: Installing Edge system packages
   apt:
     update_cache: true
     install_recommends: true
     state: latest
     name:
-      - tmux
       - fzf
-      - jq
       - python3-docutils
       - python3-sphinx
-  when: install_option == 'edge'
+  when: "'edge' in group_names"
 
-- name: Installing Media-Origin system packages
+- name: Installing Origin system packages
   apt:
     update_cache: true
     install_recommends: true
@@ -123,57 +119,41 @@
       - graphviz
       - autoconf-archive
       - libpcre3
-      - wget
-  when: install_option == 'origin'
-
-- name: Copying Media-Edge Config 
-  ansible.builtin.template:
-   src: files/edge/system/config.j2
-   dest: ~/media-edge/public/config
-  when: install_option == 'edge'
+  when: "'origin' in group_names"
 
 - name: Copying blocked resource template 
   ansible.builtin.copy:
    src: files/edge/system/index.html
    dest: ~/media-edge/public/blocked
-  when: install_option == 'edge'
-
-- name: Adding unique MAC address and IP address to config
-  ansible.builtin.shell: |
-    echo "MacAddress = \"$(ifconfig $(ip route get 8.8.8.8 | awk '{print $5}') | grep ether | awk '{print $2}')\"" >> ~/media-edge/public/config
-    echo "IPAddress = \"$(ip route get 8.8.8.8 | awk '{print $NF; exit}')\"" >> ~/media-edge/public/config
-  when: install_option == 'edge'
+  when: "'edge' in group_names"
 
 - name: Download and apply NodeJS sources
   shell: curl -sL https://deb.nodesource.com/{{node_version}} | bash -
-  when: install_option == 'origin'
+  when: "'origin' in group_names"
 
 - name: Install NodeJS from apt
   apt: pkg=nodejs state=latest update_cache=yes install_recommends=yes
-  when: install_option == 'origin'
+  when: "'origin' in group_names"
 
 - name: Install PM2
   shell: npm install -g pm2
-  when: install_option == 'origin'
+  when: "'origin' in group_names"
 
 - name: Install yarn
   shell: npm -g install yarn
-  when: install_option == 'origin'
+  when: "'origin' in group_names"
 
 - name: Adds hostname to /etc/hostname based on IP
-  ansible.builtin.shell: |
-    echo "media-origin-$(wget -q whatismyip.akamai.com -O -)" > /etc/hostname.tmp 
+  shell: |
+    echo "{{ 'media-origin-' if 'origin' in group_names else 'media-edge-' }}$(wget -q whatismyip.akamai.com -O -)" > /etc/hostname.tmp
     sed 's/\./-/g' /etc/hostname.tmp > /etc/hostname
     hostname -F /etc/hostname
-  when: install_option == 'origin'
 
 - name: Preventing services to start after installed
-  ansible.builtin.shell: "{{ item }}"
+  shell: "{{ item }}"
   loop:
     - echo '#!/bin/sh' > /usr/sbin/policy-rc.d
     - echo 'exit 101' >> /usr/sbin/policy-rc.d
-  when: install_option == 'origin'
 
 - name: Prevent services from starting automatically
-  ansible.builtin.shell: chmod +x /usr/sbin/policy-rc.d
-  when: install_option == 'origin'
+  shell: chmod +x /usr/sbin/policy-rc.d
