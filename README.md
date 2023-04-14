@@ -48,16 +48,19 @@ Media Edge is a new and powerful software that allows CDN providers to create th
 
 ## What is Media Edge?
 
-Media Edge is an open-source software that serves as a web server and blockchain resource manager for CDN providers. It is a tool that simplifies the process of setting up a CDN network, and it includes all the necessary features to interact with the Media Network smart contracts.
+Media Edge is an open-source software that serves as a web server and blockchain resource manager for CDN providers. It is a tool that simplifies the process of setting up a CDN network, and it includes all the necessary features to interact with the Media Network smart contracts from the provider stand point.
 
 ### Built With:
 
 * [Ansible](https://www.ansible.com/)
 * [Caddy](https://caddyserver.com/)
 * [Varnish](https://varnish-cache.org/)
+* [NodeJs](https://nodejs.org/)
+* [Kibana](https://www.elastic.co/kibana/)
+* [Elasticsearch](https://www.elastic.co/elasticsearch/)
+* [Logstash](https://www.elastic.co/logstash/)
+* [Filebeat](https://www.elastic.co/beats/filebeat)
 * [hsd](https://github.com/handshake-org/hsd)
-* [Prometheus](https://prometheus.io/)
-* [Grafana](https://grafana.com)
 
 ## Getting Started
 
@@ -116,7 +119,7 @@ For more information, please refer to the [Media Edge Docs](https://docs.media.n
 - [X] First Release
 - [ ] TBD
 - [ ] TBD
-    - [ ] TBD
+- [ ] TBD
 
 See the [open issues](https://github.com/mediafoundation/media-edge-deploy/issues) for a full list of proposed features (and known issues).
 

@@ -1,15 +1,17 @@
-- include: edge/set_facts.yml
-#- include: edge/system.yml
-#- include: guard_tasks/postgres.yml
-#  when: install_option in ['Server']
-- include: edge/varnish.apt.yml
-- include: edge/caddy.yml
-#- include: edge/stats.yml todo: check url of wget
-#  when: not minimal_install
-#- include: edge/private_network.yml
-#- include: edge/hnsd.yml
-#- include: edge/optimize.yml
-#- include: edge/ganache.yml
-#  when: testing_mode.user_input == 'yes'
-#- include: guard_tasks/guard.yml
-#  when: install_option == 'Server'
+- include: set_facts.yml
+- include: system.yml
+- include: postgres.yml
+  when: install_option == 'origin'
+- include: varnish.apt.yml
+- include: caddy.yml
+- include: origin_stats.yml
+  when: install_option == 'origin'
+- include: edge_stats.yml
+  when: install_option == 'edge'
+- include: private_network.yml
+#- include: hnsd.yml
+- include: optimize.yml
+- include: ganache.yml
+  when: testing_mode.user_input == 'yes'
+- include: origin.yml
+  when: install_option == 'origin'

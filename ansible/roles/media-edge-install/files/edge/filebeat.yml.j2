@@ -1,0 +1,9 @@
+filebeat.inputs:
+- type: log
+  paths:
+    - /var/log/caddy/access.log
+  fields:
+    log_type: caddy_access
+
+output.logstash:
+  hosts: ["{{ media_origins[0] }}:5044"]

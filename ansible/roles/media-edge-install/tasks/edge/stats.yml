@@ -1,4 +1,0 @@
-- include: node_exporter.yml
-- include: prometheus_varnish_exporter.yml
-- include: prometheus.yml
-- include: grafana.yml

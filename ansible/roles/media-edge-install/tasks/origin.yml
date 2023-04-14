@@ -1,6 +1,6 @@
-- name: Remove existing guard
+- name: Remove existing origin
   file:
-    path: /root/guard
+    path: /root/origin
     state: absent
 
 - name: Remove existing abis
@@ -10,13 +10,13 @@
 
 - name: Create program directory
   file:
-    path: /root/guard
+    path: /root/origin
     state: directory
 
 - name: Copy program folder
   copy:
-    src: ../guard/
-    dest: /root/guard
+    src: ../origin/
+    dest: /root/origin
 
 - name: Copy abis folder
   copy:
@@ -25,12 +25,12 @@
 
 - name: Create .env file
   copy:
-    dest: "/root/guard/config/env.js"
+    dest: "/root/origin/config/env.js"
     content: |
       module.exports = {
         WALLET: "{{public_key}}",
         PRIVATE_KEY: "{{private_key}}",
-        dbstring: "postgres://guard:{{postgres_password}}@127.0.0.1:5432/guard",
+        dbstring: "postgres://origin:{{postgres_password.user_input}}@127.0.0.1:5432/origin",
         caddyUrl: "http://127.0.0.1:2020/",
         host: "medianetwork.app", // dev
         hns: "medtv", // dev
@@ -39,11 +39,11 @@
 - name: Run yarn install in program folder
   command: yarn install
   args:
-    chdir: /root/guard/
+    chdir: /root/origin/
 
 - name: Copy ecosystem file for pm2
   ansible.builtin.copy:
-    src: files/guard_files/pm2/ecosystem.config.js
+    src: files/origin/pm2/ecosystem.config.js
     dest: /root/
     follow: no
 

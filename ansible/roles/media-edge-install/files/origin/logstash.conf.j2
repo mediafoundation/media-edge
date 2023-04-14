@@ -1,0 +1,24 @@
+input {
+  beats {
+    port => 5044
+  }
+}
+
+filter {
+  # Parse JSON stringified data inside "message"
+  json {
+    source => "message"
+    target => "parsed_data"
+  }
+  # Remove the original "message" field
+  mutate {
+    remove_field => ["message"]
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["http://localhost:9200"]
+    index => "caddy-%{+YYYY.MM.dd}"
+  }
+}

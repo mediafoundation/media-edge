@@ -1,0 +1,19 @@
+- name: Install Filebeat
+  apt:
+    update_cache: true
+    install_recommends: true
+    state: latest
+    name: filebeat
+
+- name: Configure Filebeat
+  template:
+    src: files/edge/filebeat.yml.j2
+    dest: /etc/filebeat/filebeat.yml
+  vars:
+    origin_ip: "{{ hostvars[groups['origin'][0]]['ansible_host'] }}"
+
+- name: Start and enable Filebeat service
+  systemd:
+    name: filebeat
+    state: restarted
+    enabled: yes

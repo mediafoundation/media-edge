@@ -105,3 +105,11 @@
   command: systemctl status hnsd
 
 
+- name: Copy DANE cert files (HNS)
+  ansible.builtin.copy:
+    dest: ~/media-edge/
+    src: files/edge/hnsd/{{ item }}
+  with_items:
+  - cert-dcdn.crt
+  - cert-dcdn.key
+  when: install_option == 'edge'

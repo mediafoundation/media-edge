@@ -1,0 +1,37 @@
+- name: Installing Elastic Stack
+  apt:
+    update_cache: true
+    install_recommends: true
+    state: latest
+    name:
+      - elasticsearch
+      - logstash
+      - kibana
+
+- name: Configure Logstash
+  template:
+    src: files/origin/logstash.conf.j2
+    dest: /etc/logstash/conf.d/logstash.conf
+
+- name: Configure Kibana
+  template:
+    src: files/origin/kibana.yml.j2
+    dest: /etc/kibana/kibana.yml
+
+- name: Start and enable Elasticsearch service
+  systemd:
+    name: elasticsearch
+    state: restarted
+    enabled: yes
+
+- name: Start and enable Logstash service
+  systemd:
+    name: logstash
+    state: restarted
+    enabled: yes
+
+- name: Start and enable Kibana service
+  systemd:
+    name: kibana
+    state: restarted
+    enabled: yes

@@ -36,19 +36,13 @@
     GOROOT: '/usr/local/go'
     GOPATH: '/root/caddy/go'
 
-- name: Build XCaddy with DNS support for certificates
-  shell: /root/caddy/go/bin/xcaddy build --with github.com/caddy-dns/lego-deprecated
+- name: Build Caddy
+  shell: /root/caddy/go/bin/xcaddy build --with github.com/mediafoundation/caddy-bandwidth@latest --with github.com/caddy-dns/lego-deprecated --with github.com/firecow/caddy-elastic-encoder
   environment:
     PATH: '/usr/local/go/bin:$PATH'
     GOROOT: '/usr/local/go'
     GOPATH: '/root/caddy/go'
 
-- name: Build XCaddy with DNS support for certificates
-  shell: /root/caddy/go/bin/xcaddy build --with github.com/mediafoundation/caddy-bandwidth@latest
-  environment:
-    PATH: '/usr/local/go/bin:$PATH'
-    GOROOT: '/usr/local/go'
-    GOPATH: '/root/caddy/go'
 
 - name: Create caddy group
   ansible.builtin.group:
@@ -85,13 +79,13 @@
   template:
     src: files/edge/caddy/Caddyfile.j2
     dest: /etc/caddy/Caddyfile
-  when: install_option == 'Client'
+  when: install_option == 'edge'
 
 - name: Copy CaddyFile to /etc/caddy/Caddyfile
   template:
-    src: files/guard_files/caddy/Caddyfile.j2
+    src: files/origin/caddy/Caddyfile.j2
     dest: /etc/caddy/Caddyfile
-  when: install_option == 'Server'
+  when: install_option == 'origin'
 
 - name: Copy caddy service file to /etc/systemd/system/caddy.service
   template:
@@ -100,16 +94,16 @@
     owner: root
     group: root
     mode: '0644'
-  when: install_option == 'Client'
+  when: install_option == 'edge'
 
 - name: Copy caddy service file to /etc/systemd/system/caddy.service
   template:
-    src: files/guard_files/caddy/caddy.service.j2
+    src: files/origin/caddy/caddy.service.j2
     dest: /etc/systemd/system/caddy.service
     owner: root
     group: root
     mode: '0644'
-  when: install_option == 'Server'
+  when: install_option == 'origin'
 
 #Init caddy
 

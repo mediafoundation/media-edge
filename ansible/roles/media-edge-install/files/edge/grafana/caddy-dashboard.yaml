@@ -1,9 +1,0 @@
-apiVersion: 1
-
-providers:
-  - name: caddy-dashboard
-    type: file
-    updateIntervalSeconds: 60
-    options:
-      path: /etc/grafana/provisioning/dashboards/caddy-dashboard
-      foldersFromFilesStructure: true

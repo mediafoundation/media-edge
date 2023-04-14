@@ -1,9 +1,0 @@
-apiVersion: 1
-
-providers:
-  - name: prometheus_system
-    type: file
-    updateIntervalSeconds: 60
-    options:
-      path: /etc/grafana/provisioning/dashboards/disk-dashboard
-      foldersFromFilesStructure: true

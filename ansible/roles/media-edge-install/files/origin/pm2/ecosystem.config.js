@@ -1,8 +1,8 @@
 module.exports = {
          apps: [
                  {
-                     name : "guard",
-                     script: "/root/guard/daemon.js",
+                     name : "origin",
+                     script: "/root/origin/daemon.js",
                      instances: 1
                  },
          ]

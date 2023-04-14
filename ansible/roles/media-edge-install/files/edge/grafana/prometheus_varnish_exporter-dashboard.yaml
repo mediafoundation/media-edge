@@ -1,9 +1,0 @@
-apiVersion: 1
-
-providers:
-  - name: prometheus_varnish_exporter
-    type: file
-    updateIntervalSeconds: 60
-    options:
-      path: /etc/grafana/provisioning/dashboards/prometheus_varnish_exporter-dashboard
-      foldersFromFilesStructure: true

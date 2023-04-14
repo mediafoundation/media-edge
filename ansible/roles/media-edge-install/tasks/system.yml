@@ -7,7 +7,7 @@
   ansible.builtin.file:
     state: absent
     path: ~/media-edge/
-  when: install_option == 'Client'
+  when: install_option == 'edge'
 
 - name: Ensure all necessary directories exist before copying files
   ansible.builtin.file:
@@ -21,7 +21,7 @@
     - ~/media-edge/
     - ~/media-edge/caddy
     - ~/media-edge/public/blocked
-  when: install_option == 'Client'
+  when: install_option == 'edge'
 
 - name: Cleaning up cron if necessary
   ansible.builtin.shell: crontab -r
@@ -102,9 +102,9 @@
       - jq
       - python3-docutils
       - python3-sphinx
-  when: install_option == 'Client'
+  when: install_option == 'edge'
 
-- name: Installing Media-Guard system packages
+- name: Installing Media-Origin system packages
   apt:
     update_cache: true
     install_recommends: true
@@ -124,56 +124,56 @@
       - autoconf-archive
       - libpcre3
       - wget
-  when: install_option == 'Server'
+  when: install_option == 'origin'
 
 - name: Copying Media-Edge Config 
   ansible.builtin.template:
    src: files/edge/system/config.j2
    dest: ~/media-edge/public/config
-  when: install_option == 'Client'
+  when: install_option == 'edge'
 
 - name: Copying blocked resource template 
   ansible.builtin.copy:
    src: files/edge/system/index.html
    dest: ~/media-edge/public/blocked
-  when: install_option == 'Client'
+  when: install_option == 'edge'
 
 - name: Adding unique MAC address and IP address to config
   ansible.builtin.shell: |
     echo "MacAddress = \"$(ifconfig $(ip route get 8.8.8.8 | awk '{print $5}') | grep ether | awk '{print $2}')\"" >> ~/media-edge/public/config
     echo "IPAddress = \"$(ip route get 8.8.8.8 | awk '{print $NF; exit}')\"" >> ~/media-edge/public/config
-  when: install_option == 'Client'
+  when: install_option == 'edge'
 
 - name: Download and apply NodeJS sources
   shell: curl -sL https://deb.nodesource.com/{{node_version}} | bash -
-  when: install_option == 'Server'
+  when: install_option == 'origin'
 
 - name: Install NodeJS from apt
   apt: pkg=nodejs state=latest update_cache=yes install_recommends=yes
-  when: install_option == 'Server'
+  when: install_option == 'origin'
 
 - name: Install PM2
   shell: npm install -g pm2
-  when: install_option == 'Server'
+  when: install_option == 'origin'
 
 - name: Install yarn
   shell: npm -g install yarn
-  when: install_option == 'Server'
+  when: install_option == 'origin'
 
 - name: Adds hostname to /etc/hostname based on IP
   ansible.builtin.shell: |
     echo "media-origin-$(wget -q whatismyip.akamai.com -O -)" > /etc/hostname.tmp 
     sed 's/\./-/g' /etc/hostname.tmp > /etc/hostname
     hostname -F /etc/hostname
-  when: install_option == 'Server'
+  when: install_option == 'origin'
 
 - name: Preventing services to start after installed
   ansible.builtin.shell: "{{ item }}"
   loop:
     - echo '#!/bin/sh' > /usr/sbin/policy-rc.d
     - echo 'exit 101' >> /usr/sbin/policy-rc.d
-  when: install_option == 'Server'
+  when: install_option == 'origin'
 
 - name: Prevent services from starting automatically
   ansible.builtin.shell: chmod +x /usr/sbin/policy-rc.d
-  when: install_option == 'Server'
+  when: install_option == 'origin'
