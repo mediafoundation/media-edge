@@ -8,7 +8,6 @@
   when: install_option == 'origin'
 - include: edge_stats.yml
   when: install_option == 'edge'
-- include: private_network.yml
 #- include: hnsd.yml
 - include: optimize.yml
 - include: ganache.yml
