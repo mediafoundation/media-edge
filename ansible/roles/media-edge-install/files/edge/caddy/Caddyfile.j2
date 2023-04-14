@@ -1,40 +1,36 @@
 {
+    order bandwidth before header
     auto_https disable_redirects
     on_demand_tls {
         ask http://{{ media_origins[0] }}:8080/domains
         interval 2m
         burst 5
     }
+    log {
+        format elastic
+        output file /var/log/caddy/admin_access.log
+    }
 }
-
 
 {% if domain is defined %}
 *.{{domain}} {
     header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
-    @has_bandwidth_limit header_regexp X-Bandwidth-Limit .+
-    handle @has_bandwidth_limit {
-        bandwidth {
-            limit 100000
-        }
-    }
-    reverse_proxy http://localhost:8080
-    log {
-        output file /var/log/caddy/caddy.log {
-            roll_size 1gb
-            roll_keep 5
-            roll_keep_for 720h
-        }
-        format filter {
-            wrap json
-            fields {
-                deal_id {http.request.header.X-Deal-ID}
-                common_log
+    reverse_proxy http://localhost:8080 {
+        @hasBandwidthLimit header X-Bandwidth-Limit Yes
+        handle_response @hasBandwidthLimit {
+            bandwidth {
+                limit 50000
             }
+            reverse_proxy http://localhost:8080
         }
     }
     tls {
         dns lego_deprecated cloudns
         resolvers 1.1.1.1
+    }
+    log {
+        format elastic
+        output file /var/log/caddy/access.log
     }
 }
 {% endif %}
@@ -42,53 +38,37 @@
 
 https:// {
     header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
-    @has_bandwidth_limit header_regexp X-Bandwidth-Limit .+
-    handle @has_bandwidth_limit {
-        bandwidth {
-            limit 100000
-        }
-    }
-    reverse_proxy http://localhost:8080
-    log {
-        output file /var/log/caddy/caddy.log {
-            roll_size 1gb
-            roll_keep 5
-            roll_keep_for 720h
-        }
-        format filter {
-            wrap json
-            fields {
-                deal_id {http.request.header.X-Deal-ID}
-                common_log
+    reverse_proxy http://localhost:8080 {
+        @hasBandwidthLimit header X-Bandwidth-Limit Yes
+        handle_response @hasBandwidthLimit {
+            bandwidth {
+                limit 50000
             }
+            reverse_proxy http://localhost:8080
         }
     }
     tls {
         on_demand
     }
+    log {
+        format elastic
+        output file /var/log/caddy/access.log
+    }
 }
 
 http:// {
     header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
-    @has_bandwidth_limit header_regexp X-Bandwidth-Limit .+
-    handle @has_bandwidth_limit {
-        bandwidth {
-            limit 100000
+    reverse_proxy http://localhost:8080 {
+        @hasBandwidthLimit header X-Bandwidth-Limit Yes
+        handle_response @hasBandwidthLimit {
+            bandwidth {
+               limit 50000
+            }
+            reverse_proxy http://localhost:8080
         }
     }
-    reverse_proxy http://localhost:8080
     log {
-        output file /var/log/caddy/caddy.log {
-            roll_size 1gb
-            roll_keep 5
-            roll_keep_for 720h
-        }
-        format filter {
-            wrap json
-            fields {
-                deal_id {http.request.header.X-Deal-ID}
-                common_log
-            }
-        }
+        format elastic
+        output file /var/log/caddy/access.log
     }
 }

@@ -29,6 +29,8 @@ Environment=CLOUDNS_AUTH_PASSWORD={{password}}
 {% endif %}
 ExecStart=/usr/local/bin/caddy run --environ --config /etc/caddy/Caddyfile
 ExecReload=/usr/local/bin/caddy reload --config /etc/caddy/Caddyfile
+#ExecStart=/usr/local/bin/caddy run --environ --config /etc/caddy/caddy.json
+#ExecReload=/usr/local/bin/caddy reload --config /etc/caddy/caddy.json
 TimeoutStopSec=5s
 LimitNOFILE=1048576
 LimitNPROC=512

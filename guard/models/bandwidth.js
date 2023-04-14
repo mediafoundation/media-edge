@@ -40,20 +40,21 @@ module.exports = (sequelize, DataTypes) => {
         query: {
           bool: {
             filter: [
-              { term: { 'deal_id.keyword': deal.id } },
-              { range: { '@timestamp': range } },
+              { term: { 'parsed_data.resp_headers.X-Deal-Id': deal.id } },
+              { range: { 'parsed_data.@timestamp': range } },
             ],
           },
         },
+        size:0,
         aggs: {
-          total_bytes: { sum: { field: 'http.response.bytes' } },
+          total_bytes: { sum: { field: 'parsed_data.size' } },
         },
       },
     };
   
     try {
       const response = await client.search(query);
-      const totalBytes = response.body.aggregations.total_bytes.value;
+      const totalBytes = parseInt(response.body.aggregations.total_bytes.value);
       return { totalBytes, range };
     } catch (error) {
       console.error(`Error fetching bandwidth usage for deal ${deal.id}:`, error);
