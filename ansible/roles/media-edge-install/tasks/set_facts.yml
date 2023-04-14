@@ -1,3 +1,44 @@
+- name: Check if origins group exists and is not empty
+  set_fact:
+    origin_ips_exist: true
+  when: "'origin' in groups and groups['origin'] | length > 0"
+
+- name: Store origins IP addresses in a variable
+  set_fact:
+    origin_ips: "{{ groups['origin'] | map('extract', hostvars, 'ansible_host') | list }}"
+  when: origin_ips_exist | default(false)
+
+- name: Prompt for origins IP addresses
+  pause:
+    prompt: "Enter comma-separated list of origins IP addresses (e.g., 192.168.1.1,192.168.1.2):"
+    echo: yes
+  register: origin_ips_input
+  when: not origin_ips_exist | default(false)
+
+- name: Store origins IP addresses in a variable
+  set_fact:
+    origin_ips: "{{ origin_ips_input.user_input.split(',') | map('trim') | list }}"
+  when: not origin_ips_exist | default(false)
+
+- name: Print origins IPs
+  debug:
+    var: origin_ips
+
+- name: Ask user to confirm origins IPs
+  pause:
+    prompt: "Please confirm the origins IP addresses above. Type 'yes' to continue or 'no' to cancel:"
+    echo: yes
+  register: user_confirmation
+
+- name: Print origins IPs
+  debug:
+    var: user_confirmation
+
+- name: Check if user confirmed the origins IPs
+  fail:
+    msg: "User did not confirm the origins IP addresses. Exiting."
+  when: user_confirmation.user_input | lower != 'yes'
+
 - name: Validate install option input
   fail:
     msg: "Invalid install option selected: {{ selected_install_option }}"
@@ -15,7 +56,7 @@
 
 - name:
   pause:
-    prompt: "Do you want to use the server in testing mode? (yes/no) [no]: "
+    prompt: "Do you want to use the origins in testing mode? (yes/no) [no]: "
     echo: yes
   register: testing_mode
   when: install_option == 'origin'
@@ -72,16 +113,6 @@
     prompt: "\nEnter your server system ram capability in Gigabytes"
   register: system_ram
   when: install_option == 'edge'
-
-- name:
-  pause:
-    prompt: "\nEnter the IP addresses of your media origins separated by comma"
-  register: media_origins_input
-  when: install_option == 'edge'
-
-- name:
-  set_fact:
-    media_origins: "{{media_origins_input.user_input.split(',')}}"
 
 - name:
   pause:

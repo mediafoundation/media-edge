@@ -2,7 +2,7 @@
     order bandwidth before header
     auto_https disable_redirects
     on_demand_tls {
-        ask http://{{ media_origins[0] }}:8080/domains
+        ask http://{{ origins_ips[0] }}:8080/domains
         interval 2m
         burst 5
     }

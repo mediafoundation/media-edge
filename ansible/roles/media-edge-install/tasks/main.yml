@@ -1,16 +1,16 @@
 - include: set_facts.yml
-- include: system.yml
-- include: postgres.yml
-  when: install_option == 'origin'
-- include: varnish.apt.yml
-- include: caddy.yml
-- include: origin_stats.yml
-  when: install_option == 'origin'
-- include: edge_stats.yml
-  when: install_option == 'edge'
+#- include: system.yml
+#- include: postgres.yml
+#  when: install_option == 'origin'
+#- include: varnish.apt.yml
+#- include: caddy.yml
+#- include: origin_stats.yml
+#  when: install_option == 'origin'
+#- include: edge_stats.yml
+#  when: install_option == 'edge'
 #- include: hnsd.yml
-- include: optimize.yml
-- include: ganache.yml
-  when: testing_mode.user_input == 'yes'
-- include: origin.yml
-  when: install_option == 'origin'
+#- include: optimize.yml
+#- include: ganache.yml
+#  when: testing_mode.user_input == 'yes'
+#- include: origin.yml
+#  when: install_option == 'origin'

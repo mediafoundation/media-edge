@@ -6,4 +6,4 @@ filebeat.inputs:
     log_type: caddy_access
 
 output.logstash:
-  hosts: ["{{ media_origins[0] }}:5044"]
+  hosts: ["{{ origin_ips[0] }}:5044"]
