@@ -80,8 +80,7 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
 
 
 // let CURRENT_NETWORK = networks.bsc
-let deployed = [networks.ganache]
-deployed.forEach(async CURRENT_NETWORK => {
+networks.forEach(async CURRENT_NETWORK => {
 
     const web3 = new Web3(
         new Web3.providers.HttpProvider(CURRENT_NETWORK.URL)
