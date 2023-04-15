@@ -1,4 +1,5 @@
 const express = require("express");
+const app = express();
 const Greenlock = require("greenlock");
 const fs = require("fs");
 const path = require("path");
@@ -6,6 +7,9 @@ const models = require("./models");
 
 const challengesPath = "/var/www/challenges";
 const certsPath = "/etc/ssl/caddy";
+
+// Serve ACME challenge files from the shared filesystem
+app.use("/.well-known/acme-challenge", express.static(challengesPath));
 
 let greenlock;
 
@@ -82,14 +86,11 @@ async function initGreenlock() {
     },
   });
 
-  // Serve ACME challenge files from the shared filesystem
-  greenlock.app.use("/.well-known/acme-challenge", express.static(challengesPath));
-
   for (const domain of domains) {
     greenlock.add({ subject: domain, altnames: [domain] });
   }
 
-  greenlock.serveApp(function() {
+  greenlock.serveApp(app, function() {
     console.log("Greenlock Server listening on port 80 and 443");
   });
 }
