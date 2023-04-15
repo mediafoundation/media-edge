@@ -39,7 +39,7 @@ async function fetchDomainsFromDatabase() {
 
 async function obtainAndRenewCertificates() {
   const client = new acme.Client({
-    directoryUrl: acme.directory.letsencrypt.staging,
+    directoryUrl: acme.directory.letsencrypt.production,
     accountKey: await acme.crypto.createPrivateKey(),
   });
 
