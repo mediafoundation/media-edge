@@ -75,10 +75,12 @@ async function initGreenlock() {
     packageAgent: "your-application-name",
     manager: {
       module: "@greenlock/manager",
-      basePath: certsPath,
-      memory: {
-        live: true,
-        staging: true,
+      config: {
+        basePath: certsPath,
+        memory: {
+          live: true,
+          staging: true,
+        },
       },
     },
     store: require("le-store-fs").create({
