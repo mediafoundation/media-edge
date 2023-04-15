@@ -107,8 +107,9 @@ networks.forEach(async CURRENT_NETWORK => {
     if(lastReadBlock !== 0){
         console.log("Start to check events")
         setInterval(async () => {
-            try {
-                lastReadBlock = await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK, web3)
+            try { 
+                let getLastBlock = await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK, web3)
+                lastReadBlock = getLastBlock ? getLastBlock : lastReadBlock;
             } catch(e){
                 console.log("Something failed while checking events", e)
             }
