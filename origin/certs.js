@@ -9,9 +9,7 @@ const models = require("./models");
 
 const challengesPath = "/var/www/challenges";
 const certsPath = "/etc/ssl/caddy";
-
 app.use("/.well-known/acme-challenge", express.static(challengesPath));
-app.use('/domains', getDomains)
 
 const getDomains = async(req, res) => {
   try {
@@ -31,6 +29,7 @@ const getDomains = async(req, res) => {
     return res.sendStatus(404)
   }
 }
+app.use('/domains', getDomains)
 
 async function fetchDomainsFromDatabase() {
   let domains = await models.Caddy.getCaddySources(['host']);
