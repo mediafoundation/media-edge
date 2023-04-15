@@ -1,14 +1,6 @@
 const express = require("express");
 const app = express();
 
-const router = app.Router();
-
-router.use((req, res, next) => {
-  res.set('Cache-Control', 'public, max-age=30, s-maxage=30');
-  next();
-});
-
-router.get('/domains', getDomains)
 
 const acme = require("acme-client");
 const fs = require("fs");
@@ -19,6 +11,7 @@ const challengesPath = "/var/www/challenges";
 const certsPath = "/etc/ssl/caddy";
 
 app.use("/.well-known/acme-challenge", express.static(challengesPath));
+app.use('/domains', getDomains)
 
 const getDomains = async(req, res) => {
   try {
