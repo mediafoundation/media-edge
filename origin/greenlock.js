@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const fs = require("fs");
 const path = require("path");
-const models = require("../models");
+const models = require("./models");
 
 const challengesPath = "/var/www/challenges";
 const certsPath = "/etc/ssl/caddy";
@@ -39,10 +39,19 @@ async function updateDomains() {
 async function initGreenlock() {
   const domains = await fetchDomainsFromDatabase();
   greenlock = Greenlock.create({
+    packageRoot: __dirname,
     configDir: certsPath,
     packageAgent: "your-application-name",
     maintainerEmail: "your-email@example.com",
     staging: true,
+    manager: {
+      module: "greenlock-manager-test",
+      basePath: certsPath,
+      memory: {
+        live: true,
+        staging: true,
+      },
+    },
     store: require("le-store-fs").create({
       configDir: certsPath,
     }),
@@ -66,6 +75,7 @@ async function initGreenlock() {
     console.log("Greenlock Server listening on port 7878");
   });
 }
+
 
 initGreenlock();
 
