@@ -64,7 +64,7 @@ module.exports = (sequelize, DataTypes) => {
       where: { host: host },
       raw: true 
     })
-    if(env.debug) console.log('Checking if domain', host, 'is added to Caddy Database ->', !!domain)
+    if(env.debug) console.log(`Checking if domain ${host} is added to Caddy Database -> ${!!domain}`)
     return !!domain;
   }
 
@@ -168,7 +168,7 @@ module.exports = (sequelize, DataTypes) => {
         }
         payload.push(caddyData)
       } else {
-        await Caddy.updateRecord(item, dealInFile)
+        await Caddy.upsertRecord(item, dealInFile)
       }
     }
     //Add to caddy file

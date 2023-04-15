@@ -65,7 +65,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
                     let evmRecord = await models.Evm.addRecord(formattedResource)
 
                     for (const deal of deals) {
-                        await models.Caddy.updateRecord({
+                        await models.Caddy.upsertRecord({
                             resource: formattedResource, 
                             deal: deal.dataValues
                         })
@@ -80,7 +80,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
 
                         //Check change of domain
                         if(!models.Caddy.areArraysEqual(dbRecords, caddyRecords)){
-                            await models.Caddy.updateRecord({
+                            await models.Caddy.upsertRecord({
                                 resource: formattedResource, 
                                 deal: deal.dataValues
                             })
@@ -93,7 +93,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
                                 evmRecord.includes('protocol') || 
                                 evmRecord.includes('path')
                             ) {
-                                await models.Caddy.updateRecord({
+                                await models.Caddy.upsertRecord({
                                     resource: formattedResource, 
                                     deal: deal
                                 })

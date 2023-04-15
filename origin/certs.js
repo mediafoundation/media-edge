@@ -6,7 +6,6 @@ const path = require("path");
 const models = require("./models");
 const crypto = require('crypto');
 
-
 const challengesPath = "/var/www/challenges";
 const certsPath = "/etc/ssl/caddy";
 app.use("/.well-known/acme-challenge", express.static(challengesPath));
@@ -29,6 +28,7 @@ const getDomains = async(req, res) => {
     return res.sendStatus(404)
   }
 }
+
 app.use('/domains', getDomains)
 
 async function fetchDomainsFromDatabase() {
@@ -41,10 +41,8 @@ function checkCertificateValidity(certificatePath, host) {
   try {
     // Read the certificate file
     const certData = fs.readFileSync(certificatePath, 'utf-8');
-
     // Create a certificate object
     const cert = new crypto.X509Certificate(certData);
-
     // Get the current date
     const currentDate = new Date();
 
@@ -82,7 +80,7 @@ async function obtainAndRenewCertificates() {
       const keyPath = path.join(certsPath, `${domain.host}`, `${domain.host}.key`);
       const jsonPath = path.join(certsPath, `${domain.host}`, `${domain.host}.json`);
 
-      if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+      if (fs.existsSync(certPath) && fs.existsSync(keyPath) && fs.existsSync(jsonPath)) {
         const validCert = checkCertificateValidity(certPath, domain.host);
         if (!validCert) {
           console.log(`Renewing certificate for ${domain.host}`);
@@ -92,11 +90,9 @@ async function obtainAndRenewCertificates() {
       } else {
         console.log(`Obtaining certificate for ${domain.host}`);
       }
-      /* Create CSR */
       const [key, csr] = await acme.crypto.createCsr({
         commonName: String(domain.host),
       });
-
       const cert = await client.auto({
         csr,
         email: 'test@medianetwork.app',
@@ -110,7 +106,7 @@ async function obtainAndRenewCertificates() {
           fs.writeFileSync(filePath, keyAuthorization);
 	        console.log("Written challenge")
         },
-        challengeRemoveFn: async (authz, challenge, keyAuthorization) => {
+        challengeRemoveFn: async (authz, challenge) => {
           const filePath = path.join(
             challengesPath,
             challenge.token
@@ -121,14 +117,7 @@ async function obtainAndRenewCertificates() {
       if (!fs.existsSync(path.join(certsPath, `${domain.host}`))){
           fs.mkdirSync(path.join(certsPath, `${domain.host}`), { recursive: true });
       }
-      const json = `{
-        "sans": [
-          "${domain.host}"
-        ],
-        "issuer_data": {
-          "url": "https://media.network/"
-        }
-      }`;
+      const json = `{"sans": ["${domain.host}"],"issuer_data": {"url": "https://media.network/"}}`;
       fs.writeFileSync(certPath, cert);
       fs.writeFileSync(keyPath, key);
       fs.writeFileSync(jsonPath, json);

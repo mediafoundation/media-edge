@@ -23,12 +23,7 @@ let initCaddy = async function(){
         matchDealResources.push(matchDealResource)
     })
 
-    //console.log("Caddy records", caddyRecords)
     await models.Caddy.addRecords(matchDealResources, caddyRecords)
-
-    //delete records from caddy sources that are not in deals table
-
-    //let caddySources = await models.Caddy.getCaddySources()
 
     let caddyFile = await models.Caddy.getRecords()
 
@@ -36,11 +31,7 @@ let initCaddy = async function(){
         dealsFromDB.map(deal => deal.id),
 	    caddyFile.map(obj => obj['@id']).filter(id => id)
     )
-
-	//console.log(dealsFromDB.map(deal => deal.id))
-	//console.log(caddyFile.map(obj => obj['@id']).filter(id => id))
-
-	//console.log("Difference", difference)
+    
     for (const deal of difference) {
         await models.Caddy.deleteRecord(deal)
     }
