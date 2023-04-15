@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const fs = require("fs");
 const path = require("path");
+const models = require("../models")
 
 const challengesPath = "/var/www/challenges";
 const certsPath = "/etc/ssl/caddy";
@@ -12,11 +13,7 @@ let greenlock;
 
 async function fetchDomainsFromDatabase() {
   // Replace this with your actual implementation to fetch the domains
-  const domains = [
-    'example.com',
-    'www.example.com',
-  ];
-
+  let domains = models.Caddy.getCaddySources(['host']);
   return domains;
 }
 
@@ -104,8 +101,8 @@ async function initGreenlock() {
     })
   );
 
-  app.listen(80, () => {
-    console.log("Server listening on port 80");
+  app.listen(7878, () => {
+    console.log("Greenlock Server listening on port 7878");
   });
 }
 

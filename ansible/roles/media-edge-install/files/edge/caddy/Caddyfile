@@ -1,8 +1,7 @@
 {
   admin 0.0.0.0:2019
   order bandwidth before header
-  #auto_https disable_redirects
-  auto_https off
+  auto_https disable_redirects
   log {
     format elastic
     output file /var/log/caddy/admin_access.log
@@ -12,7 +11,7 @@
 *.medianetwork.app {
   header Server "MediaEdge v0.0.1 | https://media.network"
   handle /.well-known/acme-challenge/* {
-    reverse_proxy http://localhost:7878
+    reverse_proxy http://109.236.84.2:7878
   }
   reverse_proxy http://localhost:8080 {
     @hasBandwidthLimit header X-Bandwidth-Limit Yes
@@ -23,7 +22,10 @@
       reverse_proxy http://localhost:8080
     }
   }
-  tls /path/to/mounted_certificates/{host}/fullchain.pem /path/to/mounted_certificates/{host}/privkey.pem
+  tls {
+      dns lego_deprecated cloudns
+      resolvers 1.1.1.1
+  }
   log {
     format elastic
     output file /var/log/caddy/access.log
@@ -33,7 +35,7 @@
 https:// {
   header Server "MediaEdge v0.0.1 | https://media.network"
   handle /.well-known/acme-challenge/* {
-    reverse_proxy http://localhost:7878
+    reverse_proxy http://109.236.84.2:7878
   }
   reverse_proxy http://localhost:8080 {
     @hasBandwidthLimit header X-Bandwidth-Limit Yes
@@ -44,7 +46,9 @@ https:// {
       reverse_proxy http://localhost:8080
     }
   }
-  tls /path/to/mounted_certificates/{host}/fullchain.pem /path/to/mounted_certificates/{host}/privkey.pem
+  tls {
+      on_demand
+  }
   log {
     format elastic
     output file /var/log/caddy/access.log
@@ -54,7 +58,7 @@ https:// {
 http:// {
   header Server "MediaEdge v0.0.1 | https://media.network"
   handle /.well-known/acme-challenge/* {
-    reverse_proxy http://localhost:7878
+    reverse_proxy http://109.236.84.2:7878
   }
   reverse_proxy http://localhost:8080 {
     @hasBandwidthLimit header X-Bandwidth-Limit Yes

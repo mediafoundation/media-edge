@@ -68,8 +68,11 @@ module.exports = (sequelize, DataTypes) => {
     return !!domain;
   }
 
-  Caddy.getCaddySources = async() => {
-    return await CaddySource.findAll({raw: true})
+  Caddy.getCaddySources = async(attributes=null) => {
+    return await CaddySource.findAll({ 
+      attributes: attributes, 
+      raw: true
+    })
   }
 
   Caddy.getHostnames = (deal)  =>{
