@@ -154,7 +154,10 @@ let manageDealCreatedOrAccepted = async (MarketplaceInstance, ResourcesInstance,
                 //console.log(dealFormatted, resourceFormatted)
                 await models.Deals.addRecord(dealFormatted)
                 await models.Evm.addRecord(resourceFormatted)
-                await models.Caddy.addRecord({resource: resourceFormatted, deal: dealFormatted}, CURRENT_NETWORK)
+                await models.Caddy.upsertRecord({
+                    resource: resourceFormatted, 
+                    deal: dealFormatted
+                })
             }
         }
     }

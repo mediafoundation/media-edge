@@ -169,26 +169,7 @@ module.exports = (sequelize, DataTypes) => {
         payload.push(caddyData)
       } else {
         await Caddy.updateRecord(item, dealInFile)
-/*         let dealHostArray = dealInFile.match[0].host
-        let dbHosts = []
-        if(item.resource.domain){
-          dbHosts.push(item.resource.domain)
-        }
-        dbHosts.push(...Caddy.getHostnames(item.deal))
-        //check if caddy record needs update
-        if(!Caddy.areArraysEqual(dbHosts, dealHostArray)){
-          console.log("Record needs update:", item.deal.id)
-          await Caddy.updateRecord(item, dealHostArray)
-        } 
-
-        //if resource has a custom domain
-        if(item.resource.domain) {
-          await Caddy.manageDomain(caddyData, item)
-        }
-
-        */
       }
-
     }
     //Add to caddy file
     try {
@@ -229,40 +210,9 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  Caddy.addRecord = async (item) => {
-    //check if requires update (if record present on database **OR** on caddyFile)
-    //let requireUpdate = !!(fileExist)
-    //create caddy object
-    let caddyData = await Caddy.newObject(item.resource, item.deal)
+  Caddy.upsertRecord = async (item) => {
 
-    //Add to caddy file
-    try {
-      await axios.post(
-        Caddy.caddyRoutesUrl,
-        caddyData,
-        Caddy.caddyReqCfg
-      )
-      console.log('Added to caddy:', item.deal.id)
-    } catch (e){
-      console.log("axios error", e)
-      return false
-    }
-    //if caddy added succesfully, and theres a custom domain, add resource to pending queue
-    if(item.resource.domain) {
-      await Caddy.manageDomain(caddyData, item)
-    }
-
-    return true
-  }
-
-  //we allow the prevItem to be sent so we don't make n requests to the caddy configuration for checking.
-  Caddy.updateRecord = async (item, prevItem=false) => {
-    //set previous record if not sent as parameter
-    if(!prevItem) prevItem = await Caddy.getRecord(item.deal.id);
-
-    console.log("prevItem",prevItem);
-
-    //Destroy previous records associated to deal id
+    //Destroy previous custom cnames records associated to deal id
     let destroyed = await CaddySource.destroy({
       where: {
         deal_id: item.deal.id
@@ -276,19 +226,16 @@ module.exports = (sequelize, DataTypes) => {
     //create Caddy object required to be posted on caddyFile
     let newCaddyData = await Caddy.newObject(item.resource, item.deal)
     
-    console.log("newCaddyData",newCaddyData);
     //if the resource has a custom cname
     if(item.resource.domain) {
       console.log("Deal has domain:", item.resource.domain)
       await Caddy.manageDomain(newCaddyData, item)
     }
-    
-    console.log("newCaddyData2",newCaddyData);
 
-    let existingRecordId = Caddy.caddyBaseUrl+"id/"+item.deal.id
+    let recordId = Caddy.caddyBaseUrl+"id/"+item.deal.id
     try {
-      await axios.patch(
-          existingRecordId,
+      await axios.post(
+          recordId,
           newCaddyData,
           Caddy.caddyReqCfg
       )
@@ -297,7 +244,6 @@ module.exports = (sequelize, DataTypes) => {
       console.log("axios error", url)
       return false
     }
-
 
     return true
   }
