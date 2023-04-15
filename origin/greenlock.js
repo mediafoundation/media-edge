@@ -2,37 +2,78 @@ const express = require("express");
 const app = express();
 const fs = require("fs");
 const path = require("path");
-const models = require("./models");
+const models = require("../models");
 
 const challengesPath = "/var/www/challenges";
 const certsPath = "/etc/ssl/caddy";
-
-// Serve ACME challenge files from the shared filesystem
 app.use("/.well-known/acme-challenge", express.static(challengesPath));
 
+const Greenlock = require("greenlock");
 let greenlock;
 
 async function fetchDomainsFromDatabase() {
-  // Replace this with your actual implementation to fetch the domains
-  let domains = models.Caddy.getCaddySources(['host']);
+  let domains = models.Caddy.getCaddySources(["host"]);
   return domains;
 }
 
 async function updateDomains() {
-  const currentDomains = greenlock.manager.get(null, "all").map((cert) => cert.subject);
+  const currentDomains = await greenlock.manager.get(null, "all");
   const newDomains = await fetchDomainsFromDatabase();
 
-  const domainsToAdd = newDomains.filter((domain) => !currentDomains.includes(domain));
-  const domainsToRemove = currentDomains.filter((domain) => !newDomains.includes(domain));
+  const domainsToAdd = newDomains.filter(
+    (domain) => !currentDomains.includes(domain)
+  );
+  const domainsToRemove = currentDomains.filter(
+    (domain) => !newDomains.includes(domain)
+  );
 
   for (const domain of domainsToAdd) {
-    greenlock.manager.add({ subject: domain, altnames: [domain] });
+    greenlock.add({ subject: domain, altnames: [domain] });
   }
 
   for (const domain of domainsToRemove) {
-    greenlock.manager.remove({ subject: domain });
+    greenlock.remove({ subject: domain });
   }
 }
+
+async function initGreenlock() {
+  const domains = await fetchDomainsFromDatabase();
+  greenlock = Greenlock.create({
+    configDir: certsPath,
+    packageAgent: "your-application-name",
+    maintainerEmail: "your-email@example.com",
+    staging: true,
+    store: require("le-store-fs").create({
+      configDir: certsPath,
+    }),
+    challenges: {
+      "http-01": require("le-challenge-fs").create({
+        webrootPath: challengesPath,
+      }),
+    },
+  });
+
+  greenlock.manager.defaults({
+    agreeToTerms: true,
+    subscriberEmail: "webhosting@example.com",
+  });
+
+  for (const domain of domains) {
+    greenlock.add({ subject: domain, altnames: [domain] });
+  }
+
+  app.listen(7878, () => {
+    console.log("Greenlock Server listening on port 7878");
+  });
+}
+
+initGreenlock();
+
+const updateInterval = 60 * 60 * 1000; // Update every 1 hour
+setInterval(updateDomains, updateInterval);
+
+
+
 
 function cleanUpChallenges() {
   const maxAge = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
@@ -65,49 +106,6 @@ function cleanUpChallenges() {
     });
   });
 }
-
-async function initGreenlock() {
-  const domains = await fetchDomainsFromDatabase();
-  greenlock = require("greenlock").create({
-    packageRoot: __dirname,
-    configDir: certsPath,
-    maintainerEmail: "your-email@example.com",
-    packageAgent: "your-application-name",
-    manager: {
-      module: "@greenlock/manager",
-      config: {
-        basePath: certsPath,
-        memory: {
-          live: true,
-          staging: true,
-        },
-      },
-    },
-    store: require("le-store-fs").create({
-      configDir: certsPath,
-    }),
-    challenges: {
-      "http-01": require("le-challenge-fs").create({
-        webrootPath: challengesPath,
-      }),
-    },
-  });
-
-  for (const domain of domains) {
-    greenlock.manager.add({ subject: domain, altnames: [domain] });
-  }
-
-  app.listen(7878, () => {
-    console.log("Greenlock Server listening on port 7878");
-  });
-}
-
-//Init the greenlock instance
-initGreenlock();
-
-//Update greenlock with new domains every hour
-const updateInterval = 60 * 60 * 1000; // Update every 1 hour
-setInterval(updateDomains, updateInterval);
 
 //Clean up old http-01 challenges every day
 const cleanupInterval = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
