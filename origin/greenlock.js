@@ -1,6 +1,5 @@
 const express = require("express");
 const app = express();
-const greenlock = require("greenlock");
 const fs = require("fs");
 const path = require("path");
 const models = require("../models");
@@ -8,6 +7,7 @@ const models = require("../models");
 const challengesPath = "/var/www/challenges";
 const certsPath = "/etc/ssl/caddy";
 
+// Serve ACME challenge files from the shared filesystem
 app.use("/.well-known/acme-challenge", express.static(challengesPath));
 
 let greenlock;
@@ -26,11 +26,11 @@ async function updateDomains() {
   const domainsToRemove = currentDomains.filter((domain) => !newDomains.includes(domain));
 
   for (const domain of domainsToAdd) {
-    greenlock.add({ subject: domain, altnames: [domain] });
+    greenlock.manager.add({ subject: domain, altnames: [domain] });
   }
 
   for (const domain of domainsToRemove) {
-    greenlock.remove({ subject: domain });
+    greenlock.manager.remove({ subject: domain });
   }
 }
 
@@ -68,8 +68,7 @@ function cleanUpChallenges() {
 
 async function initGreenlock() {
   const domains = await fetchDomainsFromDatabase();
-
-  const gl = greenlock.create({
+  greenlock = require("greenlock").create({
     packageRoot: __dirname,
     configDir: certsPath,
     maintainerEmail: "your-email@example.com",
@@ -93,7 +92,7 @@ async function initGreenlock() {
   });
 
   for (const domain of domains) {
-    gl.manager.add({ subject: domain, altnames: [domain] });
+    greenlock.manager.add({ subject: domain, altnames: [domain] });
   }
 
   app.listen(7878, () => {
