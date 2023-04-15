@@ -83,8 +83,7 @@ async function obtainAndRenewCertificates() {
       const jsonPath = path.join(certsPath, `${domain.host}`, `${domain.host}.json`);
 
       if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
-        const cert = fs.readFileSync(certPath, "utf8");
-        const validCert = checkCertificateValidity(cert);
+        const validCert = checkCertificateValidity(certPath);
         if (!validCert) {
           console.log(`Renewing certificate for ${domain.host}`);
         } else {
