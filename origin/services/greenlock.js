@@ -1,13 +1,11 @@
 const express = require("express");
-const app = express();
+const Greenlock = require("greenlock");
 const fs = require("fs");
 const path = require("path");
-const models = require("../models")
+const models = require("../models");
 
 const challengesPath = "/var/www/challenges";
 const certsPath = "/etc/ssl/caddy";
-// Serve ACME challenge files from the shared filesystem
-app.use("/.well-known/acme-challenge", express.static(challengesPath));
 
 let greenlock;
 
@@ -64,45 +62,35 @@ function cleanUpChallenges() {
     });
   });
 }
+
 async function initGreenlock() {
   const domains = await fetchDomainsFromDatabase();
-  greenlock = require("greenlock").create({
+  greenlock = Greenlock.create({
     packageRoot: __dirname,
     configDir: certsPath,
     maintainerEmail: "your-email@example.com",
     packageAgent: "your-application-name",
-    manager: {
-      module: "@greenlock/manager",
-      basePath: certsPath,
-      memory: {
-        live: true,
-        staging: true,
+    challenges: {
+      "http-01": {
+        module: "acme-http-01-webroot",
+        webrootPath: challengesPath,
       },
     },
-    store: require("le-store-fs").create({
-      configDir: certsPath,
-    }),
-    challenges: {
-      "http-01": require("le-challenge-fs").create({
-        webrootPath: challengesPath,
-      }),
+    store: {
+      module: "greenlock-store-fs",
+      basePath: certsPath,
     },
   });
+
+  // Serve ACME challenge files from the shared filesystem
+  greenlock.app.use("/.well-known/acme-challenge", express.static(challengesPath));
 
   for (const domain of domains) {
     greenlock.add({ subject: domain, altnames: [domain] });
   }
 
-  app.use(
-    greenlock.middleware({
-      challengeStore: require("le-store-fs").create({
-        configDir: challengesPath,
-      }),
-    })
-  );
-
-  app.listen(7878, () => {
-    console.log("Greenlock Server listening on port 7878");
+  greenlock.serveApp(function() {
+    console.log("Greenlock Server listening on port 80 and 443");
   });
 }
 
