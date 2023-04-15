@@ -30,7 +30,7 @@
       module.exports = {
         WALLET: "{{wallet_address}}",
         PRIVATE_KEY: "{{private_key}}",
-        dbstring: "postgres://origin:{{postgres_password.user_input}}@127.0.0.1:5432/origin",
+        dbstring: "postgres://origin:{{postgres_password.user_input}}@127.0.0.1:5432/guard",
         caddyUrl: "http://127.0.0.1:2020/",
         host: "medianetwork.app", // dev
         hns: "medtv", // dev
