@@ -1,14 +1,13 @@
 const express = require("express");
 const app = express();
-const Greenlock = require("greenlock");
+const greenlock = require("greenlock");
 const fs = require("fs");
 const path = require("path");
-const models = require("./models");
+const models = require("../models");
 
 const challengesPath = "/var/www/challenges";
 const certsPath = "/etc/ssl/caddy";
 
-// Serve ACME challenge files from the shared filesystem
 app.use("/.well-known/acme-challenge", express.static(challengesPath));
 
 let greenlock;
@@ -69,29 +68,36 @@ function cleanUpChallenges() {
 
 async function initGreenlock() {
   const domains = await fetchDomainsFromDatabase();
-  greenlock = Greenlock.create({
+
+  const gl = greenlock.create({
     packageRoot: __dirname,
     configDir: certsPath,
     maintainerEmail: "your-email@example.com",
     packageAgent: "your-application-name",
-    challenges: {
-      "http-01": {
-        module: "acme-http-01-webroot",
-        webrootPath: challengesPath,
+    manager: {
+      module: "@greenlock/manager",
+      basePath: certsPath,
+      memory: {
+        live: true,
+        staging: true,
       },
     },
-    store: {
-      module: "greenlock-store-fs",
-      basePath: certsPath,
+    store: require("le-store-fs").create({
+      configDir: certsPath,
+    }),
+    challenges: {
+      "http-01": require("le-challenge-fs").create({
+        webrootPath: challengesPath,
+      }),
     },
   });
 
   for (const domain of domains) {
-    greenlock.add({ subject: domain, altnames: [domain] });
+    gl.manager.add({ subject: domain, altnames: [domain] });
   }
 
-  greenlock.serveApp(app, function() {
-    console.log("Greenlock Server listening on port 80 and 443");
+  app.listen(7878, () => {
+    console.log("Greenlock Server listening on port 7878");
   });
 }
 
