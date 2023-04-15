@@ -59,3 +59,19 @@
 - name: pm2 save
   command:
     cmd: 'pm2 save'
+
+- name: Create /var/www/challenges directory
+  ansible.builtin.file:
+    path: /var/www/challenges
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: 0755
+
+- name: Create /etc/ssl/caddy directory
+  ansible.builtin.file:
+    path: /etc/ssl/caddy
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: 0700

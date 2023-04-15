@@ -72,7 +72,7 @@ module.exports = (sequelize, DataTypes) => {
     return await CaddySource.findAll({raw: true})
   }
 
-  Caddy.getHostname = (deal)  =>{
+  Caddy.getHostnames = (deal)  =>{
     let hostnames = []
     for (const domain of JSON.parse(deal.domains)) {
       hostnames.push(deal.id + "." + domain[1])
@@ -99,7 +99,7 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   Caddy.newObject = async (res, deal) => {
-    let hostname = Caddy.getHostname(deal)
+    let hostname = Caddy.getHostnames(deal)
     let transport = res.protocol === "https" ? 
     { 
       "protocol": "http", 
@@ -157,38 +157,32 @@ module.exports = (sequelize, DataTypes) => {
     let payload = []
     for(const item of dealsResources) {
       let caddyData = await Caddy.newObject(item.resource, item.deal)
-      for (const domain of caddyData.match[0].host){
-        await CaddySource.findOrCreate({
-          where: {
-            host: domain,
-            deal_id: item.deal.id
-          }
-        })
-      }
+      let dealInFile = Caddyfile.find(o => o["@id"] === item.deal.id);
       //if resource is not on caddyfile already, add to payload
-      let fileExist = !!Caddyfile.find(o => o["@id"] === item.deal.id);
-      //console.log("File exists", fileExist)
-      if(!fileExist) payload.push(caddyData)
-      else{
-        //check if caddy record needs update
-        let caddyHosts = await Caddy.getRecord(item.deal.id)
-        //console.log("Existing record in caddy:", caddyHosts)
+      if(!dealInFile) {
+        payload.push(caddyData)
+      } else {
+        await Caddy.updateRecord(item, dealInFile)
+/*         let dealHostArray = dealInFile.match[0].host
         let dbHosts = []
         if(item.resource.domain){
           dbHosts.push(item.resource.domain)
         }
-        dbHosts.push(...Caddy.getHostname(item.deal))
-        //console.log("Db host", dbHosts)
-        if(!Caddy.areArraysEqual(dbHosts, caddyHosts)){
+        dbHosts.push(...Caddy.getHostnames(item.deal))
+        //check if caddy record needs update
+        if(!Caddy.areArraysEqual(dbHosts, dealHostArray)){
           console.log("Record needs update:", item.deal.id)
-          await Caddy.updateRecord(item, caddyHosts)
+          await Caddy.updateRecord(item, dealHostArray)
+        } 
+
+        //if resource has a custom domain
+        if(item.resource.domain) {
+          await Caddy.manageDomain(caddyData, item)
         }
+
+        */
       }
 
-      //if resource has a custom domain
-      if(item.resource.domain) {
-        await Caddy.manageDomain(caddyData, item)
-      }
     }
     //Add to caddy file
     try {
@@ -234,22 +228,8 @@ module.exports = (sequelize, DataTypes) => {
     //let requireUpdate = !!(fileExist)
     //create caddy object
     let caddyData = await Caddy.newObject(item.resource, item.deal)
-    //if res has an ID, it may confict with DB id, so we delete it before adding
-    //if(res.id) delete res.id
-    //add to Caddy DB
-    //let caddy = await Caddy.create(res)
-    //add domains to Caddy Sources DB
-    for (const domain of caddyData.match[0].host){
-      await CaddySource.findOrCreate({
-        where: {
-          host: domain,
-          deal_id: item.deal.id
-        }
-      })
-    }
-    //if theres no caddyFile matching the ID
 
-      //Add to caddy file
+    //Add to caddy file
     try {
       await axios.post(
         Caddy.caddyRoutesUrl,
@@ -269,13 +249,16 @@ module.exports = (sequelize, DataTypes) => {
     return true
   }
 
-  //res = new or updated resource | fileExist = caddy configuration object | caddy = caddy db record
-  //we allow these parameters to be sent so we don't make n requests to the caddy configuration for checking.
-  Caddy.updateRecord = async (item, prevDomain) => {
+  //we allow the prevItem to be sent so we don't make n requests to the caddy configuration for checking.
+  Caddy.updateRecord = async (item, prevItem=false) => {
+    //set previous record if not sent as parameter
+    if(!prevItem) prevItem = await Caddy.getRecord(item.deal.id);
+
+    console.log("prevItem",prevItem);
+
     //Destroy previous records associated to deal id
     let destroyed = await CaddySource.destroy({
       where: {
-        host: prevDomain,
         deal_id: item.deal.id
       }
     })
@@ -285,28 +268,25 @@ module.exports = (sequelize, DataTypes) => {
     await Caddy.deletefromAllQueues(item.deal.id)
 
     //create Caddy object required to be posted on caddyFile
-    let caddyData = await Caddy.newObject(item.resource, item.deal)
+    let newCaddyData = await Caddy.newObject(item.resource, item.deal)
+    
+    console.log("newCaddyData",newCaddyData);
     //if the resource has a custom cname
     if(item.resource.domain) {
       console.log("Deal has domain:", item.resource.domain)
-      await Caddy.manageDomain(caddyData, item)
+      await Caddy.manageDomain(newCaddyData, item)
     }
-    let url = Caddy.caddyBaseUrl+"id/"+item.deal.id
+    
+    console.log("newCaddyData2",newCaddyData);
+
+    let existingRecordId = Caddy.caddyBaseUrl+"id/"+item.deal.id
     try {
       await axios.patch(
-          url,
-          caddyData,
+          existingRecordId,
+          newCaddyData,
           Caddy.caddyReqCfg
       )
-      console.log('Updated Caddyfile.j2 resource:', item.deal.id)
-      for (const domain of caddyData.match[0].host){
-        await CaddySource.findOrCreate({
-          where: {
-            host: domain,
-            deal_id: item.deal.id
-          }
-        })
-      }
+      console.log('Updated Caddyfile resource:', item.deal.id)
     } catch (e){
       console.log("axios error", url)
       return false
@@ -326,6 +306,24 @@ module.exports = (sequelize, DataTypes) => {
     } catch(e){
       //console.log("Axios error, status: " + e.response.status + " on " + url);
       console.log(e)
+      return false;
+    }
+  }
+
+  Caddy.getResource = async (id) => {s
+    let url = Caddy.caddyBaseUrl + 'id/' + id;
+    try { 
+      let resp = await axios.get(
+        url,
+        Caddy.caddyReqCfg
+      )        
+      return resp.data
+    } catch(e){
+      if(e.response.status === 500){
+        console.log(`Record id ${id} not found on Caddyfile.`);
+      } else {
+        console.log("Axios error, status: " + e.response.status + " on " + url);
+      }
       return false;
     }
   }
@@ -378,7 +376,7 @@ module.exports = (sequelize, DataTypes) => {
   //patches hostnames on an existing caddyfile record
   Caddy.patchRecord = async (item) => {
     if (item.resource.domain) {
-      let host = Caddy.getHostname(item.deal);
+      let host = Caddy.getHostnames(item.deal);
       //let match = [host]
       //match.push(Caddy.getDHostname(item.resource_id))
       let cname_is_valid = await Caddy.checkCname(item.resource.domain, host[0])
@@ -423,13 +421,13 @@ module.exports = (sequelize, DataTypes) => {
       await CaddySource.destroy({where: {}})
       /*await CaddySource.findOrCreate({
         where: {
-          host: Caddy.getHostname("media-api"),
+          host: Caddy.getHostnames("media-api"),
           resource_id: 0
         }
       })
       await CaddySource.findOrCreate({
         where: {
-          host: Caddy.getHostname("appdev"),
+          host: Caddy.getHostnames("appdev"),
           resource_id: 0
         }
       })*/
@@ -482,22 +480,6 @@ module.exports = (sequelize, DataTypes) => {
   Caddy.addToQueue = async(queue, id, item) =>{
     if (!Caddy.isInQueue(id)) {
       queue.push({...item, id});
-    }
-  }
-
-  Caddy.isResourceAlreadyAdded = async(id) =>{
-    try {
-      let deals = await axios.get(Caddy.caddyRoutesUrl)
-      for (const deal of deals.data) {
-        if (deal["@id"] === id) {
-          console.log("Resource already added: "+deal["@id"])
-          return true
-        }
-      } 
-      return false
-    } catch (e){
-      console.log(e)
-      return false
     }
   }
 
@@ -579,15 +561,6 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     return true;
-  }
-
-  Caddy.getCaddySources = async () => {
-    let caddySources = []
-    let dealsInDb =  await CaddySource.findAll({attributes: {exclude: ['createdAt', 'updatedAt']}})
-    dealsInDb.forEach(deal => {
-      caddySources.push(deal.dataValues)
-    })
-    return caddySources
   }
 
   Caddy.compareDbAndCaddyData = (dbDealIds, caddyDealIds) => {

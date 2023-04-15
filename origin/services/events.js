@@ -50,34 +50,55 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
     if (typeof updatedResources !== "undefined" && updatedResources.length > 0) {
         console.log("Update resource");
         for (const event of updatedResources) {
-            let deals = await models.Deals.dealsThatHasResource(formatIdForDB(event.returnValues._id, CURRENT_NETWORK))
+            let deals = await models.Deals.dealsThatHasResource(
+                getId(event.returnValues._id, CURRENT_NETWORK)
+            )
             if(deals.length > 0){
                 let resource = await models.Evm.getResource(ResourcesInstance, event.returnValues._id)
                 if(resource !== false){
-                    let formattedResource = await models.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK)
+                    let formattedResource = await models.Evm.formatDataToDb(
+                        resource.resource_id, 
+                        resource.owner, 
+                        resource.data, 
+                        CURRENT_NETWORK
+                    )
                     let evmRecord = await models.Evm.addRecord(formattedResource)
 
                     for (const deal of deals) {
-                        //Check if cname is added or deleted
+                        await models.Caddy.updateRecord({
+                            resource: formattedResource, 
+                            deal: deal.dataValues
+                        })
+
+/*                         //Check if cname is added or deleted
                         let caddyRecords = await models.Caddy.getRecord(deal.id, CURRENT_NETWORK)
                         let dbRecords = []
                         if(formattedResource.domain){
                             dbRecords.push(formattedResource.domain)
                         }
-                        dbRecords.push(...(await models.Caddy.getHostname(deal)))
+                        dbRecords.push(...(await models.Caddy.getHostnames(deal)))
 
                         //Check change of domain
                         if(!models.Caddy.areArraysEqual(dbRecords, caddyRecords)){
-                            await models.Caddy.updateRecord({resource: formattedResource, deal: deal.dataValues}, caddyRecords, CURRENT_NETWORK)
+                            await models.Caddy.updateRecord({
+                                resource: formattedResource, 
+                                deal: deal.dataValues
+                            })
                         }
                         
                         //Check change of resource data
                         if(evmRecord.length > 0){
-                            if (evmRecord.includes('origin') || evmRecord.includes('protocol') || evmRecord.includes('path')) {
-                                let caddyHosts = await models.Caddy.getRecord(deal.id)
-                                await models.Caddy.updateRecord({resource: formattedResource, deal: deal}, caddyHosts)
+                            if (
+                                evmRecord.includes('origin') || 
+                                evmRecord.includes('protocol') || 
+                                evmRecord.includes('path')
+                            ) {
+                                await models.Caddy.updateRecord({
+                                    resource: formattedResource, 
+                                    deal: deal
+                                })
                             }
-                        }
+                        } */
                     }
                 }
             }
@@ -86,7 +107,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
 
     if (typeof removedResources !== "undefined" && removedResources.length > 0) {
         for (const event of removedResources) {
-            await models.Evm.deleteRecords(formatIdForDB(event.returnValues._id, CURRENT_NETWORK))
+            await models.Evm.deleteRecords(getId(event.returnValues._id, CURRENT_NETWORK))
         }
     }
 
@@ -100,16 +121,16 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
         for (const event of cancelledDeals) {
             //delete deal from caddy and db
 
-            await models.Caddy.deleteRecord(formatIdForDB(event.returnValues._dealId, CURRENT_NETWORK))
-            await models.Deals.deleteRecords([formatIdForDB(event.returnValues._dealId, CURRENT_NETWORK)])
+            await models.Caddy.deleteRecord(getId(event.returnValues._dealId, CURRENT_NETWORK))
+            await models.Deals.deleteRecords([getId(event.returnValues._dealId, CURRENT_NETWORK)])
 
             //Check if the resource associated to that deal has any other deals or need to be removed
             let deal = await models.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
-            let dealsOfResource = await models.Deals.dealsThatHasResource(formatIdForDB(deal.resourceId, CURRENT_NETWORK))
+            let dealsOfResource = await models.Deals.dealsThatHasResource(getId(deal.resourceId, CURRENT_NETWORK))
 
             if(dealsOfResource.length === 0){
                 console.log("Resource Id", deal.resourceId)
-                await models.Evm.deleteRecords([formatIdForDB(deal.resourceId, CURRENT_NETWORK)])
+                await models.Evm.deleteRecords([getId(deal.resourceId, CURRENT_NETWORK)])
             }
         }
     }
@@ -139,7 +160,7 @@ let manageDealCreatedOrAccepted = async (MarketplaceInstance, ResourcesInstance,
     }
 }
 
-let formatIdForDB = (id, network) => {
+let getId = (id, network) => {
     return id + "_" + network.network_id + "_" + network.chain_id
 }
 
