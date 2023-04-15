@@ -1,11 +1,11 @@
 const express = require("express");
 const app = express();
-
-
 const acme = require("acme-client");
 const fs = require("fs");
 const path = require("path");
 const models = require("./models");
+const crypto = require('crypto');
+
 
 const challengesPath = "/var/www/challenges";
 const certsPath = "/etc/ssl/caddy";
@@ -37,6 +37,37 @@ async function fetchDomainsFromDatabase() {
   return domains;
 }
 
+function checkCertificateValidity(certificatePath, host) {
+  try {
+    // Read the certificate file
+    const certData = fs.readFileSync(certificatePath, 'utf-8');
+
+    // Create a certificate object
+    const cert = new crypto.X509Certificate(certData);
+
+    // Get the current date
+    const currentDate = new Date();
+
+    // Check the certificate's validity period
+    // Check if the certificate is one week away from expiring
+    const oneWeekAway = new Date();
+    oneWeekAway.setDate(oneWeekAway.getDate() + 7);
+    if (currentDate >= cert.validFrom && cert.validTo <= oneWeekAway) {
+      console.log('The SSL certificate is less than one week away from expiring. Time to issue a new certificate.');
+      return false;
+    } else if(currentDate >= cert.validFrom && currentDate <= cert.validTo) {
+      console.log(`The SSL certificate for ${host} is valid.`);
+      return true;
+    } else {
+      console.log(`The SSL certificate for ${host} has expired or is not yet valid.`);
+      return false;
+    }
+  } catch (error) {
+    console.error(`Error while checking ${host}'s SSL certificate:`, error.message);
+    return false;
+  }
+}
+
 async function obtainAndRenewCertificates() {
   const client = new acme.Client({
     directoryUrl: acme.directory.letsencrypt.production,
@@ -49,15 +80,14 @@ async function obtainAndRenewCertificates() {
     try {
       const certPath = path.join(certsPath, `${domain.host}`, `${domain.host}.crt`);
       const keyPath = path.join(certsPath, `${domain.host}`, `${domain.host}.key`);
+      const jsonPath = path.join(certsPath, `${domain.host}`, `${domain.host}.json`);
 
       if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
         const cert = fs.readFileSync(certPath, "utf8");
-        const certInfo = await client.getCertificateInfo(cert);
-
-        if (Date.now() + 30 * 24 * 60 * 60 * 1000 > certInfo.notAfter) {
+        const validCert = checkCertificateValidity(cert);
+        if (!validCert) {
           console.log(`Renewing certificate for ${domain.host}`);
         } else {
-          console.log(`Certificate for ${domain.host} is still valid.`);
           continue;
         }
       } else {
@@ -92,8 +122,17 @@ async function obtainAndRenewCertificates() {
       if (!fs.existsSync(path.join(certsPath, `${domain.host}`))){
           fs.mkdirSync(path.join(certsPath, `${domain.host}`), { recursive: true });
       }
+      const json = `{
+        "sans": [
+          "${domain.host}"
+        ],
+        "issuer_data": {
+          "url": "https://media.network/"
+        }
+      }`;
       fs.writeFileSync(certPath, cert);
       fs.writeFileSync(keyPath, key);
+      fs.writeFileSync(jsonPath, json);
       console.log(`Certificate for ${domain.host} obtained and saved.`);
     } catch (error) {
       console.error(`Failed to obtain certificate for ${domain.host}:`, error);
