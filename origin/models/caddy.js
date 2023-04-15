@@ -386,14 +386,12 @@ module.exports = (sequelize, DataTypes) => {
       if (cname_is_valid) {
         await Caddy.cleanUpCname(item.deal.id, item.resource.domain)
         host.push(item.resource.domain)
-        for (const domain of host){
-          CaddySource.findOrCreate({
-            where: {
-              host: domain,
-              deal_id: item.deal.id
-            }
-          })
-        }
+        CaddySource.findOrCreate({
+          where: {
+            host: item.resource.domain,
+            deal_id: item.deal.id
+          }
+        })
         try{
           console.log('Patching caddy domain', host)
           axios.patch(

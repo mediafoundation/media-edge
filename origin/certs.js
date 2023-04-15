@@ -1,28 +1,43 @@
 const express = require("express");
 const app = express();
+
+const router = app.Router();
+
+router.use((req, res, next) => {
+  res.set('Cache-Control', 'public, max-age=30, s-maxage=30');
+  next();
+});
+
+router.get('/domains', getDomains)
+
 const acme = require("acme-client");
 const fs = require("fs");
 const path = require("path");
 const models = require("./models");
-const forge = require('node-forge');
 
 const challengesPath = "/var/www/challenges";
 const certsPath = "/etc/ssl/caddy";
 
-const privateKeyPath = path.join(__dirname, '/account-private-key.pem');
-
-if (!fs.existsSync(privateKeyPath)) {
-  const keys = forge.pki.rsa.generateKeyPair(2048);
-  const privateKey = keys.privateKey;
-  const pem = forge.pki.privateKeyToPem(privateKey);
-
-  fs.writeFileSync(privateKeyPath, pem);
-} else {
-  const pem = fs.readFileSync(privateKeyPath, 'utf8');
-  const privateKey = forge.pki.privateKeyFromPem(pem);
-}
-
 app.use("/.well-known/acme-challenge", express.static(challengesPath));
+
+const getDomains = async(req, res) => {
+  try {
+    let domain = false
+    //add protocol to validate URL object if missing (should be missing always)
+    let protocol = (/^https?:\/\//).test(req.query.domain) ? "" : "http://";
+    let url = new URL(protocol+req.query.domain)
+    //check if its a subdomain
+    if((/[\w]+\.[\w]+\.[\w]+$/).test(url.hostname)){
+      domain = await models.Caddy.checkDomain(url.hostname)
+    } else {
+      console.log("Domain is not a subdomain", req.query.domain)
+    }
+    return res.sendStatus(domain ? 200 : 404)
+  } catch(_){
+    console.log("Invalid domain requested", req.query.domain)
+    return res.sendStatus(404)
+  }
+}
 
 async function fetchDomainsFromDatabase() {
   let domains = await models.Caddy.getCaddySources(['host']);
