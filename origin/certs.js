@@ -47,8 +47,8 @@ async function obtainAndRenewCertificates() {
 
   for (const domain of domains) {
     try {
-      const certPath = path.join(certsPath, `${domain.host}.pem`);
-      const keyPath = path.join(certsPath, `${domain.host}-key.pem`);
+      const certPath = path.join(certsPath, `${domain.host}/${domain.host}.crt`);
+      const keyPath = path.join(certsPath, `${domain.host}/${domain.host}.key`);
 
       if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
         const cert = fs.readFileSync(certPath, "utf8");
@@ -63,15 +63,15 @@ async function obtainAndRenewCertificates() {
       } else {
         console.log(`Obtaining certificate for ${domain.host}`);
       }
-  /* Create CSR */
-  const [key, csr] = await acme.crypto.createCsr({
-    commonName: String(domain.host),
-  });
+      /* Create CSR */
+      const [key, csr] = await acme.crypto.createCsr({
+        commonName: String(domain.host),
+      });
 
       const cert = await client.auto({
         csr,
-    email: 'test@medianetwork.app',
-    termsOfServiceAgreed: true,
+        email: 'test@medianetwork.app',
+        termsOfServiceAgreed: true,
         challengePriority: ["http-01"],
         challengeCreateFn: async (authz, challenge, keyAuthorization) => {
           const filePath = path.join(
@@ -79,7 +79,7 @@ async function obtainAndRenewCertificates() {
             challenge.token
           );
           fs.writeFileSync(filePath, keyAuthorization);
-	  console.log("Written challenge")
+	        console.log("Written challenge")
         },
         challengeRemoveFn: async (authz, challenge, keyAuthorization) => {
           const filePath = path.join(
