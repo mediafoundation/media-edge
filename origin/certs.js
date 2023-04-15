@@ -47,8 +47,8 @@ async function obtainAndRenewCertificates() {
 
   for (const domain of domains) {
     try {
-      const certPath = path.join(certsPath, `${domain.host}/${domain.host}.crt`);
-      const keyPath = path.join(certsPath, `${domain.host}/${domain.host}.key`);
+      const certPath = path.join(certsPath, `${domain.host}`, `${domain.host}.crt`);
+      const keyPath = path.join(certsPath, `${domain.host}`, `${domain.host}.key`);
 
       if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
         const cert = fs.readFileSync(certPath, "utf8");
@@ -89,7 +89,9 @@ async function obtainAndRenewCertificates() {
           fs.unlinkSync(filePath);
         },
       });
-
+      if (!fs.existsSync(path.join(certsPath, `${domain.host}`))){
+          fs.mkdirSync(path.join(certsPath, `${domain.host}`), { recursive: true });
+      }
       fs.writeFileSync(certPath, cert);
       fs.writeFileSync(keyPath, key);
       console.log(`Certificate for ${domain.host} obtained and saved.`);
