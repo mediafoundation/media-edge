@@ -5,9 +5,9 @@
   "repository": "git@github.com:mediafoundation/media-edge.git",
   "author": "barboldev <barboldev@protonmail.com>",
   "license": "MIT",
-
   "dependencies": {
     "@metamask/eth-sig-util": "^5.0.2",
+    "acme-client": "^5.0.0",
     "axios": "^0.21.1",
     "basic-auth": "^2.0.1",
     "bignumber.js": "^9.0.1",
@@ -15,6 +15,7 @@
     "dohjs": "^0.3.2",
     "dotenv": "^10.0.0",
     "ejs": "^3.1.6",
+    "ethers": "^5.4.3",
     "express": "^4.17.1",
     "nanoid": "^3.3.4",
     "pg": "^8.5.1",
@@ -23,8 +24,6 @@
     "sequelize": "^6.21.3",
     "toml": "^3.0.0",
     "tweetnacl-sealedbox-js": "^1.2.0",
-    "web3": "^1.5.1",
-    "ethers": "^5.4.3"
+    "web3": "^1.5.1"
   }
-  
 }
