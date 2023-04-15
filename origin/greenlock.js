@@ -2,7 +2,7 @@ const express = require("express");
 const Greenlock = require("greenlock");
 const fs = require("fs");
 const path = require("path");
-const models = require("../models");
+const models = require("./models");
 
 const challengesPath = "/var/www/challenges";
 const certsPath = "/etc/ssl/caddy";
