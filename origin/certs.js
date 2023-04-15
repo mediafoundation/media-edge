@@ -52,14 +52,14 @@ function checkCertificateValidity(certificatePath, host) {
     // Check if the certificate is one week away from expiring
     const oneWeekAway = new Date();
     oneWeekAway.setDate(oneWeekAway.getDate() + 7);
-    if (currentDate >= cert.validFrom && cert.validTo <= oneWeekAway) {
+    if (currentDate >= new Date(cert.validFrom) && new Date(cert.validTo) <= oneWeekAway) {
       console.log('The SSL certificate is less than one week away from expiring. Time to issue a new certificate.');
       return false;
-    } else if(currentDate >= cert.validFrom && currentDate <= cert.validTo) {
+    } else if(currentDate >= new Date(cert.validFrom) && currentDate <= new Date(cert.validTo)) {
       console.log(`The SSL certificate for ${host} is valid.`);
       return true;
     } else {
-      console.log(`The SSL certificate for ${host} has expired or is not yet valid.`);
+      console.log(`The SSL certificate for ${host} has expired or is not yet valid. Current date: ${currentDate} - Certificate Valid from ${cert.validFrom} to ${cert.validTo}`);
       return false;
     }
   } catch (error) {
@@ -83,7 +83,7 @@ async function obtainAndRenewCertificates() {
       const jsonPath = path.join(certsPath, `${domain.host}`, `${domain.host}.json`);
 
       if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
-        const validCert = checkCertificateValidity(certPath);
+        const validCert = checkCertificateValidity(certPath, domain.host);
         if (!validCert) {
           console.log(`Renewing certificate for ${domain.host}`);
         } else {
