@@ -163,6 +163,9 @@ module.exports = (sequelize, DataTypes) => {
       let dealInFile = Caddyfile.find(o => o["@id"] === item.deal.id);
       //if resource is not on caddyfile already, add to payload
       if(!dealInFile) {
+        if(item.resource.domain) {
+          Caddy.addToQueue(Caddy.queues.Minutely, item.deal.id, item);
+        }
         payload.push(caddyData)
       } else {
         await Caddy.updateRecord(item, dealInFile)
