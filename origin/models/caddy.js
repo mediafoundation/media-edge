@@ -234,7 +234,7 @@ module.exports = (sequelize, DataTypes) => {
 
     let recordId = Caddy.caddyBaseUrl+"id/"+item.deal.id
     try {
-      await axios.post(
+      await axios.patch(
           recordId,
           newCaddyData,
           Caddy.caddyReqCfg
