@@ -23,18 +23,15 @@
     src: ../media-evm-abis/
     dest: /root/media-evm-abis
 
-- name: Create .env file
-  copy:
-    dest: "/root/origin/config/env.js"
-    content: |
-      module.exports = {
-        WALLET: "{{wallet_address}}",
-        PRIVATE_KEY: "{{private_key}}",
-        dbstring: "postgres://origin:{{postgres_password}}@127.0.0.1:5432/origin",
-        caddyUrl: "http://127.0.0.1:2020/",
-        host: "medianetwork.app", // dev
-        hns: "medtv", // dev
-      }
+- name: Create env.js file
+  template:
+    src: files/origin/config/env.js.j2
+    dest: /root/origin/config/env.js
+
+- name: Create networks.js file
+  template:
+    src: files/origin/config/networks.js.j2
+    dest: /root/origin/config/networks.js
 
 - name: Run yarn install in program folder
   command: yarn install

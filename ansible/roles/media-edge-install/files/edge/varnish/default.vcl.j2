@@ -6,23 +6,23 @@ import directors;
 # define backend servers
   
 {% for origin in origin_ips %}
-    backend media-origin-{{ loop.index }} {
-        .host = "{{ origin }}";
-        .port = "6969";
-        .probe = {
-            .timeout = 2s;
-            .interval = 5s;
-            .window = 5;
-            .threshold = 3;
-        }
+backend media-origin-{{ loop.index }} {
+    .host = "{{ origin }}";
+    .port = "6969";
+    .probe = {
+        .timeout = 2s;
+        .interval = 5s;
+        .window = 5;
+        .threshold = 3;
     }
+}
 {% endfor %}
 
 # create media-origin director, round robin & health based
 sub vcl_init {
     new media-origin = directors.fallback();
     {% for origin in origin_ips %}
-        media-origin.add_backend(media-origin-{{ loop.index }});
+    media-origin.add_backend(media-origin-{{ loop.index }});
     {% endfor %}
 }
 

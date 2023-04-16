@@ -80,7 +80,6 @@ module.exports = (sequelize, DataTypes) => {
     for (const domain of JSON.parse(deal.domains)) {
       hostnames.push(deal.id + "." + domain[1])
     }
-    //return deal.id + "." + env.host
     return hostnames
   }
 
@@ -526,6 +525,9 @@ module.exports = (sequelize, DataTypes) => {
     return difference;
   }
 
-  //CaddySource.sync({ force: false })
+  Caddy.syncCaddySources = async (props) => {
+    await CaddySource.sync(props)
+  }
+  
   return Caddy;
 }

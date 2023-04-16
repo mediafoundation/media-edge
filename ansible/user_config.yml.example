@@ -1,0 +1,42 @@
+
+# Media Edge configuration file
+#
+# Specify your Wallet address and network (public key ONLY!). 
+# Never paste any private key or personal information in this file.
+#
+# If it's a SOLANA wallet it should look something to this: 
+# wallet_address: "B1QA24y1sLB7WGjVBDVnYhUe5kh9jbKqy93shuFgwbnF"
+#
+# Or if it's an EVM wallet it should look something to this: 
+# wallet_address: "0x00f420693607b8079432296d2E34eb8a9dDC6e7B"
+# the usage of "" is required otherwise this is taken as a number.
+wallet_address: ""
+private_key: 
+
+# Please specify the network where you are staking your LP tokens, 
+# the list of possible networks is the following: SOL, ETH, POLYGON, BSC, AVAX, RSK
+# wallet_network: SOL
+networks: 
+- name: ganache
+  URL: http://109.236.84.2:8545
+  WSS: wss://109.236.84.2:8545
+  chain_id: 1336
+  network_id: 5778
+
+# Server capabilities
+disk_space: 200G
+cpu_cores: 48
+system_ram: 64G
+
+# DNS Configuration: This allows caddy to create TXT records to pass acme challenges. Leave commented to disable.
+# Check https://go-acme.github.io/lego/dns/#dns-providers for providers and env variables settings.
+dns_config: 
+  lego: cloudns 
+  env_vars: 
+  - CLOUDNS_SUB_AUTH_ID=1234
+  - CLOUDNS_AUTH_PASSWORD=<PASSWD>
+  domains: 
+  - mycdndomain.com
+
+# Postgres config
+postgres_password: kjhn2f3FQ@eh
