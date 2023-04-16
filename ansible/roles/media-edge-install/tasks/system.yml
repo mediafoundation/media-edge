@@ -66,7 +66,6 @@
       - curl
       - bmon
       - gcc
-      - nfs-common
       - build-essential
       - iftop
       - net-tools
@@ -88,6 +87,7 @@
       - tmux
       - jq
       - wget
+      - lsb-release
 
 - name: Installing Edge system packages
   apt:
@@ -110,7 +110,6 @@
       - gpg
       - software-properties-common
       - dirmngr
-      - lsb-release
       - locate
       - unzip
       - autotools-dev
@@ -131,16 +130,16 @@
   shell: curl -sL https://deb.nodesource.com/{{node_version}} | bash -
   when: "'origin' in group_names"
 
-- name: Install NodeJS from apt
-  apt: pkg=nodejs state=latest update_cache=yes install_recommends=yes
+- name: Installing NodeJS from apt
+  apt: 
+    pkg: nodejs 
+    state: latest 
+    update_cache: yes 
+    install_recommends: yes
   when: "'origin' in group_names"
 
-- name: Install PM2
-  shell: npm install -g pm2
-  when: "'origin' in group_names"
-
-- name: Install yarn
-  shell: npm -g install yarn
+- name: Install PM2 and yarn
+  shell: npm install -g pm2 yarn
   when: "'origin' in group_names"
 
 - name: Adds hostname to /etc/hostname based on IP

@@ -23,14 +23,11 @@ Requires=network-online.target
 Type=notify
 User=root
 Group=root
-{% if dns_config is defined %}
-Environment=CLOUDNS_SUB_AUTH_ID={{user}}
-Environment=CLOUDNS_AUTH_PASSWORD={{password}}
-{% endif %}
+{% for env in dns_config.env_vars %}
+{{ env }}
+{% endfor %}
 ExecStart=/usr/local/bin/caddy run --environ --config /etc/caddy/Caddyfile
 ExecReload=/usr/local/bin/caddy reload --config /etc/caddy/Caddyfile
-#ExecStart=/usr/local/bin/caddy run --environ --config /etc/caddy/caddy.json
-#ExecReload=/usr/local/bin/caddy reload --config /etc/caddy/caddy.json
 TimeoutStopSec=5s
 LimitNOFILE=1048576
 LimitNPROC=512

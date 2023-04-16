@@ -8,9 +8,7 @@
   when: "'origin' in group_names"
 - include: edge_stats.yml
   when: "'edge' in group_names"
-- include: hnsd.yml
+# - include: hnsd.yml
 - include: optimize.yml
-- include: ganache.yml
-  when: testing_mode.user_input == 'yes'
 - include: origin.yml
   when: "'origin' in group_names"

@@ -64,38 +64,38 @@
 - name: Set the system's maximum open file limit
   shell: ulimit -n 999999
 
-- name: Create 1GB file for speed tests
-  shell: dd if=/dev/zero of=/root/media-edge/public/1GB.bin bs=1 count=0 seek=1G
-  when: "'edge' in group_names"
+# - name: Create 1GB file for speed tests
+#   shell: dd if=/dev/zero of=/root/media-edge/public/1GB.bin bs=1 count=0 seek=1G
+#   when: "'edge' in group_names"
 
-- name: Configure iptables
-  iptables:
-    chain: INPUT
-    jump: ACCEPT
-    protocol: tcp
-    match: multiport
-    dports: 80,443,422,420,22,3000
-    state: present
-  ignore_errors: true
+# - name: Configure iptables
+#   iptables:
+#     chain: INPUT
+#     jump: ACCEPT
+#     protocol: tcp
+#     match: multiport
+#     dports: 80,443,422,420,22,3000
+#     state: present
+#   ignore_errors: true
 
-- name: Configure ufw
-  ufw:
-    rule: allow
-    port: "{{ item }}"
-    proto: tcp
-  with_items:
-    - 80
-    - 443
-    - 422
-    - 420
-    - 22
-    - 3000
-  ignore_errors: true
+# - name: Configure ufw
+#   ufw:
+#     rule: allow
+#     port: "{{ item }}"
+#     proto: tcp
+#   with_items:
+#     - 80
+#     - 443
+#     - 422
+#     - 420
+#     - 22
+#     - 3000
+#   ignore_errors: true
 
-- name: Reboot the host
-  reboot:
-    msg: "Reboot initiated by Ansible"
-    connect_timeout: 5
-    reboot_timeout: 600
-    pre_reboot_delay: 0
-    post_reboot_delay: 600
+# - name: Reboot the host
+#   reboot:
+#     msg: "Reboot initiated by Ansible"
+#     connect_timeout: 5
+#     reboot_timeout: 600
+#     pre_reboot_delay: 0
+#     post_reboot_delay: 600

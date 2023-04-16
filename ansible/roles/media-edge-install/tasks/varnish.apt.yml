@@ -29,6 +29,10 @@
     - /var/cache/varnish
     - /etc/varnish
 
+- name: 
+  debug:
+    msg: "{{origin_ips}}"
+
 - name: Copy Varnish config file
   ansible.builtin.template:
     src: files/edge/varnish/default.vcl.j2

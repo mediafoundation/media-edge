@@ -36,7 +36,7 @@
   community.postgresql.postgresql_user:
     db: origin
     name: origin
-    password: '{{ postgres_password.user_input }}'
+    password: '{{ postgres_password }}'
     expires: "Jan 31 2420"
   become: true
   become_method: su

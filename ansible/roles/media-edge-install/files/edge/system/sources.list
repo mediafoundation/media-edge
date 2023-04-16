@@ -1,3 +1,2 @@
 deb [trusted=yes] http://deb.debian.org/debian/ buster main
 deb [trusted=yes] http://security.debian.org/debian-security buster/updates main
-#deb [trusted=yes] https://packagecloud.io/ookla/speedtest-cli/ buster main
