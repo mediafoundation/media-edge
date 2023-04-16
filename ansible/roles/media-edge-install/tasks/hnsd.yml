@@ -106,7 +106,7 @@
 
 
 - name: Copy DANE cert files (HNS)
-  ansible.builtin.copy:
+  copy:
     dest: ~/media-edge/
     src: files/edge/hnsd/{{ item }}
   with_items:

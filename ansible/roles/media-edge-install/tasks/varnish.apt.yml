@@ -1,25 +1,25 @@
 # Install and configure Varnish
 
 - name: Install Varnish package
-  ansible.builtin.apt: 
+  apt: 
     name: varnish
     state: latest
 
 - name: Create vcache group
-  ansible.builtin.group:
+  group:
     name: vcache
     state: present
     system: yes
 
 - name: Create vcache user
-  ansible.builtin.user:
+  user:
     name: vcache
     state: present
     group: vcache
     system: yes
 
 - name: Create necessary directories and set permissions
-  ansible.builtin.file:
+  file:
     path: "{{ item }}"
     state: directory
     owner: vcache
@@ -34,7 +34,7 @@
     msg: "{{origin_ips}}"
 
 - name: Copy Varnish config file
-  ansible.builtin.template:
+  template:
     src: files/edge/varnish/default.vcl.j2
     dest: /etc/varnish/default.vcl
     owner: vcache
@@ -43,7 +43,7 @@
   when: "'edge' in group_names"
 
 - name: Copy Varnish systemd service file
-  ansible.builtin.template:
+  template:
     src: files/edge/varnish/varnish.service.j2
     dest: /etc/systemd/system/varnish.service
     owner: root
@@ -52,7 +52,7 @@
   when: "'edge' in group_names"
 
 - name: Copy Varnish config file
-  ansible.builtin.template:
+  template:
     src: files/origin/varnish/default.vcl.j2
     dest: /etc/varnish/default.vcl
     owner: vcache
@@ -61,7 +61,7 @@
   when: "'origin' in group_names"
 
 - name: Copy Varnish systemd service file
-  ansible.builtin.template:
+  template:
     src: files/origin/varnish/varnish.service.j2
     dest: /etc/systemd/system/varnish.service
     owner: root
@@ -70,7 +70,7 @@
   when: "'origin' in group_names"
 
 - name: Copy Varnishncsa systemd service file
-  ansible.builtin.copy:
+  copy:
     src: files/edge/varnish/varnishncsa.service
     dest: /etc/systemd/system/varnishncsa.service
     owner: root
@@ -79,7 +79,7 @@
   when: "'edge' in group_names"
 
 - name: Enable and start Varnish service
-  ansible.builtin.systemd:
+  systemd:
     name: varnish
     enabled: true
     state: started

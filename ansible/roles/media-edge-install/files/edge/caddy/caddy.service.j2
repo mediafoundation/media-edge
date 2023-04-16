@@ -24,7 +24,7 @@ Type=notify
 User=root
 Group=root
 {% for env in dns_config.env_vars %}
-{{ env }}
+Environment={{ env }}
 {% endfor %}
 ExecStart=/usr/local/bin/caddy run --environ --config /etc/caddy/Caddyfile
 ExecReload=/usr/local/bin/caddy reload --config /etc/caddy/Caddyfile

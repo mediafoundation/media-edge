@@ -1,60 +1,60 @@
 - name: Configure Linux system settings - fs.file-max
-  ansible.builtin.sysctl:
+  sysctl:
     name: fs.file-max
     value: 999999
     state: present
 
 - name: Configure Linux system settings - fs.inotify.max_user_watches
-  ansible.builtin.sysctl:
+  sysctl:
     name: fs.inotify.max_user_watches
     value: 999999
     state: present
 
 - name: Configure Linux system settings - fs.inotify.max_user_instances
-  ansible.builtin.sysctl:
+  sysctl:
     name: fs.inotify.max_user_instances
     value: 999999
     state: present
 
 - name: Configure Linux system settings - net.ipv4.tcp_fin_timeout
-  ansible.builtin.sysctl:
+  sysctl:
     name: net.ipv4.tcp_fin_timeout
     value: 30
     state: present
 
 - name: Configure Linux system settings - net.core.somaxconn
-  ansible.builtin.sysctl:
+  sysctl:
     name: net.core.somaxconn
     value: 65535
     state: present
 
 - name: Configure Linux system settings - net.core.netdev_max_backlog
-  ansible.builtin.sysctl:
+  sysctl:
     name: net.core.netdev_max_backlog
     value: 65535
     state: present
 
 - name: Configure Linux system settings - net.ipv4.ip_local_port_range
-  ansible.builtin.sysctl:
+  sysctl:
     name: net.ipv4.ip_local_port_range
     value: 15000 61000
     state: present
 
 # - name: Configure Linux system settings - net.ipv4.netfilter.ip_conntrack_tcp_timeout_time_wait
-#   ansible.builtin.sysctl:
+#   sysctl:
 #     name: net.ipv4.netfilter.ip_conntrack_tcp_timeout_time_wait
 #     value: 1
 #     state: present
 
 - name: Configure systemd settings - DefaultLimitNOFILE in system.conf
-  ansible.builtin.ini_file:
+  ini_file:
     path: /etc/systemd/system.conf
     section: DefaultLimitNOFILE
     option: DefaultLimitNOFILE
     value: 999999
     state: present
 - name: Configure systemd settings - DefaultLimitNOFILE in user.conf
-  ansible.builtin.ini_file:
+  ini_file:
     path: /etc/systemd/user.conf
     section: DefaultLimitNOFILE
     option: DefaultLimitNOFILE

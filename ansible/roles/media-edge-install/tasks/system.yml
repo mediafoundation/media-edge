@@ -1,11 +1,11 @@
 - name: Prepare the system for Media-Edge
-  ansible.builtin.file:
+  file:
     state: absent
     path: ~/media-edge/
   when: "'edge' in group_names"
 
 - name: Ensure all necessary directories exist before copying files
-  ansible.builtin.file:
+  file:
     path: "{{ item }}"
     state: directory
     recurse: yes
@@ -34,7 +34,7 @@
   command: dpkg --configure -a
 
 - name: Upgrading system packages
-  ansible.builtin.apt:
+  apt:
     upgrade: "yes"
     update_cache: yes
     cache_valid_time: 3600
@@ -44,15 +44,15 @@
     state: absent 
     autoremove: true
     name:
-    - apache2
-    - nginx    
-    - exim4
-    - exim4-base   
-    - exim4-config
-    - exim4-daemon-light       
-    - rpcbind  
-    - nfs-server
-    - libunbound8
+      - apache2
+      - nginx    
+      - exim4
+      - exim4-base   
+      - exim4-config
+      - exim4-daemon-light       
+      - rpcbind  
+      - nfs-server
+      - libunbound8
 
 - name: Installing shared system packages
   apt:
@@ -121,7 +121,7 @@
   when: "'origin' in group_names"
 
 - name: Copying blocked resource template 
-  ansible.builtin.copy:
+  copy:
    src: files/edge/system/index.html
    dest: ~/media-edge/public/blocked
   when: "'edge' in group_names"

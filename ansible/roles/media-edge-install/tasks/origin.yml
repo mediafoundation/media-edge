@@ -39,7 +39,7 @@
     chdir: /root/origin/
 
 - name: Copy ecosystem file for pm2
-  ansible.builtin.copy:
+  copy:
     src: files/origin/pm2/ecosystem.config.js
     dest: /root/
     follow: no
@@ -58,7 +58,7 @@
     cmd: 'pm2 save'
 
 - name: Create /var/www/challenges directory
-  ansible.builtin.file:
+  file:
     path: /var/www/challenges
     state: directory
     owner: "root"
@@ -66,7 +66,7 @@
     mode: 0755
 
 - name: Create /etc/ssl/caddy directory
-  ansible.builtin.file:
+  file:
     path: /etc/ssl/caddy
     state: directory
     owner: "root"

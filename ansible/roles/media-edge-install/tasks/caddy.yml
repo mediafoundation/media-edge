@@ -54,12 +54,12 @@
 
 
     - name: Create caddy group
-      ansible.builtin.group:
+      group:
         name: caddy
         system: yes
 
     - name: Create caddy user
-      ansible.builtin.user:
+      user:
         name: caddy
         system: yes
         home: /var/lib/caddy
