@@ -150,6 +150,6 @@
 
 - name: Adds hostname to /etc/hostname based on IP
   shell: |
-    echo "{{ 'media-origin-' if 'origin' in group_names else 'media-edge-' }}$(wget -q whatismyip.akamai.com -O -)" > /etc/hostname.tmp
+    echo "{{ 'media-origin-' if inventory_hostname in groups["origin"] else 'media-edge-' }}$(wget -q whatismyip.akamai.com -O -)" > /etc/hostname.tmp
     sed 's/\./-/g' /etc/hostname.tmp > /etc/hostname
     hostname -F /etc/hostname

@@ -25,7 +25,7 @@
       register: postgres_password_input
     - set_fact:
         postgres_password: "{{ postgres_password_input.user_input }}"
-  when: "'origin' in group_names and postgres_password is not defined"
+  when: "inventory_hostname in groups["origin"] and postgres_password is not defined"
 
 - name: Store wallet address if not defined
   block:
@@ -35,7 +35,7 @@
       register: wallet_address_input
     - set_fact:
         wallet_address: "{{ wallet_address_input.user_input }}"
-  when: "'origin' in group_names and wallet_address is not defined"
+  when: "inventory_hostname in groups["origin"] and wallet_address is not defined"
 
 - name: Store private key if not defined
   block:
@@ -45,7 +45,7 @@
       register: private_key_input
     - set_fact:
         private_key: "{{ private_key_input.user_input }}"
-  when: "'origin' in group_names and private_key is not defined"
+  when: "inventory_hostname in groups["origin"] and private_key is not defined"
 
 - name: Store disk space if not defined
   block:
@@ -54,7 +54,7 @@
         register: disk_space_input
     - set_fact:
         disk_space: "{{ disk_space_input.user_input }}"
-  when: "'edge' in group_names and disk_space is not defined"
+  when: "inventory_hostname in groups["edge"] and disk_space is not defined"
 
 - name: Store cpu cores if not defined
   block:
@@ -63,7 +63,7 @@
       register: cpu_cores_input
     - set_fact:
         cpu_cores: "{{ cpu_cores_input.user_input }}"
-  when: "'edge' in group_names and cpu_cores is not defined"
+  when: "inventory_hostname in groups["edge"] and cpu_cores is not defined"
 
 - name: Store system_ram if not defined
   block:
@@ -72,7 +72,7 @@
       register: system_ram_input
     - set_fact:
         system_ram: "{{ system_ram_input.user_input }}"
-  when: "'edge' in group_names and system_ram is not defined"
+  when: "inventory_hostname in groups["edge"] and system_ram is not defined"
 
 # - name: 
 #   debug:
