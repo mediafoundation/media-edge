@@ -27,7 +27,7 @@ Vagrant.configure("2") do |config|
     edge.vm.box = "bento/debian-10.13"
     edge.vm.network "public_network", ip: "192.168.0.171"
     edge.vm.provision :shell, path: "scripts/provission.sh"
-    origin.vm.provider "virtualbox" do |v|
+    edge.vm.provider "virtualbox" do |v|
       v.memory = 2000
       v.cpus = 4
     end
@@ -37,7 +37,7 @@ Vagrant.configure("2") do |config|
     edge2.vm.box = "bento/debian-10.13"
     edge2.vm.network "public_network", ip: "192.168.0.172"
     edge2.vm.provision :shell, path: "scripts/provission.sh"
-    origin.vm.provider "virtualbox" do |v|
+    edge2.vm.provider "virtualbox" do |v|
       v.memory = 2000
       v.cpus = 4
     end
