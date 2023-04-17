@@ -1,6 +1,0 @@
-[unused]
-
-[origin]
-
-[edge]
-edge ansible_host=190.2.132.218 ansible_port=22 ansible_user=root
