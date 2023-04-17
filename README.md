@@ -1,6 +1,6 @@
 <div style="align:center">
-  <a href="https://github.com/mediafoundation/media-edge-deploy">
-    <img src="images/media-edge.png" alt="Logo" width="100%" height="100%">
+  <a href="https://github.com/mediafoundation/media-edge">
+    <img src="media-edge.png" alt="Logo" width="100%" height="100%">
   </a>
 
   <p style="align:center">
@@ -13,7 +13,6 @@
     <a href="https://github.com/mediafoundation/media-edge-deploy/issues">Request Feature</a>
   </p>
 </div>
-
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -75,7 +74,7 @@ Follow these simple example steps to get your Media Edge setup and running in no
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/mediafoundation/media-edge-deploy.git
+   git clone https://github.com/mediafoundation/media-edge.git
    ```
 
 2. Navigate to `ansible` folder
@@ -83,16 +82,18 @@ Follow these simple example steps to get your Media Edge setup and running in no
    cd ansible
    ```
 
-4. Copy `ansible/hosts.example` to `ansible/hosts` and edit the file: replace `xxx.xxx.xxx.xxx` with your server's IP address. You can add multiple servers (one per line).
+4. Copy `hosts.example` to `hosts` and edit the file: replace with your server's IP addresses. You can add multiple servers (one per line) and also install origins or edges.
     ```sh
     [origin]
-    origin ansible_host=127.0.0.1 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_user=root ansible_port=22
+    origin ansible_host=192.168.0.170 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_user=root ansible_port=22
     [edge]
-    edge ansible_host=127.0.0.1 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_user=root ansible_port=22
-    edge ansible_host=127.0.0.1 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_user=root ansible_port=22
+    edge ansible_host=192.168.0.171 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_user=root ansible_port=22
+    edge ansible_host=192.168.0.172 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_user=root ansible_port=22
     ```
 
-5. Deploy Media Edge
+5. Copy `user_config.yml.example` to `user_config.yml` and edit with up your wallet configuration.
+
+6. Deploy Media Edges
     ```sh
     ansible-playbook deploy.yml -i hosts
     ```
@@ -101,7 +102,7 @@ Follow these simple example steps to get your Media Edge setup and running in no
 <!-- USAGE EXAMPLES -->
 ## Usage & Troubleshooting
 
-For more information, please refer to the [Media Edge Docs](https://docs.media.network/media-edge-about).
+For more information, please refer to the [Media Edge Docs](https://docs.media.network/cdn-marketplace-edge).
 
 <!-- ROADMAP -->
 ## Roadmap
@@ -111,7 +112,7 @@ For more information, please refer to the [Media Edge Docs](https://docs.media.n
 - [ ] TBD
 - [ ] TBD
 
-See the [open issues](https://github.com/mediafoundation/media-edge-deploy/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/mediafoundation/media-edge/issues) for a full list of proposed features (and known issues).
 
 <!-- CONTRIBUTING -->
 ## Contributing
