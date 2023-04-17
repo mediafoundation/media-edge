@@ -32,6 +32,11 @@
         src: files/origin/kibana.yml.j2
         dest: /etc/kibana/kibana.yml
 
+    - name: Force stop Java programs Logstash
+      shell: |
+        pkill -9 -u elasticsearch
+        pkill -9 -u logstash
+
     - name: Start and enable Elasticsearch service
       systemd:
         name: elasticsearch
