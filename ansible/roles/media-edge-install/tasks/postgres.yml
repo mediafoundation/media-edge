@@ -45,8 +45,8 @@
   become_method: su
   become_user: postgres
 
-  - name: Grant all privileges on schema public to origin user
-  community.general.postgresql_privs:
+- name: Grant all privileges on schema public to origin user
+  community.postgresql.postgresql_privs:
     database: origin
     schema: public
     state: present

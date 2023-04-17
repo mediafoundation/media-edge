@@ -10,12 +10,14 @@
 # Or if it's an EVM wallet it should look something to this: 
 # wallet_address: "0x00f420693607b8079432296d2E34eb8a9dDC6e7B"
 # the usage of "" is required otherwise this is taken as a number.
-wallet_address: ""
-private_key: 
+wallet_address: "0xe2D5992C16b12D2682De9074592973065aA9221F"
 
-# Please specify the network where you are staking your LP tokens, 
-# the list of possible networks is the following: SOL, ETH, POLYGON, BSC, AVAX, RSK
-# wallet_network: SOL
+# Please specify the private key for decrypting resources (64 characters)
+# This should be the private key to the public encryption key provided in the app at provider registering.
+# Which may or may not be the same as your provider wallet address (staking wallet).
+private_key: 545cdcd19de92805371d9644fa7d5a154e51204e41c8cbc8ff3bc9fdd5083efd
+
+# Please specify the networks you are providing services (where you are staking your tokens). 
 networks: 
 - name: ganache
   URL: http://109.236.84.2:8545
@@ -24,19 +26,19 @@ networks:
   network_id: 5778
 
 # Server capabilities
-disk_space: 200G
-cpu_cores: 48
-system_ram: 64G
+disk_space: 40G
+cpu_cores: 4
+system_ram: 4G
 
 # DNS Configuration: This allows caddy to create TXT records to pass acme challenges. Leave commented to disable.
 # Check https://go-acme.github.io/lego/dns/#dns-providers for providers and env variables settings.
 dns_config: 
   lego: cloudns 
   env_vars: 
-  - CLOUDNS_SUB_AUTH_ID=1234
-  - CLOUDNS_AUTH_PASSWORD=<PASSWD>
+  - CLOUDNS_SUB_AUTH_ID=12345
+  - CLOUDNS_AUTH_PASSWORD=<password>
   domains: 
-  - mycdndomain.com
+  - medianetwork.app
 
 # Postgres config
 postgres_password: kjhn2f3FQ@eh

@@ -39,6 +39,15 @@
     update_cache: yes
     cache_valid_time: 3600
 
+- name: Preventing services to start after installed
+  shell: "{{ item }}"
+  loop:
+    - echo '#!/bin/sh' > /usr/sbin/policy-rc.d
+    - echo 'exit 101' >> /usr/sbin/policy-rc.d
+
+- name: Prevent services from starting automatically
+  shell: chmod +x /usr/sbin/policy-rc.d
+
 - name: Removing potential conflicting packages
   apt:
     state: absent 
@@ -147,12 +156,3 @@
     echo "{{ 'media-origin-' if 'origin' in group_names else 'media-edge-' }}$(wget -q whatismyip.akamai.com -O -)" > /etc/hostname.tmp
     sed 's/\./-/g' /etc/hostname.tmp > /etc/hostname
     hostname -F /etc/hostname
-
-- name: Preventing services to start after installed
-  shell: "{{ item }}"
-  loop:
-    - echo '#!/bin/sh' > /usr/sbin/policy-rc.d
-    - echo 'exit 101' >> /usr/sbin/policy-rc.d
-
-- name: Prevent services from starting automatically
-  shell: chmod +x /usr/sbin/policy-rc.d

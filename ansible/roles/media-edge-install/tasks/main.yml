@@ -1,14 +1,11 @@
-# - include: set_facts.yml
-# - include: system.yml
-# - include: postgres.yml
-#   when: "'origin' in group_names"
-# - include: varnish.apt.yml
-# - include: caddy.yml
-# - include: origin_stats.yml
-#   when: "'origin' in group_names"
-# - include: edge_stats.yml
-#   when: "'edge' in group_names"
-# # - include: hnsd.yml
-# - include: optimize.yml
+- include: set_facts.yml
+- include: system.yml
+- include: postgres.yml
+  when: "'origin' in group_names"
+- include: varnish.apt.yml
+- include: caddy.yml
+- include: stats.yml
+# - include: hnsd.yml
+- include: optimize.yml
 - include: origin.yml
   when: "'origin' in group_names"
