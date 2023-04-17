@@ -37,10 +37,6 @@
         wallet_address: "{{ wallet_address_input.user_input }}"
   when: inventory_hostname in groups["origin"] and (wallet_address is not defined or wallet_address == "" or wallet_address == none)
 
-- name: Display result
-  debug:
-    msg: "Is my_variable an empty string? {{ private_key }}"
-
 - name: Store private key if not defined
   block:
     - pause:
