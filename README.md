@@ -31,13 +31,18 @@ Media Edge is an open-source software that serves as a web server and blockchain
 
 * [Ansible](https://www.ansible.com/)
 * [Caddy](https://caddyserver.com/)
-* [Varnish](https://varnish-cache.org/)
-* [NodeJs](https://nodejs.org/)
-* [Kibana](https://www.elastic.co/kibana/)
 * [Elasticsearch](https://www.elastic.co/elasticsearch/)
-* [Logstash](https://www.elastic.co/logstash/)
+* [Ethers](https://ethers.org/)
+* [Express](https://expressjs.com/)
 * [Filebeat](https://www.elastic.co/beats/filebeat)
 * [hsd](https://github.com/handshake-org/hsd)
+* [Kibana](https://www.elastic.co/kibana/)
+* [Logstash](https://www.elastic.co/logstash/)
+* [NodeJs](https://nodejs.org/)
+* [PostgreSQL](https://www.postgresql.org/)
+* [TweetNaCl.js](https://tweetnacl.js.org/)
+* [Varnish](https://varnish-cache.org/)
+* [web3.js](https://web3js.org/#/)
 
 ## Getting Started
 
