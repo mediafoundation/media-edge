@@ -55,17 +55,20 @@ Follow these simple example steps to get your Media Edge setup and running in no
 
 ### Installation
 
-1. Clone the repo
-   ```sh
-   git clone https://github.com/mediafoundation/media-edge.git
-   ```
+1. Clone the repo and submodule (abis)
+  ```
+  sh
+  git clone https://github.com/mediafoundation/media-edge.git
+  git submodule init
+  git submodule update
+  ```
 
 2. Navigate to `ansible` folder
    ```sh
    cd ansible
    ```
 
-4. Copy `hosts.example` to `hosts` and edit the file: replace with your server's IP addresses. You can add multiple servers (one per line) and also install origins or edges.
+3. Copy `hosts.example` to `hosts` and edit the file: replace with your server's IP addresses. You can add multiple servers (one per line) and also install origins or edges.
     ```sh
     [origin]
     origin ansible_host=192.168.0.170 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_user=root ansible_port=22
@@ -74,9 +77,9 @@ Follow these simple example steps to get your Media Edge setup and running in no
     edge ansible_host=192.168.0.172 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_user=root ansible_port=22
     ```
 
-5. Copy `user_config.yml.example` to `user_config.yml` and edit with up your wallet configuration.
+4. Copy `user_config.yml.example` to `user_config.yml` and edit with up your wallet configuration.
 
-6. Deploy Media Edges
+5. Deploy Media Edges
     ```sh
     ansible-playbook deploy.yml -i hosts
     ```
