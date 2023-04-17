@@ -35,7 +35,7 @@
       register: wallet_address_input
     - set_fact:
         wallet_address: "{{ wallet_address_input.user_input }}"
-  when: inventory_hostname in groups["origin"] and (wallet_address is not defined or wallet_address == "" wallet_address == none)
+  when: inventory_hostname in groups["origin"] and (wallet_address is not defined or wallet_address == "" or wallet_address == none)
 
 - name: Display result
   debug:
