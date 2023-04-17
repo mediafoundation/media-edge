@@ -1,48 +1,26 @@
-<div style="align:center">
-  <a href="https://github.com/mediafoundation/media-edge">
-    <img src="media-edge.png" alt="Logo" width="100%" height="100%">
-  </a>
+# Media Edge
 
-  <p style="align:center">
-    <a href="https://docs.media.network"><strong>Explore the docs »</strong></a>
-    <br />
-    <a href="https://app.media.network">Use the dCDN</a>
-    ·
-    <a href="https://github.com/mediafoundation/media-edge-deploy/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/mediafoundation/media-edge-deploy/issues">Request Feature</a>
-  </p>
-</div>
+![Logo](media-edge.png)
 
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-      <br />
-  <ol>
-    <li>
-      <a href="#about-media-edge">About Media Edge</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage & Troubleshooting</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-  </ol>
-</details>
+[**Explore the docs »**](https://docs.media.network)  
+[Use the dCDN](https://app.media.network)  
+[Report Bug](https://github.com/mediafoundation/media-edge/issues)  
+[Request Feature](https://github.com/mediafoundation/media-edge/issues)
 
-<!-- ABOUT MEDIA EDGE -->
+- [Table of Contents](#table-of-contents)
+  * [About Media Edge](#about-media-edge)
+    + [Built With](#built-with)
+  * [Getting Started](#getting-started)
+    + [Software Prerequisites](#software-prerequisites)
+    + [Installation](#installation)
+  * [Usage & Troubleshooting](#usage--troubleshooting)
+  * [Roadmap](#roadmap)
+  * [Contributing](#contributing)
+  * [License](#license)
+  * [Contact](#contact)
+
 ## About Media Edge
-  
+
 Media Edge is a new and powerful software that allows CDN providers to create their content delivery network and sell their services in the decentralized Media Network marketplace. With the Media Edge, providers can easily set up their CDN networks, offer them within the Media Network marketplace, and get MEDIA rewards in exchange for the services provided.
 
 ## What is Media Edge?
