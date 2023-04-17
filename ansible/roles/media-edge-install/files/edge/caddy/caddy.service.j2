@@ -23,9 +23,11 @@ Requires=network-online.target
 Type=notify
 User=root
 Group=root
+{% if dns_config.env_vars is defined %}
 {% for env in dns_config.env_vars %}
 Environment={{ env }}
 {% endfor %}
+{% endif %}
 ExecStart=/usr/local/bin/caddy run --environ --config /etc/caddy/Caddyfile
 ExecReload=/usr/local/bin/caddy reload --config /etc/caddy/Caddyfile
 TimeoutStopSec=5s
