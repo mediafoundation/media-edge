@@ -2,7 +2,7 @@
   file:
     state: absent
     path: ~/media-edge/
-  when: "'edge' in group_names"
+  when: inventory_hostname in groups["edge"]
 
 - name: Ensure all necessary directories exist before copying files
   file:
@@ -16,7 +16,7 @@
     - ~/media-edge/
     - ~/media-edge/caddy
     - ~/media-edge/public/blocked
-  when: "'edge' in group_names"
+  when: inventory_hostname in groups["edge"]
 
 - name: Cleaning up cron if necessary
   shell: crontab -r
@@ -104,7 +104,7 @@
       - fzf
       - python3-docutils
       - python3-sphinx
-  when: "'edge' in group_names"
+  when: inventory_hostname in groups["edge"]
 
 - name: Installing Origin system packages
   apt:
@@ -124,17 +124,17 @@
       - graphviz
       - autoconf-archive
       - libpcre3
-  when: "'origin' in group_names"
+  when: inventory_hostname in groups["origin"]
 
 - name: Copying blocked resource template 
   copy:
    src: files/edge/system/index.html
    dest: ~/media-edge/public/blocked
-  when: "'edge' in group_names"
+  when: inventory_hostname in groups["edge"]
 
 - name: Download and apply NodeJS sources
   shell: curl -sL https://deb.nodesource.com/{{node_version}} | bash -
-  when: "'origin' in group_names"
+  when: inventory_hostname in groups["origin"]
 
 - name: Installing NodeJS from apt
   apt: 
@@ -142,11 +142,11 @@
     state: latest 
     update_cache: yes 
     install_recommends: yes
-  when: "'origin' in group_names"
+  when: inventory_hostname in groups["origin"]
 
 - name: Install PM2 and yarn
   shell: npm install -g pm2 yarn
-  when: "'origin' in group_names"
+  when: inventory_hostname in groups["origin"]
 
 - name: Adds hostname to /etc/hostname based on IP
   shell: |

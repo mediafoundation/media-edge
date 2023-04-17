@@ -49,7 +49,7 @@
         name: kibana
         state: restarted
         enabled: yes
-  when: "'origin' in group_names"
+  when: inventory_hostname in groups["origin"]
 
 - name: Install and configure Edge stats 
   block:
@@ -72,4 +72,4 @@
         name: filebeat
         state: restarted
         enabled: yes
-  when: "'edge' in group_names"
+  when: inventory_hostname in groups["edge"]

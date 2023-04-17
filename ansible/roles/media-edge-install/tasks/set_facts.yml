@@ -83,11 +83,11 @@
 #     prompt: "Do you want to use the origins in testing mode? (yes/no) [no]: "
 #     echo: yes
 #   register: testing_mode
-#   when: "'origin' in group_names"
+#   when: inventory_hostname in groups["origin"]
 
 # - name:
 #   pause:
 #     prompt: "\nEnter your wallet network"
 #     echo: no
 #   register: wallet_network
-#   when: "'edge' in group_names"
+#   when: inventory_hostname in groups["edge"]

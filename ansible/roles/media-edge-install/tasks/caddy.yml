@@ -89,13 +89,13 @@
   template:
     src: files/edge/caddy/Caddyfile.j2
     dest: /etc/caddy/Caddyfile
-  when: "'edge' in group_names"
+  when: inventory_hostname in groups["edge"]
 
 - name: Copy CaddyFile to /etc/caddy/Caddyfile
   template:
     src: files/origin/caddy/Caddyfile.j2
     dest: /etc/caddy/Caddyfile
-  when: "'origin' in group_names"
+  when: inventory_hostname in groups["origin"]
 
 - name: Copy caddy service file to /etc/systemd/system/caddy.service
   template:
@@ -104,7 +104,7 @@
     owner: root
     group: root
     mode: '0644'
-  when: "'edge' in group_names"
+  when: inventory_hostname in groups["edge"]
 
 - name: Copy caddy service file to /etc/systemd/system/caddy.service
   template:
@@ -113,7 +113,7 @@
     owner: root
     group: root
     mode: '0644'
-  when: "'origin' in group_names"
+  when: inventory_hostname in groups["origin"]
 
 #Init caddy
 

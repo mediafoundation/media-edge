@@ -36,7 +36,7 @@
     owner: vcache
     group: vcache
     mode: 0664
-  when: "'edge' in group_names"
+  when: inventory_hostname in groups["edge"]
 
 - name: Copy Varnish systemd service file
   template:
@@ -45,7 +45,7 @@
     owner: root
     group: root
     mode: 0664
-  when: "'edge' in group_names"
+  when: inventory_hostname in groups["edge"]
 
 - name: Copy Varnish config file
   template:
@@ -54,7 +54,7 @@
     owner: vcache
     group: vcache
     mode: 0664
-  when: "'origin' in group_names"
+  when: inventory_hostname in groups["origin"]
 
 - name: Copy Varnish systemd service file
   template:
@@ -63,7 +63,7 @@
     owner: root
     group: root
     mode: 0664
-  when: "'origin' in group_names"
+  when: inventory_hostname in groups["origin"]
 
 - name: Copy Varnishncsa systemd service file
   copy:
@@ -72,7 +72,7 @@
     owner: root
     group: root
     mode: 0664
-  when: "'edge' in group_names"
+  when: inventory_hostname in groups["edge"]
 
 - name: Enable and start Varnish service
   systemd:

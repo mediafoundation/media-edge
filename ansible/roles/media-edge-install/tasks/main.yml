@@ -1,11 +1,11 @@
 - include: set_facts.yml
 - include: system.yml
 - include: postgres.yml
-  when: "'origin' in group_names"
+  when: inventory_hostname in groups["origin"]
 - include: varnish.apt.yml
 - include: caddy.yml
 - include: stats.yml
 # - include: hnsd.yml
 - include: optimize.yml
 - include: origin.yml
-  when: "'origin' in group_names"
+  when: inventory_hostname in groups["origin"]
