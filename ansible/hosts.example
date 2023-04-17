@@ -1,6 +1,6 @@
 [origin]
-192.168.0.172 ansible_port=22 ansible_user=root ansible_ssh_private_key_file=.vagrant/machines/origin/virtualbox/private_key
+192.168.0.170 ansible_port=22 ansible_user=root ansible_ssh_private_key_file=.vagrant/machines/origin/virtualbox/private_key
 
 [edge]
-192.168.0.170 ansible_port=22 ansible_user=root ansible_ssh_private_key_file=.vagrant/machines/edge/virtualbox/private_key
-192.168.0.171 ansible_port=22 ansible_user=root ansible_ssh_private_key_file=.vagrant/machines/edge2/virtualbox/private_key
+192.168.0.171 ansible_port=22 ansible_user=root ansible_ssh_private_key_file=.vagrant/machines/edge/virtualbox/private_key
+192.168.0.172 ansible_port=22 ansible_user=root ansible_ssh_private_key_file=.vagrant/machines/edge2/virtualbox/private_key
