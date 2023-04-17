@@ -121,6 +121,8 @@
   systemd:
     name: caddy
     enabled: true
+    state: restarted
+    daemon_reload: yes
 
 - name: Create cron job to restart caddy on reboot
   cron:

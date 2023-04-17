@@ -29,10 +29,6 @@
     - /var/cache/varnish
     - /etc/varnish
 
-- name: 
-  debug:
-    msg: "{{origin_ips}}"
-
 - name: Copy Varnish config file
   template:
     src: files/edge/varnish/default.vcl.j2
@@ -82,4 +78,5 @@
   systemd:
     name: varnish
     enabled: true
-    state: started
+    state: restarted
+    daemon_reload: yes

@@ -24,10 +24,12 @@
             reverse_proxy http://localhost:8080
         }
     }
+    {% if dns_config.lego is defined %}
     tls {
         dns lego_deprecated {{ dns_config.lego }}
         resolvers 1.1.1.1
     }
+    {% endif %}
     log {
         format elastic
         output file /var/log/caddy/access.log

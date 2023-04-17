@@ -17,11 +17,6 @@
         origin_ips: "{{ origin_ips_input.user_input.split(',') | map('trim') | list }}"
   when: not origin_ips_exist | default(false)
 
-  
-- name: 
-  debug:
-    msg: "{{origin_ips}}"
-
 - name: Store postgresql password if not defined
   block:
     - pause:

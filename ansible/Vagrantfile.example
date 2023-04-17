@@ -17,7 +17,7 @@ Vagrant.configure("2") do |config|
     origin.vm.network "public_network", ip: "192.168.0.170"
     origin.vm.provision :shell, path: "scripts/provission.sh"
     origin.vm.provider "virtualbox" do |v|
-      v.memory = 8000
+      v.memory = 6000
       v.cpus = 4
     end
   end
@@ -28,7 +28,7 @@ Vagrant.configure("2") do |config|
     edge.vm.network "public_network", ip: "192.168.0.171"
     edge.vm.provision :shell, path: "scripts/provission.sh"
     origin.vm.provider "virtualbox" do |v|
-      v.memory = 4000
+      v.memory = 2000
       v.cpus = 4
     end
   end
@@ -38,7 +38,7 @@ Vagrant.configure("2") do |config|
     edge2.vm.network "public_network", ip: "192.168.0.172"
     edge2.vm.provision :shell, path: "scripts/provission.sh"
     origin.vm.provider "virtualbox" do |v|
-      v.memory = 4000
+      v.memory = 2000
       v.cpus = 4
     end
   end

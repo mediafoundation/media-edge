@@ -15,18 +15,12 @@
       - postgresql-client-14
       - postgresql-contrib
 
-# caddy service managment
-
-- name: Enabling postgresql service and ensure it is not masked
+- name: Restart and enable postgresql service
   systemd:
     name: postgresql
-    enabled: yes    
-
-- name: Restart postgresql service, in all cases, also issue daemon-reload to pick up config changes
-  systemd:
+    enabled: yes
     state: restarted
     daemon_reload: yes
-    name: postgresql
 
 - name: Create a new database with name "origin"
   community.postgresql.postgresql_db:
@@ -46,13 +40,9 @@
   become_user: postgres
 
 - name: Grant all privileges on schema public to origin user
-  community.postgresql.postgresql_privs:
-    database: origin
-    schema: public
-    state: present
-    privs: ALL
-    type: schema
-    role: origin
+  community.postgresql.postgresql_query:
+    query: "GRANT ALL ON SCHEMA public TO origin;"
+    db: origin
   become: true
   become_method: su
   become_user: postgres
