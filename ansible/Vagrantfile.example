@@ -27,12 +27,20 @@ Vagrant.configure("2") do |config|
     edge.vm.box = "bento/debian-10.13"
     edge.vm.network "public_network", ip: "192.168.0.171"
     edge.vm.provision :shell, path: "scripts/provission.sh"
+    origin.vm.provider "virtualbox" do |v|
+      v.memory = 4000
+      v.cpus = 4
+    end
   end
 
   config.vm.define "edge2" do |edge2|
     edge2.vm.box = "bento/debian-10.13"
     edge2.vm.network "public_network", ip: "192.168.0.172"
     edge2.vm.provision :shell, path: "scripts/provission.sh"
+    origin.vm.provider "virtualbox" do |v|
+      v.memory = 4000
+      v.cpus = 4
+    end
   end
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
