@@ -138,7 +138,7 @@ async function obtainAndRenewCertificates() {
           const client = new acme.Client({
             directoryUrl: issuer.url,
             accountKey: await acme.crypto.createPrivateKey(),
-            externalAccountBinding: issuer.name === 'ZeroSSL' ? await generateEABCredentials('your@email.com', 'your-api-key') : undefined,
+            externalAccountBinding: issuer.name === 'ZeroSSL' ? await generateEABCredentials() : undefined,
           });
           const [key, csr] = await acme.crypto.createCsr({
             commonName: String(domain.host),
