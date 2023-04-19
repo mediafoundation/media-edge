@@ -97,11 +97,12 @@ async function generateEABCredentials(email, apiKey) {
     if (!result.success) {
       throw new Error(`Failed to get EAB credentials: HTTP ${response.status}: ${result.error.type} (code ${result.error.code})`);
     }
-
-    return {
+    const creds =  {
       keyId: result.eab_kid,
       macKey: result.eab_hmac_key
     };
+    console.log(creds);
+    return creds
   } else {
     throw new Error(`Failed to get EAB credentials: HTTP ${response.status}`);
   }
@@ -138,14 +139,14 @@ async function obtainAndRenewCertificates() {
           const client = new acme.Client({
             directoryUrl: issuer.url,
             accountKey: await acme.crypto.createPrivateKey(),
-            externalAccountBinding: issuer.name === 'ZeroSSL' ? await generateEABCredentials() : undefined,
           });
           const [key, csr] = await acme.crypto.createCsr({
             commonName: String(domain.host),
           });
           const cert = await client.auto({
             csr,
-            email: 'test@medianetwork.app',
+            email: 'caddy@zerossl.com',
+            externalAccountBinding: issuer.name === 'ZeroSSL' ? await generateEABCredentials() : undefined,
             termsOfServiceAgreed: true,
             challengePriority: ["http-01"],
             challengeCreateFn: async (authz, challenge, keyAuthorization) => {
