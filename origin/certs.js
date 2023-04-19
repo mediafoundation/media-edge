@@ -7,7 +7,7 @@ const models = require("./models");
 const crypto = require('crypto');
 
 const challengesPath = "/var/www/challenges";
-const certsPath = "/etc/ssl/caddy";
+const certsPath = "/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory";
 app.use("/.well-known/acme-challenge", express.static(challengesPath));
 
 const getDomains = async(req, res) => {

@@ -7,4 +7,4 @@
   vars_files:
     - user_config.yml
     - vars/variables.yml
-  gather_facts: no
+  gather_facts: yes

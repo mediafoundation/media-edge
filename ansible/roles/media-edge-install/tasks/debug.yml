@@ -1,0 +1,15 @@
+- name: Debug inventory_hostname
+  debug:
+    var: inventory_hostname
+
+- name: Debug groups["origin"]
+  debug:
+    var: groups["origin"]
+
+- name: Debug groups["edge"]
+  debug:
+    var: groups["edge"]
+
+- name: hostvars[inventory_hostname]['ansible_host']
+  debug:
+    var: hostvars[inventory_hostname]['ansible_host']

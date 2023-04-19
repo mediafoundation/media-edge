@@ -1,5 +1,6 @@
 - include: set_facts.yml
 - include: system.yml
+- include: gluster.yml
 - include: postgres.yml
   when: inventory_hostname in groups["origin"]
 - include: varnish.apt.yml
