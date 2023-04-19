@@ -97,12 +97,10 @@ async function generateEABCredentials(email, apiKey) {
     if (!result.success) {
       throw new Error(`Failed to get EAB credentials: HTTP ${response.status}: ${result.error.type} (code ${result.error.code})`);
     }
-    const creds =  {
-      keyId: result.eab_kid,
-      macKey: result.eab_hmac_key
+    return {
+      kid: result.eab_kid,
+      hmacKey: result.eab_hmac_key
     };
-    console.log(creds);
-    return creds
   } else {
     throw new Error(`Failed to get EAB credentials: HTTP ${response.status}`);
   }
@@ -136,17 +134,10 @@ async function obtainAndRenewCertificates() {
       for (const issuer of issuers) {
         try {
           console.log(`Obtaining certificate for ${domain.host} from ${issuer.name} / ${issuer.url}`);
-          let externalAccountBinding;
-          if(issuer.name == 'ZeroSSL') {
-            externalAccountBinding = await generateEABCredentials();
-            console.log(`externalAccountBinding ${externalAccountBinding}`);
-          } else {
-            externalAccountBinding = undefined;
-          }
           const client = new acme.Client({
             directoryUrl: issuer.url,
             accountKey: await acme.crypto.createPrivateKey(),
-            externalAccountBinding: externalAccountBinding,
+            externalAccountBinding: issuer.name === 'ZeroSSL' ? await generateEABCredentials() : undefined,
           });
           const [key, csr] = await acme.crypto.createCsr({
             commonName: String(domain.host),
