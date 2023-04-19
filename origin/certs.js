@@ -70,10 +70,6 @@ function checkCertificateValidity(certificatePath, host) {
   }
 }
 async function obtainAndRenewCertificates() {
-  const client = new acme.Client({
-    directoryUrl: acme.directory.letsencrypt.production,
-    accountKey: await acme.crypto.createPrivateKey(),
-  });
 
   const domains = await fetchDomainsFromDatabase();
 
@@ -91,14 +87,17 @@ async function obtainAndRenewCertificates() {
           continue;
         }
       }
-      const [key, csr] = await acme.crypto.createCsr({
-        commonName: String(domain.host),
-      });
 
       for (const issuer of issuers) {
         try {
           console.log(`Obtaining certificate for ${domain.host} from ${issuer.name} / ${issuer.url}`);
-          client.directoryUrl = issuer.url;
+          const client = new acme.Client({
+            directoryUrl: issuer.url,
+            accountKey: await acme.crypto.createPrivateKey(),
+          });
+          const [key, csr] = await acme.crypto.createCsr({
+            commonName: String(domain.host),
+          });
           const cert = await client.auto({
             csr,
             email: 'test@medianetwork.app',
