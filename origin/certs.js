@@ -5,16 +5,12 @@ const fs = require("fs");
 const path = require("path");
 const models = require("./models");
 const crypto = require('crypto');
+const fetch = require('node-fetch');
+const querystring = require('querystring');
 
 const challengesPath = "/var/www/challenges";
 const certsPath = "/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory";
 
-const issuers = [
-  { name: 'Let\'s Encrypt', url: acme.directory.letsencrypt.production },
-  { name: 'ZeroSSL', url: 'https://acme.zerossl.com/v2/DV90' },
-  { name: 'Buypass Go SSL', url: 'https://api.buypass.com/acme/directory' },
-  // Add more ACME endpoints as needed...
-];
 
 const getDomains = async(req, res) => {
   try {
@@ -69,8 +65,56 @@ function checkCertificateValidity(certificatePath, host) {
     return false;
   }
 }
+
+async function generateEABCredentials(email, apiKey) {
+  const zerosslAPIBase = 'https://api.zerossl.com/acme';
+  const endpoint  = apiKey
+                  ? `${zerosslAPIBase}/eab-credentials?${querystring.stringify({ access_key: apiKey })}`
+                  : `${zerosslAPIBase}/eab-credentials-email`;
+  const headers = {
+    'User-Agent': 'CertMagic'
+  };
+
+  if (!apiKey) {
+    if (!email) {
+      console.warn('Missing email address for ZeroSSL; it is strongly recommended to set one for next time');
+      email = 'caddy@zerossl.com';
+    }
+    headers['Content-Type'] = 'application/x-www-form-urlencoded';
+  }
+
+  const requestOptions = {
+    method: 'POST',
+    headers: headers,
+    body: apiKey ? null : querystring.stringify({ email })
+  };
+
+  const response = await fetch(endpoint, requestOptions);
+
+  if (response.ok) {
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(`Failed to get EAB credentials: HTTP ${response.status}: ${result.error.type} (code ${result.error.code})`);
+    }
+
+    return {
+      keyId: result.eab_kid,
+      macKey: result.eab_hmac_key
+    };
+  } else {
+    throw new Error(`Failed to get EAB credentials: HTTP ${response.status}`);
+  }
+}
+
 async function obtainAndRenewCertificates() {
 
+  const issuers = [
+    { name: 'Let\'s Encrypt', url: acme.directory.letsencrypt.production },
+    { name: 'ZeroSSL', url: 'https://acme.zerossl.com/v2/DV90' },
+    { name: 'Buypass Go SSL', url: 'https://api.buypass.com/acme/directory' },
+    // Add more ACME endpoints as needed...
+  ];
   const domains = await fetchDomainsFromDatabase();
 
   for (const domain of domains) {
@@ -94,6 +138,7 @@ async function obtainAndRenewCertificates() {
           const client = new acme.Client({
             directoryUrl: issuer.url,
             accountKey: await acme.crypto.createPrivateKey(),
+            externalAccountBinding: issuer.name === 'ZeroSSL' ? await generateEABCredentials('your@email.com', 'your-api-key') : undefined,
           });
           const [key, csr] = await acme.crypto.createCsr({
             commonName: String(domain.host),
@@ -139,6 +184,7 @@ async function obtainAndRenewCertificates() {
     }
   }
 }
+
 
 setInterval(obtainAndRenewCertificates, 60 * 60 * 1000); // Update every 1 hour
 
