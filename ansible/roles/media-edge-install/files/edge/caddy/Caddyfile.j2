@@ -60,6 +60,9 @@ https:// {
 
 http:// {
     header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
+    handle /.well-known/acme-challenge/* {
+        reverse_proxy http://{{ origin_ips[0] }}:7878
+    }
     reverse_proxy http://localhost:8080 {
         @hasBandwidthLimit header X-Bandwidth-Limit Yes
         handle_response @hasBandwidthLimit {
