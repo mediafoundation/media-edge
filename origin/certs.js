@@ -8,7 +8,13 @@ const crypto = require('crypto');
 
 const challengesPath = "/var/www/challenges";
 const certsPath = "/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory";
-app.use("/.well-known/acme-challenge", express.static(challengesPath));
+
+const issuers = [
+  { name: 'Let\'s Encrypt', url: acme.directory.letsencrypt.production },
+  { name: 'ZeroSSL', url: 'https://acme.zerossl.com/v2/DV90' },
+  { name: 'Buypass Go SSL', url: 'https://api.buypass.com/acme/directory' },
+  // Add more ACME endpoints as needed...
+];
 
 const getDomains = async(req, res) => {
   try {
@@ -28,8 +34,6 @@ const getDomains = async(req, res) => {
     return res.sendStatus(404)
   }
 }
-
-app.use('/domains', getDomains)
 
 async function fetchDomainsFromDatabase() {
   let domains = await models.Caddy.getCaddySources(['host']);
@@ -65,7 +69,6 @@ function checkCertificateValidity(certificatePath, host) {
     return false;
   }
 }
-
 async function obtainAndRenewCertificates() {
   const client = new acme.Client({
     directoryUrl: acme.directory.letsencrypt.production,
@@ -87,53 +90,64 @@ async function obtainAndRenewCertificates() {
         } else {
           continue;
         }
-      } else {
-        console.log(`Obtaining certificate for ${domain.host}`);
       }
       const [key, csr] = await acme.crypto.createCsr({
         commonName: String(domain.host),
       });
-      const cert = await client.auto({
-        csr,
-        email: 'test@medianetwork.app',
-        termsOfServiceAgreed: true,
-        challengePriority: ["http-01"],
-        challengeCreateFn: async (authz, challenge, keyAuthorization) => {
-          const filePath = path.join(
-            challengesPath,
-            challenge.token
-          );
-          fs.writeFileSync(filePath, keyAuthorization);
-	        console.log("Written challenge")
-        },
-        challengeRemoveFn: async (authz, challenge) => {
-          const filePath = path.join(
-            challengesPath,
-            challenge.token
-          );
-          fs.unlinkSync(filePath);
-        },
-      });
-      if (!fs.existsSync(path.join(certsPath, `${domain.host}`))){
-          fs.mkdirSync(path.join(certsPath, `${domain.host}`), { recursive: true });
+
+      for (const issuer of issuers) {
+        try {
+          console.log(`Obtaining certificate for ${domain.host} from ${issuer.name} / ${issuer.url}`);
+          client.directoryUrl = issuer.url;
+          const cert = await client.auto({
+            csr,
+            email: 'test@medianetwork.app',
+            termsOfServiceAgreed: true,
+            challengePriority: ["http-01"],
+            challengeCreateFn: async (authz, challenge, keyAuthorization) => {
+              const filePath = path.join(
+                challengesPath,
+                challenge.token
+              );
+              fs.writeFileSync(filePath, keyAuthorization);
+              console.log("Written challenge")
+            },
+            challengeRemoveFn: async (authz, challenge) => {
+              const filePath = path.join(
+                challengesPath,
+                challenge.token
+              );
+              fs.unlinkSync(filePath);
+            },
+          });
+          // Certificate obtained successfully!
+          if (!fs.existsSync(path.join(certsPath, `${domain.host}`))){
+              fs.mkdirSync(path.join(certsPath, `${domain.host}`), { recursive: true });
+          }
+          const json = `{"sans": ["${domain.host}"],"issuer_data": {"url": "https://media.network/"}}`;
+          fs.writeFileSync(certPath, cert);
+          fs.writeFileSync(keyPath, key);
+          fs.writeFileSync(jsonPath, json);
+          console.log(`Certificate for ${domain.host} obtained and saved.`);
+          break;
+        } catch (error) {
+          console.error(`Failed to obtain certificate from ${issuer.name}:`, error);
+          // Try the next ACME endpoint...
+        }
       }
-      const json = `{"sans": ["${domain.host}"],"issuer_data": {"url": "https://media.network/"}}`;
-      fs.writeFileSync(certPath, cert);
-      fs.writeFileSync(keyPath, key);
-      fs.writeFileSync(jsonPath, json);
-      console.log(`Certificate for ${domain.host} obtained and saved.`);
     } catch (error) {
       console.error(`Failed to obtain certificate for ${domain.host}:`, error);
     }
   }
 }
 
-app.listen(7878, () => {
-  console.log("Server listening on port 7878");
-});
-
-const updateInterval = 60 * 60 * 1000; // Update every 1 hour
-setInterval(obtainAndRenewCertificates, updateInterval);
+setInterval(obtainAndRenewCertificates, 60 * 60 * 1000); // Update every 1 hour
 
 obtainAndRenewCertificates();
 
+app.use("/.well-known/acme-challenge", express.static(challengesPath));
+app.use('/domains', getDomains)
+
+app.listen(7878, () => {
+  console.log("Server listening on port 7878");
+});
