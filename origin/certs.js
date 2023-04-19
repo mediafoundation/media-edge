@@ -136,9 +136,17 @@ async function obtainAndRenewCertificates() {
       for (const issuer of issuers) {
         try {
           console.log(`Obtaining certificate for ${domain.host} from ${issuer.name} / ${issuer.url}`);
+          let externalAccountBinding;
+          if(issuer.name == 'ZeroSSL') {
+            externalAccountBinding = await generateEABCredentials();
+            console.log(`externalAccountBinding ${externalAccountBinding}`);
+          } else {
+            externalAccountBinding = undefined;
+          }
           const client = new acme.Client({
             directoryUrl: issuer.url,
             accountKey: await acme.crypto.createPrivateKey(),
+            externalAccountBinding: externalAccountBinding,
           });
           const [key, csr] = await acme.crypto.createCsr({
             commonName: String(domain.host),
@@ -146,7 +154,6 @@ async function obtainAndRenewCertificates() {
           const cert = await client.auto({
             csr,
             email: 'caddy@zerossl.com',
-            externalAccountBinding: issuer.name === 'ZeroSSL' ? await generateEABCredentials() : undefined,
             termsOfServiceAgreed: true,
             challengePriority: ["http-01"],
             challengeCreateFn: async (authz, challenge, keyAuthorization) => {
