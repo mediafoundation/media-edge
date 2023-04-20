@@ -50,8 +50,8 @@ Follow these simple example steps to get your Media Edge setup and running in no
 
 ### Software Prerequisites
 
-* [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-ansible-on-specific-operating-systems)
-* [Debian 10 x64](https://www.debian.org/releases/buster/debian-installer/)
+* [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-ansible-on-specific-operating-systems) @ local computer
+* [Debian 10 x64](https://www.debian.org/releases/buster/debian-installer/) @ target server(s)
 
 ### Installation
 
@@ -77,7 +77,7 @@ Follow these simple example steps to get your Media Edge setup and running in no
     edge ansible_host=192.168.0.172 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_user=root ansible_port=22
     ```
 
-4. Copy `user_config.yml.example` to `user_config.yml` and edit with up your wallet configuration.
+4. Copy `user_config.yml.example` to `user_config.yml` and edit with up your wallet and other settings, like provider domains or RPC endpoints.
 
 5. Deploy Media Edges
     ```sh
