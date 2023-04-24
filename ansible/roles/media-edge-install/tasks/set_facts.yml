@@ -47,14 +47,14 @@
         private_key: "{{ private_key_input.user_input }}"
   when: inventory_hostname in groups["origin"] and (private_key is not defined or private_key == "" or private_key == none)
 
-- name: Store disk space if not defined
-  block:
-    - pause:
-        prompt: "\nEnter your server disk space, example: 10G"
-        register: disk_space_input
-    - set_fact:
-        disk_space: "{{ disk_space_input.user_input }}"
-  when: inventory_hostname in groups["edge"] and (disk_space is not defined or disk_space == "" or disk_space == none)
+- name: Set disk capacities as a fact
+  set_fact:
+    disk_capacities: "{{ ansible_mounts | selectattr('mount', 'equalto', '/') | first }}"
+
+- name: Set disk space as variable
+  set_fact:
+    disk_space: "{{((disk_capacities.size_available / (1024*1024))*0.8) | int}}"
+
 
 - name: Store cpu cores if not defined
   block:
@@ -65,13 +65,14 @@
         cpu_cores: "{{ cpu_cores_input.user_input }}"
   when: inventory_hostname in groups["edge"] and (cpu_cores is not defined or cpu_cores == "" or cpu_cores == none)
 
-- name: Store system_ram if not defined
-  block:
-    - pause:
-        prompt: "\nEnter your server system_ram"
-      register: system_ram_input
-    - set_fact:
-        system_ram: "{{ system_ram_input.user_input }}"
+- name: Set CPU cores as a fact
+  set_fact:
+    cpu_cores: "{{ ansible_processor_vcpus }}"
+  when: inventory_hostname in groups["edge"]
+
+- name: Set RAM capacity as a fact
+  set_fact:
+    system_ram: "{{ ansible_memtotal_mb }}"
   when: inventory_hostname in groups["edge"] and (system_ram is not defined or system_ram == "" or system_ram == none)
 
 # - name: 

@@ -6,7 +6,7 @@ Documentation=https://www.varnish-cache.org/docs/6.1/ man:varnishd
 Type=simple
 LimitNOFILE=infinity
 LimitMEMLOCK=infinity
-ExecStart=/usr/sbin/varnishd -j unix,user=vcache -F -a localhost:8080 -T localhost:6082 -f /etc/varnish/default.vcl -s file,/var/cache/varnish.cache,{{ disk_space }}
+ExecStart=/usr/sbin/varnishd -j unix,user=vcache -F -a localhost:8080 -T localhost:6082 -f /etc/varnish/default.vcl -s file,/var/cache/varnish.cache,{{ disk_space }}M
 ExecReload=/usr/share/varnish/varnishreload
 ProtectSystem=full
 ProtectHome=true
