@@ -14,9 +14,12 @@
     state: directory
 
 - name: Copy program folder
-  copy:
+  synchronize:
     src: ../origin/
     dest: /root/origin
+    rsync_opts:
+      - "--exclude=node_modules/"
+      - "--exclude=yarn.lock"
 
 - name: Copy abis folder
   copy:
