@@ -122,7 +122,6 @@ module.exports = (sequelize, DataTypes) => {
           "response": {
             "set": {
               "X-Deal-ID": [deal.id],
-              "X-Bandwidth-Limit": ["Yes"]
             }
           }
         },
