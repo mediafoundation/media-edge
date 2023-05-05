@@ -68,7 +68,7 @@ module.exports = (sequelize, DataTypes) => {
   
     try {
       const response = await client.search(query);
-      const totalBytes = parseInt(response.body.aggregations.total_bytes.value);
+      const totalBytes = parseInt(response.aggregations.total_bytes.value);
       return { totalBytes, range };
     } catch (error) {
       console.error(`Error fetching bandwidth usage for deal ${deal.id}:`, error);
