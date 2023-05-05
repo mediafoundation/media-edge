@@ -108,39 +108,39 @@ module.exports = (sequelize, DataTypes) => {
   
       // Check if the billing period has elapsed
       //console.log("Deal", deal)
-      if (Bandwidth.isBillingPeriodElapsed(deal, bandwidth.dataValues)) {
-        // Fetch the bandwidth usage from Elasticsearch
-        const { totalBytes, range } = await Bandwidth.getBandwidthUsageFromElasticsearch(deal, bandwidth);
 
-        //console.log("TotalBytes", totalBytes, "range", range)
+      // Fetch the bandwidth usage from Elasticsearch
+      const { totalBytes, range } = await Bandwidth.getBandwidthUsageFromElasticsearch(deal, bandwidth);
 
-        let bandwidthUsage = bandwidth.dataValues.bytes_sent + totalBytes
+      //console.log("TotalBytes", totalBytes, "range", range)
 
-        // Update the resource with the new bandwidth usage
-        //console.log(bandwidth)
-        await bandwidth.update({
-          bytes_sent: bandwidthUsage,
-          last_read: new Date(range.lte).getTime(),
-        });
-  
-        // Extract the bandwidthLimit from the deal's metadata
-        const metadata = JSON.parse(deal.metadata);
-        const bandwidthLimit = metadata.bandwidthLimit;
-  
-        // Calculate the bandwidth limit in bytes
-        let limitInBytes = Bandwidth.convertToBytes(bandwidthLimit);
-  
-        // Check if the bandwidth limit has been reached
-        if (bandwidthUsage >= limitInBytes) {
-          // Update the Caddy resource configuration to apply the bandwidth limiter
-          await Bandwidth.applyBandwidthLimiter(deal, true);
-        } else {
-          // todo: check why remove it if its already applied
-          // Remove the bandwidth limiter if it's already applied
-          //await Bandwidth.applyBandwidthLimiter(deal, false);
-        }
+      let bandwidthUsage = bandwidth.dataValues.bytes_sent + totalBytes
+
+      // Update the resource with the new bandwidth usage
+      //console.log(bandwidth)
+      await bandwidth.update({
+        bytes_sent: bandwidthUsage,
+        last_read: new Date(range.lte).getTime(),
+      });
+
+      // Extract the bandwidthLimit from the deal's metadata
+      const metadata = JSON.parse(deal.metadata);
+      const bandwidthLimit = metadata.bandwidthLimit;
+
+      // Calculate the bandwidth limit in bytes
+      let limitInBytes = Bandwidth.convertToBytes(bandwidthLimit);
+
+      // Check if the bandwidth limit has been reached
+      if (bandwidthUsage >= limitInBytes) {
+        // Update the Caddy resource configuration to apply the bandwidth limiter
+        await Bandwidth.applyBandwidthLimiter(deal, true);
+      } else {
+        // todo: check why remove it if its already applied
+        // Remove the bandwidth limiter if it's already applied
+        //await Bandwidth.applyBandwidthLimiter(deal, false);
       }
     }
+
   }
 
   Bandwidth.isBillingPeriodElapsed = (deal, bandwidth) => {
