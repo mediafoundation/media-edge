@@ -6,6 +6,7 @@
   "author": "Media Foundation <hello@media.foundation>",
   "license": "MIT",
   "dependencies": {
+    "@elastic/elasticsearch": "^8.7.0",
     "@metamask/eth-sig-util": "^5.0.2",
     "acme-client": "^5.0.0",
     "axios": "^0.21.1",

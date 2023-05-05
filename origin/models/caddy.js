@@ -240,7 +240,7 @@ module.exports = (sequelize, DataTypes) => {
       )
       console.log('Updated Caddyfile resource:', item.deal.id)
     } catch (e){
-      console.log("axios error", url)
+      console.log("axios error", e)
       return false
     }
 

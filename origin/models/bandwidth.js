@@ -1,3 +1,7 @@
+const { Client } = require('@elastic/elasticsearch');
+const env = require("../config/env");
+const axios = require("axios");
+
 module.exports = (sequelize, DataTypes) => {
 
   const Bandwidth = sequelize.define('Bandwidth', {
@@ -10,10 +14,20 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: 0,
     },
-    bandwidth_limit: {
-      type: DataTypes.JSONB,
+    last_read: {
+      type: DataTypes.BIGINT,
       allowNull: false,
     },
+    period_end: {
+      type: DataTypes.BIGINT,
+      allowNull: false
+    },
+
+    periods: {
+      type: DataTypes.BIGINT,
+      allowNull: false,
+      defaultValue: 1
+    }
   }, {
     updatedAt: false,
   });
@@ -23,13 +37,13 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   Bandwidth.getBandwidthUsageFromElasticsearch = async (deal, bandwidth) => {
-    const { Client } = require('@elastic/elasticsearch');
     const client = new Client({ node: 'http://localhost:9200' });
   
     // Set the time range for the query based on the bandwidth's updatedAt field
     const now = new Date();
+    const bandwidthTimeStamp = new Date(bandwidth.last_read * 1000)
     const range = {
-      gte: bandwidth.updatedAt.toISOString(),
+      gte: bandwidthTimeStamp.toISOString(),
       lte: now.toISOString(),
     };
   
@@ -61,7 +75,6 @@ module.exports = (sequelize, DataTypes) => {
       return { totalBytes: 0, range };
     }
   };
-  
 
   Bandwidth.convertToBytes = (bandwidthLimit) => {
     const { amount, unit } = bandwidthLimit;
@@ -87,25 +100,27 @@ module.exports = (sequelize, DataTypes) => {
     return bytes;
   }
 
-  Bandwidth.updateBandwidthUsage = async () => {
-    // Fetch all deals from the database
-    const Deals = require("./../models/deals")
-
-    const deals = await Deals.findAll()
+  Bandwidth.updateBandwidthUsage = async (deals) => {
   
     for (const deal of deals) {
       // Fetch the bandwidth record for the deal
       const bandwidth = await Bandwidth.findByPk(deal.id);
   
       // Check if the billing period has elapsed
-      if (Bandwidth.isBillingPeriodElapsed(deal, bandwidth)) {
+      //console.log("Deal", deal)
+      if (Bandwidth.isBillingPeriodElapsed(deal, bandwidth.dataValues)) {
         // Fetch the bandwidth usage from Elasticsearch
         const { totalBytes, range } = await Bandwidth.getBandwidthUsageFromElasticsearch(deal, bandwidth);
 
+        //console.log("TotalBytes", totalBytes, "range", range)
+
+        let bandwidthUsage = bandwidth.dataValues.bytes_sent + totalBytes
+
         // Update the resource with the new bandwidth usage
+        //console.log(bandwidth)
         await bandwidth.update({
-          bytes_sent: totalBytes,
-          updatedAt: new Date(range.lte),
+          bytes_sent: bandwidthUsage,
+          last_read: new Date(range.lte).getTime(),
         });
   
         // Extract the bandwidthLimit from the deal's metadata
@@ -120,18 +135,24 @@ module.exports = (sequelize, DataTypes) => {
           // Update the Caddy resource configuration to apply the bandwidth limiter
           await Bandwidth.applyBandwidthLimiter(deal, true);
         } else {
+          // todo: check why remove it if its already applied
           // Remove the bandwidth limiter if it's already applied
-          await Bandwidth.applyBandwidthLimiter(deal, false);
+          //await Bandwidth.applyBandwidthLimiter(deal, false);
         }
       }
     }
   }
 
   Bandwidth.isBillingPeriodElapsed = (deal, bandwidth) => {
-    const { minimumDuration } = deal;
+    //const { minimumDuration } = deal;
+    //console.log(deal.minDuration)
     const now = new Date();
-    const elapsedTime = now.getTime() - bandwidth.updatedAt.getTime();
-    const minimumDurationInMilliseconds = minimumDuration * 1000;
+    //console.log("Now time", now.getTime(), "last read", bandwidth.last_read * 1000)
+    const elapsedTime = now.getTime() - (bandwidth.last_read * 1000);
+    const minimumDurationInMilliseconds = deal.minDuration * 1000;
+
+    //console.log(elapsedTime >= minimumDurationInMilliseconds, "elapsed time", elapsedTime, "minDuration", minimumDurationInMilliseconds)
+
 
     return elapsedTime >= minimumDurationInMilliseconds;
   }
@@ -139,7 +160,7 @@ module.exports = (sequelize, DataTypes) => {
   Bandwidth.resetBandwidthUsage = async (dealId) => {
     await Bandwidth.update({ bytes_sent: 0 }, { where: { id: dealId } });
   
-    const config = await axios.get(`${caddyApiBaseUrl}${dealId}`, caddyApiHeaders);
+    const config = await axios.get(`${env.caddyUrl}${dealId}`, caddyApiHeaders);
     const resource = config.data;
     const headersHandler = resource.handle[0].routes[0].handle.find(
       (handler) => handler.handler === 'headers'
@@ -147,12 +168,11 @@ module.exports = (sequelize, DataTypes) => {
   
     if (headersHandler) {
       delete headersHandler.response.set["X-Bandwidth-Limit"];
-      await axios.put(`${caddyApiBaseUrl}${dealId}`, resource, caddyApiHeaders);
+      await axios.put(`${env.caddyUrl}${dealId}`, resource, caddyApiHeaders);
     }
   
     console.log(`Reset bandwidth usage for deal ${dealId}`);
   }
-  
 
   Bandwidth.applyBandwidthLimiter = async (deal, enable) => {
     try {
@@ -194,8 +214,91 @@ module.exports = (sequelize, DataTypes) => {
       console.error(`Error updating resource ${deal.id}:`, err.message);
     }
   }
-  
 
-  //Bandwidth.sync({ force: false })
+  Bandwidth.upsertRecord = async (deal) => {
+    //console.log(Bandwidth.calculatePeriodEnd(deal.startTime, deal))
+    let bandwidth_record = await Bandwidth.findOne({
+      where: {
+        id: deal.id
+      }
+    })
+    if(bandwidth_record){
+      await bandwidth_record.set(deal)
+      bandwidth_record.save()
+    } else {
+      bandwidth_record = await Bandwidth.create(deal)
+      console.log("Created deal in Bandwidth table: ", deal.id)
+    }
+    return bandwidth_record
+  }
+
+  Bandwidth.deleteRecords = async (ids) => {
+    for (const id of ids) {
+      console.log("Deleted resource in deals table: ", id)
+      let row = await Bandwidth.findOne({
+        where: { id: id }
+      })
+      if(row){
+        await row.destroy()
+        if(env.debug) console.log("Deleted deal ID: ", id)
+      } else {
+        if(env.debug) console.log("Deal not found. ID", id);
+      }
+    }
+  }
+
+  Bandwidth.formatDataToDb = async (deal) => {
+    return {
+      id: deal.id,
+      bytes_sent: 0,
+      last_read: deal.startTime,
+      period_end: Bandwidth.calculatePeriodEnd(deal.startTime, deal)
+    }
+  }
+
+  Bandwidth.resetBandwidthLimitPeriod = async (bandwidth) => {
+    let now = new Date().getTime()
+    if(now >= bandwidth.period_end){
+      let bandwidth_record = await Bandwidth.findOne({
+        where: {
+          id: bandwidth.id
+        }
+      })
+      if(bandwidth_record){
+        let bandwidthPeriods = bandwidth.periods
+        let bandwidthPeriodEnds = bandwidth.period_end
+        Bandwidth.update({period_end: (bandwidthPeriodEnds / bandwidthPeriods) * bandwidthPeriods + 1, bandwidthPeriods: bandwidthPeriods + 1}, {where: {id: bandwidth.id}})
+        await Bandwidth.resetBandwidthUsage(bandwidth.id)
+      }
+    }
+  }
+
+  Bandwidth.calculatePeriodEnd = (startTime, deal) => {
+    let metadata = JSON.parse(deal.metadata)
+    let period_end = 0
+    switch (metadata.bandwidthLimit.period) {
+      case 'hourly':
+        period_end = startTime + 3600
+        break
+      case 'daily':
+        period_end = startTime + 86400
+        break
+      case 'monthly':
+        const oneMonthLater = new Date(startTime * 1000);
+        oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+        period_end = oneMonthLater.getTime() / 1000
+        break
+      case 'yearly':
+        const oneYearLater = new Date(startTime * 1000);
+        oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+
+        period_end = oneYearLater.getTime() / 1000
+        break
+    }
+
+    return period_end
+  }
+
+  Bandwidth.sync({ force: true })
   return Bandwidth;
 }

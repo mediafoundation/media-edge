@@ -7,6 +7,7 @@ const models = require("./models");
 const {initDatabase} = require("./services/database");
 const {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy} = require("./services/caddy");
 const {checkEvents} = require("./services/events");
+const {checkBandwidth, initBandwidth} = require("./services/bandwidth");
 
 // Initialize the lastReadBlock variable to 0
 let lastReadBlock = 0;
@@ -24,6 +25,7 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
 
     let databaseInitStatus = true
     let caddyInitStatus = true
+    let bandwidthInitStatus = true
     let blockReadStatus = true
 
     //Check if daemon needs to run a full reset
@@ -63,6 +65,14 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
         caddyInitStatus = false
     }
 
+    //Init bandwidth limiter
+    try{
+        await initBandwidth()
+    }catch(e) {
+        console.log("Error when init bandwidth", e)
+        bandwidthInitStatus = false
+    }
+
     //Read block to use in events
     try {
         lastReadBlock = await web3Instance.eth.getBlockNumber()
@@ -72,7 +82,7 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
         blockReadStatus = false
     }
 
-    return databaseInitStatus && caddyInitStatus && blockReadStatus
+    return databaseInitStatus && caddyInitStatus && bandwidthInitStatus && blockReadStatus
 /*
     edgeStatus = true
 
@@ -126,6 +136,10 @@ networks.forEach(async CURRENT_NETWORK => {
 
     setInterval(async () => {
         await checkCaddy(CURRENT_NETWORK)
+    }, 60000)
+
+    setInterval(async () => {
+        await checkBandwidth()
     }, 60000)
 });
 

@@ -69,6 +69,7 @@ const initDatabase = async function (ResourcesContract, MarketplaceContract, net
 
     if (notCompatibleDeals.length > 0) {
         await db.Deals.deleteRecords(notCompatibleDeals)
+        await db.Bandwidth.deleteRecords(notCompatibleDeals)
     }
 
     //Update records in caddy if needed
