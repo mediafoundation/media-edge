@@ -83,22 +83,22 @@ module.exports = (sequelize, DataTypes) => {
     return hostnames
   }
 
-  Caddy.getDHostname = (resource_id)  =>{
+  /*Caddy.getDHostname = (resource_id)  =>{
     return resource_id + "." + env.hns
-  }
+  }*/
 
-  Caddy.getAlias = (a,b)  =>{
+  /*Caddy.getAlias = (a,b)  =>{
     return a + "_" + b
-  }
+  }*/
 
-  Caddy.getShortName = (acc)  =>{
+  /*Caddy.getShortName = (acc)  =>{
     let accLen = acc.length / 2;
     return (
         acc.slice(0,3) + //first 3 chars
         acc.slice(accLen-1,accLen+1) + //middle two chars
         acc.slice(-3) // last 3 chars
       ).toLowerCase();
-  }
+  }*/
 
   Caddy.newObject = async (res, deal) => {
     let hostname = Caddy.getHostnames(deal)

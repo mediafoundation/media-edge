@@ -112,6 +112,8 @@ module.exports = (sequelize, DataTypes) => {
       // Fetch the bandwidth usage from Elasticsearch
       const { totalBytes, range } = await Bandwidth.getBandwidthUsageFromElasticsearch(deal, bandwidth);
 
+      if(env.debug) console.log("Total bytes for deal", deal.id, ":", totalBytes)
+
       //console.log("TotalBytes", totalBytes, "range", range)
 
       let bandwidthUsage = bandwidth.dataValues.bytes_sent + totalBytes
@@ -125,7 +127,8 @@ module.exports = (sequelize, DataTypes) => {
 
       // Extract the bandwidthLimit from the deal's metadata
       const metadata = JSON.parse(deal.metadata);
-      const bandwidthLimit = metadata.bandwidthLimit;
+      const bandwidthLimit = metadata["bandwidthLimit"];
+      if(env.debug) console.log("Bandwidth limit:", bandwidthLimit)
 
       // Calculate the bandwidth limit in bytes
       let limitInBytes = Bandwidth.convertToBytes(bandwidthLimit);

@@ -3,6 +3,7 @@ const Resources = require('../media-evm-abis/Resources.json');
 const Marketplace = require('../media-evm-abis/Marketplace.json')
 const Web3 = require('web3');
 const models = require("./models");
+const env = require("./config/env")
 
 const {initDatabase} = require("./services/database");
 const {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy} = require("./services/caddy");
@@ -139,6 +140,7 @@ networks.forEach(async CURRENT_NETWORK => {
     }, 60000)
 
     setInterval(async () => {
+        if(env.debug) console.log("Start checking bandwidth")
         await checkBandwidth()
     }, 60000)
 });

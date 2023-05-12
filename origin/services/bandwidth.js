@@ -1,5 +1,4 @@
 const models = require("../models");
-const db = require("../models");
 
 let checkBandwidth = async () => {
     let deals = await models.Deals.getDealsFromDb()
