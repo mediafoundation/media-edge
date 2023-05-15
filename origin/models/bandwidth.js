@@ -113,6 +113,7 @@ module.exports = (sequelize, DataTypes) => {
       //console.log("Deal", deal)
 
       // Fetch the bandwidth usage from Elasticsearch
+      if(env.debug) console.log("Bandwidth before all:", bandwidth)
       const { totalBytes, range } = await Bandwidth.getBandwidthUsageFromElasticsearch(deal, bandwidth);
 
       if(env.debug) console.log("Total bytes for deal", deal.id, ":", totalBytes)
