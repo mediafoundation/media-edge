@@ -120,13 +120,14 @@ module.exports = (sequelize, DataTypes) => {
 
       //console.log("TotalBytes", totalBytes, "range", range)
 
-      let bandwidthUsage = bandwidth.dataValues.bytes_sent + totalBytes
+      let bandwidthUsage = parseInt(bandwidth.dataValues.bytes_sent) + totalBytes
 
       // Update the resource with the new bandwidth usage
       //console.log(bandwidth)
       if(env.debug) console.log("Updating bandwidth:", bandwidthUsage)
       if(env.debug) console.log("Updating last_read:", range.lte, new Date(range.lte).getTime())
       let newDatetime = new Date(range.lte)
+      if(env.debug) console.log("last read new value:", newDatetime.getUTCSeconds())
       await bandwidth.update({
         bytes_sent: bandwidthUsage,
         last_read: newDatetime.getUTCSeconds(),
