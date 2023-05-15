@@ -126,9 +126,10 @@ module.exports = (sequelize, DataTypes) => {
       //console.log(bandwidth)
       if(env.debug) console.log("Updating bandwidth:", bandwidthUsage)
       if(env.debug) console.log("Updating last_read:", range.lte, new Date(range.lte).getTime())
+      let newDatetime = new Date(range.lte)
       await bandwidth.update({
         bytes_sent: bandwidthUsage,
-        last_read: new Date(range.lte).getTime(),
+        last_read: newDatetime.getUTCSeconds(),
       });
 
       // Extract the bandwidthLimit from the deal's metadata
