@@ -41,7 +41,7 @@ module.exports = (sequelize, DataTypes) => {
   
     // Set the time range for the query based on the bandwidth's updatedAt field
     const now = new Date();
-    const bandwidthTimeStamp = new Date(bandwidth.last_read * 1000)
+    const bandwidthTimeStamp = new Date(bandwidth.dataValues.last_read * 1000)
     const range = {
       gte: bandwidthTimeStamp.toISOString(),
       lte: now.toISOString(),
