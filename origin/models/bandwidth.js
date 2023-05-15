@@ -46,7 +46,10 @@ module.exports = (sequelize, DataTypes) => {
       gte: bandwidthTimeStamp.toISOString(),
       lte: now.toISOString(),
     };
-  
+
+    console.log("BandwidthTimeStamp:", bandwidthTimeStamp)
+    console.log("Bandwidht from db:", bandwidth.dataValues.last_read)
+    console.log("Range:", range)
     // Elasticsearch query to fetch the bandwidth usage for the specific deal
     const query = {
       index: 'caddy-*',
