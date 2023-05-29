@@ -1,39 +1,6 @@
 const fs = require('fs');
 const axios = require('axios');
 
-// Function to create a new file and write the object
-function createNewFile(dataObj, fileName) {
-    const jsonStr = convertToJSON(dataObj);
-    const line = `${jsonStr}\n`;
-
-    fs.writeFile(fileName, line, (err) => {
-        if (err) {
-            console.error(`Error creating file: ${err}`);
-        } else {
-            console.log(`File '${fileName}' created successfully.`);
-        }
-    });
-}
-
-// Function to convert object to JSON string
-function convertToJSON(obj) {
-    return JSON.stringify(obj);
-}
-
-// Function to append the object to an existing file
-function appendToExistingFile(dataObj, fileName) {
-    const jsonStr = convertToJSON(dataObj);
-    const line = `${jsonStr}\n`;
-
-    fs.appendFile(fileName, line, (err) => {
-        if (err) {
-            console.error(`Error appending to file: ${err}`);
-        } else {
-            console.log(`Data appended to '${fileName}' successfully.`);
-        }
-    });
-}
-
 module.exports = (sequelize, DataTypes) => {
 
     const Varnish = sequelize.define('Varnish', {
@@ -106,5 +73,38 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     //Varnish.sync({force: state.resetDb})
+
+    // Function to create a new file and write the object
+    function createNewFile(dataObj, fileName) {
+        const jsonStr = convertToJSON(dataObj);
+        const line = `${jsonStr}\n`;
+
+        fs.writeFile(fileName, line, (err) => {
+            if (err) {
+                console.error(`Error creating file: ${err}`);
+            } else {
+                console.log(`File '${fileName}' created successfully.`);
+            }
+        });
+    }
+
+    // Function to convert object to JSON string
+    function convertToJSON(obj) {
+        return JSON.stringify(obj);
+    }
+
+    // Function to append the object to an existing file
+    function appendToExistingFile(dataObj, fileName) {
+        const jsonStr = convertToJSON(dataObj);
+        const line = `${jsonStr}\n`;
+
+        fs.appendFile(fileName, line, (err) => {
+            if (err) {
+                console.error(`Error appending to file: ${err}`);
+            } else {
+                console.log(`Data appended to '${fileName}' successfully.`);
+            }
+        });
+    }
     return Varnish
 }

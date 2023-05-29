@@ -144,7 +144,7 @@ module.exports = (sequelize, DataTypes) => {
 
       let dealDomains = JSON.parse(deal.domains)
       dealDomains.forEach(async domain => {
-        models.Varnish.addRecord(domain[1], '/')
+        await models.Varnish.addRecord(domain[1], '/')
         await models.Varnish.purgeRecord(domain[1]+'/')
       })
 
