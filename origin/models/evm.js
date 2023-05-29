@@ -236,6 +236,16 @@ module.exports = (sequelize, DataTypes) => {
         
     }
 
+    Evm.getResourceById = async (resourceId) => {
+        let resource = await Evm.findOne({
+            where: {
+                id: resourceId
+            }
+        })
+
+        return resource
+    }
+
     //Evm.sync({force: state.resetDb})
     return Evm
 

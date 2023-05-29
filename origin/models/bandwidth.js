@@ -1,6 +1,7 @@
 const { Client } = require('@elastic/elasticsearch');
 const env = require("../config/env");
 const axios = require("axios");
+const models = require("../models")
 
 module.exports = (sequelize, DataTypes) => {
 
@@ -141,6 +142,12 @@ module.exports = (sequelize, DataTypes) => {
       // Calculate the bandwidth limit in bytes
       let limitInBytes = Bandwidth.convertToBytes(bandwidthLimit);
 
+      let dealDomains = JSON.parse(deal.domains)
+      dealDomains.forEach(async domain => {
+        models.Varnish.addRecord(domain[1], '/')
+        await models.Varnish.purgeRecord(domain[1]+'/')
+      })
+
       // Check if the bandwidth limit has been reached
       if (bandwidthUsage >= limitInBytes) {
         // Update the Caddy resource configuration to apply the bandwidth limiter
@@ -221,6 +228,10 @@ module.exports = (sequelize, DataTypes) => {
   
       await axios.put(`http://localhost:2019/id/${deal.id}`, resource);
       console.log(`Bandwidth limiter ${enable ? 'enabled' : 'disabled'} for resource ${deal.id}`);
+
+      //Making purge for axios
+
+      
     } catch (err) {
       console.error(`Error updating resource ${deal.id}:`, err.message);
     }
