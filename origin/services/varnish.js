@@ -1,10 +1,11 @@
 const models = require('../models')
 
 const resetVarnish = async () => {
-    await models.Varnish.deleteAllRecords
+    await models.Varnish.deleteAllRecords()
 }
 
 const manageBandwidth = async (domain) => {
+    console.log(models);
     await models.Varnish.addRecord(domain[1], '/')
     await models.Varnish.purgeRecord(domain[1]+'/')
 }

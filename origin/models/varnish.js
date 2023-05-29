@@ -4,10 +4,17 @@ const axios = require('axios');
 module.exports = (sequelize, DataTypes) => {
 
     const Varnish = sequelize.define('Varnish', {
-        id: { type: DataTypes.STRING, primaryKey: true, autoIncrement: true },
-        path: DataTypes.STRING
-    }, { freezeTableName: true }
-    )
+      id: {
+        type: DataTypes.STRING,
+        primaryKey: true,
+        autoIncrement: true
+      },
+      path: {
+        type: DataTypes.STRING,
+      }
+    }, {
+      updatedAt: false,
+    });
 
     Varnish.addRecord = async (domain, path) => {
 
@@ -107,4 +114,4 @@ module.exports = (sequelize, DataTypes) => {
         });
     }
     return Varnish
-}
+  }
