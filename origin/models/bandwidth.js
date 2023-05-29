@@ -1,7 +1,7 @@
 const { Client } = require('@elastic/elasticsearch');
 const env = require("../config/env");
 const axios = require("axios");
-const models = require("../models")
+const { manageBandwidth } = require('../services/varnish');
 
 module.exports = (sequelize, DataTypes) => {
 
@@ -144,8 +144,9 @@ module.exports = (sequelize, DataTypes) => {
 
       let dealDomains = JSON.parse(deal.domains)
       dealDomains.forEach(async domain => {
-        await models.Varnish.addRecord(domain[1], '/')
-        await models.Varnish.purgeRecord(domain[1]+'/')
+        /* await Varnish.addRecord(domain[1], '/')
+        await Varnish.purgeRecord(domain[1]+'/') */
+        await manageBandwidth(domain)
       })
 
       // Check if the bandwidth limit has been reached
