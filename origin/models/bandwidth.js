@@ -1,7 +1,6 @@
 const { Client } = require('@elastic/elasticsearch');
 const env = require("../config/env");
 const axios = require("axios");
-const { manageBandwidth } = require('../services/varnish');
 
 module.exports = (sequelize, DataTypes) => {
 
@@ -22,6 +21,12 @@ module.exports = (sequelize, DataTypes) => {
     period_end: {
       type: DataTypes.BIGINT,
       allowNull: false
+    },
+
+    bandwidth_limit_applied: {
+      type: DataTypes.bool,
+      allowNull: false,
+      default: false
     },
 
     periods: {
@@ -142,17 +147,13 @@ module.exports = (sequelize, DataTypes) => {
       // Calculate the bandwidth limit in bytes
       let limitInBytes = Bandwidth.convertToBytes(bandwidthLimit);
 
-      let dealDomains = JSON.parse(deal.domains)
-      dealDomains.forEach(async domain => {
-        /* await Varnish.addRecord(domain[1], '/')
-        await Varnish.purgeRecord(domain[1]+'/') */
-        await manageBandwidth(domain)
-      })
-
       // Check if the bandwidth limit has been reached
       if (bandwidthUsage >= limitInBytes) {
         // Update the Caddy resource configuration to apply the bandwidth limiter
         await Bandwidth.applyBandwidthLimiter(deal, true);
+        await bandwidth.update({
+          bandwidth_limit_applied: true
+        })
       } else {
         // todo: check why remove it if its already applied
         // Remove the bandwidth limiter if it's already applied
@@ -177,7 +178,7 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   Bandwidth.resetBandwidthUsage = async (dealId) => {
-    await Bandwidth.update({ bytes_sent: 0 }, { where: { id: dealId } });
+    await Bandwidth.update({ bytes_sent: 0, bandwidth_limit_applied: false }, { where: { id: dealId } });
   
     const config = await axios.get(`${env.caddyUrl}${dealId}`, caddyApiHeaders);
     const resource = config.data;
@@ -195,6 +196,7 @@ module.exports = (sequelize, DataTypes) => {
 
   Bandwidth.applyBandwidthLimiter = async (deal, enable) => {
     try {
+      console.log("Applying bandwidth limit to deal:", deal.id);
       const config = await axios.get(`http://localhost:2019/id/${deal.id}`);
       const resource = config.data;
   
@@ -320,6 +322,15 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     return period_end
+  }
+
+  Bandwidth.getLimitedRecordIds = async () => {
+    try{
+      let records = await Bandwidth.findAll({attributes: ['id'], where: {bandwidth_limit_applied: true}})
+      return records
+    } catch(e){
+      console.log("Error fetching records from bandwidth:", e);
+    }
   }
 
   Bandwidth.sync({ force: true })

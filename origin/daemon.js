@@ -9,7 +9,7 @@ const {initDatabase} = require("./services/database");
 const {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy} = require("./services/caddy");
 const {checkEvents} = require("./services/events");
 const {checkBandwidth, initBandwidth} = require("./services/bandwidth");
-const { resetVarnish } = require('./services/varnish');
+const { resetVarnish, manageBandwidth } = require('./services/varnish');
 
 // Initialize the lastReadBlock variable to 0
 let lastReadBlock = 0;
@@ -141,8 +141,9 @@ networks.forEach(async CURRENT_NETWORK => {
     }, 60000)
 
     setInterval(async () => {
-        if(env.debug) console.log("Start checking bandwidth")
+        console.log("Start checking bandwidth")
         await checkBandwidth()
+        await manageBandwidth()
     }, 60000)
 
     //reset varnish every 1 week
