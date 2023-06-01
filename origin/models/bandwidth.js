@@ -24,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
     },
 
     bandwidth_limit_applied: {
-      type: DataTypes.bool,
+      type: DataTypes.BOOLEAN,
       allowNull: false,
       default: false
     },

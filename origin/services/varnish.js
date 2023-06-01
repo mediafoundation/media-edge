@@ -1,7 +1,7 @@
 const models = require('../models')
 
 const resetVarnish = async () => {
-    await models.Varnish.deleteAllRecords()
+    await models.Varnish.deleteAllRecords("/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/varnish_queue.json")
 }
 
 const manageBandwidth = async () => {

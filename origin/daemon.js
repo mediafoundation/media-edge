@@ -37,6 +37,9 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
             await models.Evm.sync({force: true})
             await models.Deals.sync({force: true})
             await models.Caddy.syncCaddySources({force: true})
+            await models.Varnish.sync({force: true})
+            await models.Bandwidth.sync({force: true})
+            await resetVarnish()
         } catch (e) {
             console.log("Error syncing db", e)
             databaseInitStatus = false
