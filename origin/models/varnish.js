@@ -21,7 +21,7 @@ module.exports = (sequelize, DataTypes) => {
         try {
             varnish_record = await Varnish.create({ path: domain + path })
             console.log("Created record in varnish table: ", varnish_record.id)
-            Varnish.appendFile({ id: varnish_record.id, path: varnish_record.path }, '/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/varnish_queue.json')
+            Varnish.appendToFile({ id: varnish_record.id, path: varnish_record.path }, '/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/varnish_queue.json')
         } catch (e) {
             console.log("Something went wrong during logging varnish purge:", e);
         }
@@ -29,19 +29,7 @@ module.exports = (sequelize, DataTypes) => {
 
 
 
-    // Function to append to or create the file
-    Varnish.appendToFile = (dataObj, fileName) => {
-        // Check if the file exists
-        fs.access(fileName, fs.constants.F_OK, (err) => {
-            if (err) {
-                // File doesn't exist, create a new file
-                createNewFile(dataObj, fileName);
-            } else {
-                // File exists, append to it
-                appendToExistingFile(dataObj, fileName);
-            }
-        });
-    }
+    
 
     Varnish.purgeRecord = async (url) => {
         try {
@@ -82,6 +70,48 @@ module.exports = (sequelize, DataTypes) => {
             console.error('Error deleting records:', error);
         }
     }
+
+    // Function to append to or create the file
+Varnish.appendToFile = (dataObj, fileName) => {
+    // Check if the file exists
+    fs.access(fileName, fs.constants.F_OK, (err) => {
+      if (err) {
+        // File doesn't exist, create a new file
+        createNewFile(dataObj, fileName);
+      } else {
+        // File exists, append to it
+        appendToExistingFile(dataObj, fileName);
+      }
+    });
+  }
+  
+  // Function to create a new file and write the object
+  Varnish.createNewFile = (dataObj, fileName) => {
+    const jsonStr = convertToJSON(dataObj);
+    const line = `${jsonStr}\n`;
+  
+    fs.writeFile(fileName, line, (err) => {
+      if (err) {
+        console.error(`Error creating file: ${err}`);
+      } else {
+        console.log(`File '${fileName}' created successfully.`);
+      }
+    });
+  }
+  
+  // Function to append the object to an existing file
+  Varnish.appendToExistingFile = (dataObj, fileName) => {
+    const jsonStr = convertToJSON(dataObj);
+    const line = `${jsonStr}\n`;
+  
+    fs.appendFile(fileName, line, (err) => {
+      if (err) {
+        console.error(`Error appending to file: ${err}`);
+      } else {
+        console.log(`Data appended to '${fileName}' successfully.`);
+      }
+    });
+  }
 
     
     return Varnish
