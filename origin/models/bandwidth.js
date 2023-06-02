@@ -281,7 +281,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  Bandwidth.resetBandwidthLimitPeriod = async (bandwidth) => {
+  Bandwidth.resetBandwidthLimitPeriod = async () => {
     let now = new Date().getTime()
     let bandwidthRecords = await Bandwidth.findAll()
     for (const bandwidthRecord of bandwidthRecords) {
@@ -296,7 +296,7 @@ module.exports = (sequelize, DataTypes) => {
           let bandwidthPeriods = bandwidthRecord.dataValues.periods
           let bandwidthPeriodEnds = bandwidthRecord.dataValues.period_end
           Bandwidth.update({period_end: (bandwidthPeriodEnds / bandwidthPeriods) * bandwidthPeriods + 1, bandwidthPeriods: bandwidthPeriods + 1, bandwidth_limit_applied: false}, {where: {id: bandwidth.id}})
-          await Bandwidth.resetBandwidthUsage(bandwidth.id)
+          await Bandwidth.resetBandwidthUsage(bandwidthRecord.dataValues.id)
         }
       } 
     }

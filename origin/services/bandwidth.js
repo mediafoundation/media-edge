@@ -3,6 +3,7 @@ const models = require("../models");
 let checkBandwidth = async () => {
     let deals = await models.Deals.getDealsFromDb()
     await models.Bandwidth.updateBandwidthUsage(deals)
+    await models.Bandwidth.resetBandwidthLimitPeriod()
 }
 
 let initBandwidth = async () => {
