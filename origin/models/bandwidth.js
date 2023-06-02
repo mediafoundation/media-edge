@@ -180,7 +180,7 @@ module.exports = (sequelize, DataTypes) => {
   Bandwidth.resetBandwidthUsage = async (dealId) => {
     await Bandwidth.update({ bytes_sent: 0, bandwidth_limit_applied: false }, { where: { id: dealId } });
   
-    const config = await axios.get(`${env.caddyUrl}${dealId}`, caddyApiHeaders);
+    const config = await axios.get(`http://localhost:2020/id/${deal.id}`, caddyApiHeaders);
     const resource = config.data;
     const headersHandler = resource.handle[0].routes[0].handle.find(
       (handler) => handler.handler === 'headers'
