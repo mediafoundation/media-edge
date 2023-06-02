@@ -148,7 +148,7 @@ module.exports = (sequelize, DataTypes) => {
       let limitInBytes = Bandwidth.convertToBytes(bandwidthLimit);
 
       // Check if the bandwidth limit has been reached
-      if (bandwidthUsage >= limitInBytes) {
+      if (bandwidthUsage >= limitInBytes && bandwidth.dataValues.bandwidth_limit_applied == false) {
         // Update the Caddy resource configuration to apply the bandwidth limiter
         await Bandwidth.applyBandwidthLimiter(deal, true);
         await bandwidth.update({
@@ -283,18 +283,22 @@ module.exports = (sequelize, DataTypes) => {
 
   Bandwidth.resetBandwidthLimitPeriod = async (bandwidth) => {
     let now = new Date().getTime()
-    if(now >= bandwidth.period_end){
-      let bandwidth_record = await Bandwidth.findOne({
-        where: {
-          id: bandwidth.id
+    let bandwidthRecords = await Bandwidth.findAll()
+    for (const bandwidthRecord of bandwidthRecords) {
+      if(now >= bandwidthRecord.dataValues.period_end){
+        console.log("Reseting bandwidth record:", bandwidthRecord.dataValues.id)
+        let bandwidth_record = await Bandwidth.findOne({
+          where: {
+            id: bandwidthRecord.dataValues.id
+          }
+        })
+        if(bandwidth_record){
+          let bandwidthPeriods = bandwidthRecord.dataValues.periods
+          let bandwidthPeriodEnds = bandwidthRecord.dataValues.period_end
+          Bandwidth.update({period_end: (bandwidthPeriodEnds / bandwidthPeriods) * bandwidthPeriods + 1, bandwidthPeriods: bandwidthPeriods + 1, bandwidth_limit_applied: false}, {where: {id: bandwidth.id}})
+          await Bandwidth.resetBandwidthUsage(bandwidth.id)
         }
-      })
-      if(bandwidth_record){
-        let bandwidthPeriods = bandwidth.periods
-        let bandwidthPeriodEnds = bandwidth.period_end
-        Bandwidth.update({period_end: (bandwidthPeriodEnds / bandwidthPeriods) * bandwidthPeriods + 1, bandwidthPeriods: bandwidthPeriods + 1}, {where: {id: bandwidth.id}})
-        await Bandwidth.resetBandwidthUsage(bandwidth.id)
-      }
+      } 
     }
   }
 
