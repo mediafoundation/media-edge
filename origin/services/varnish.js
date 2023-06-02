@@ -8,7 +8,7 @@ const manageBandwidth = async () => {
 
     let dealsIds = await models.Bandwidth.getLimitedRecordIds()
     for (const id of dealsIds) {
-        let deal = await models.Deals.getDealById(id)
+        let deal = await models.Deals.getDealById(id.dataValues.id)
         console.log("Deal in varnish service:", deal);
         let domains = JSON.parse(deal.domains)
         for (const domain of domains) {

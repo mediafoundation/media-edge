@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
 
     const Varnish = sequelize.define('Varnish', {
       id: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
       },
@@ -69,7 +69,7 @@ module.exports = (sequelize, DataTypes) => {
 
     Varnish.deleteAllRecords = async (filePath) => {
         try {
-            await MyModel.destroy({ where: {} });
+            await Varnish.destroy({ where: {} });
             console.log('All records deleted successfully.');
             fs.unlink(filePath, (err) => {
                 if (err) {

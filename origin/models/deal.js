@@ -163,7 +163,12 @@ module.exports = (sequelize, DataTypes) => {
 
     Deals.getDealById = async(id) => {
         try{
-            let deal = await Deals.findAll()
+            let deal = await Deals.findOne({
+                where: {
+                    id: id
+                },
+                raw: true
+            })
             return deal
         } catch(e){
             console.log("Error fetching deal from db:", e);

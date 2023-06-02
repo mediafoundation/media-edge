@@ -26,7 +26,7 @@ module.exports = (sequelize, DataTypes) => {
     bandwidth_limit_applied: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      default: false
+      defaultValue: false
     },
 
     periods: {
@@ -197,7 +197,7 @@ module.exports = (sequelize, DataTypes) => {
   Bandwidth.applyBandwidthLimiter = async (deal, enable) => {
     try {
       console.log("Applying bandwidth limit to deal:", deal.id);
-      const config = await axios.get(`http://localhost:2019/id/${deal.id}`);
+      const config = await axios.get(`http://localhost:2020/id/${deal.id}`);
       const resource = config.data;
   
       // Parse the metadata JSON string and get the bandwidthLimit
@@ -205,7 +205,7 @@ module.exports = (sequelize, DataTypes) => {
       const bandwidthLimit = metadata.bandwidthLimit;
   
       // Convert bandwidthLimit to bytes
-      const bytesLimit = convertToBytes(bandwidthLimit);
+      const bytesLimit = Bandwidth.convertToBytes(bandwidthLimit);
   
       let headersHandler = resource.handle[0].routes[0].handle.find(
         (handler) => handler.handler === 'headers'
@@ -229,7 +229,7 @@ module.exports = (sequelize, DataTypes) => {
         }
       }
   
-      await axios.put(`http://localhost:2019/id/${deal.id}`, resource);
+      await axios.put(`http://localhost:2020/id/${deal.id}`, resource);
       console.log(`Bandwidth limiter ${enable ? 'enabled' : 'disabled'} for resource ${deal.id}`);
 
       //Making purge for axios
