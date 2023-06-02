@@ -77,17 +77,17 @@ Varnish.appendToFile = (dataObj, fileName) => {
     fs.access(fileName, fs.constants.F_OK, (err) => {
       if (err) {
         // File doesn't exist, create a new file
-        createNewFile(dataObj, fileName);
+        Varnish.createNewFile(dataObj, fileName);
       } else {
         // File exists, append to it
-        appendToExistingFile(dataObj, fileName);
+        Varnish.appendToExistingFile(dataObj, fileName);
       }
     });
   }
   
   // Function to create a new file and write the object
   Varnish.createNewFile = (dataObj, fileName) => {
-    const jsonStr = convertToJSON(dataObj);
+    const jsonStr = Varnish.convertToJSON(dataObj);
     const line = `${jsonStr}\n`;
   
     fs.writeFile(fileName, line, (err) => {
@@ -101,7 +101,7 @@ Varnish.appendToFile = (dataObj, fileName) => {
   
   // Function to append the object to an existing file
   Varnish.appendToExistingFile = (dataObj, fileName) => {
-    const jsonStr = convertToJSON(dataObj);
+    const jsonStr = Varnish.convertToJSON(dataObj);
     const line = `${jsonStr}\n`;
   
     fs.appendFile(fileName, line, (err) => {
@@ -112,6 +112,11 @@ Varnish.appendToFile = (dataObj, fileName) => {
       }
     });
   }
+
+
+Varnish.convertToJSON = (obj) => {
+  return JSON.stringify(obj);
+}
 
     
     return Varnish
