@@ -295,7 +295,7 @@ module.exports = (sequelize, DataTypes) => {
         if(bandwidth_record){
           let bandwidthPeriods = bandwidthRecord.dataValues.periods
           let bandwidthPeriodEnds = bandwidthRecord.dataValues.period_end
-          Bandwidth.update({period_end: (bandwidthPeriodEnds / bandwidthPeriods) * bandwidthPeriods + 1, bandwidthPeriods: bandwidthPeriods + 1, bandwidth_limit_applied: false}, {where: {id: bandwidth.id}})
+          Bandwidth.update({period_end: (bandwidthPeriodEnds / bandwidthPeriods) * bandwidthPeriods + 1, bandwidthPeriods: bandwidthPeriods + 1, bandwidth_limit_applied: false}, {where: {id: bandwidthRecord.dataValues.id}})
           await Bandwidth.resetBandwidthUsage(bandwidthRecord.dataValues.id)
         }
       } 
@@ -328,9 +328,9 @@ module.exports = (sequelize, DataTypes) => {
     return period_end
   }
 
-  Bandwidth.getLimitedRecordIds = async () => {
+  Bandwidth.getRecordsFromDb = async () => {
     try{
-      let records = await Bandwidth.findAll({attributes: ['id'], where: {bandwidth_limit_applied: true}})
+      let records = await Bandwidth.findAll({raw: true})
       return records
     } catch(e){
       console.log("Error fetching records from bandwidth:", e);

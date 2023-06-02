@@ -6,9 +6,9 @@ const resetVarnish = async () => {
 
 const manageBandwidth = async () => {
 
-    let dealsIds = await models.Bandwidth.getLimitedRecordIds()
-    for (const id of dealsIds) {
-        let deal = await models.Deals.getDealById(id.dataValues.id)
+    let deals = await models.Bandwidth.getRecordsFromDb()
+    for (const dealFromDb of deals) {
+        let deal = await models.Deals.getDealById(dealFromDb.id)
         console.log("Deal in varnish service:", deal);
         let domains = JSON.parse(deal.domains)
         for (const domain of domains) {

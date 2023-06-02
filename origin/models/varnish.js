@@ -11,17 +11,26 @@ module.exports = (sequelize, DataTypes) => {
       },
       path: {
         type: DataTypes.STRING,
+      },
+
+      bandwidth_limited: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
       }
     }, {
       updatedAt: false,
     });
 
-    Varnish.addRecord = async (domain, path) => {
+    Varnish.addRecord = async (domain, path, bandwidhtLimited) => {
 
         try {
-            varnish_record = await Varnish.create({ path: domain + path })
-            console.log("Created record in varnish table: ", varnish_record.id)
-            Varnish.appendToFile({ id: varnish_record.id, path: varnish_record.path }, '/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/varnish_queue.json')
+            let varnishFromDb = await Varnish.findOne({where: {path: domain + path}, order: [['createdAt', 'DESC']], raw: true})
+            if(!varnishFromDb || varnishFromDb.bandwidth_limited != bandwidhtLimited){
+                varnish_record = await Varnish.create({ path: domain + path , bandwidth_limited: bandwidhtLimited})
+                console.log("Created record in varnish table: ", varnish_record.id)
+                Varnish.appendToFile({ id: varnish_record.id, path: varnish_record.path , bandwidth_limited: bandwidhtLimited}, '/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/varnish_queue.json')
+            }
         } catch (e) {
             console.log("Something went wrong during logging varnish purge:", e);
         }
