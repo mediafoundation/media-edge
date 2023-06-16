@@ -2,6 +2,7 @@ const axios = require('axios')
 const config = require('../config/app')
 const env = require("../config/env")
 const doh = require('dohjs')
+const { obtainAndRenewCertificate } = require('../utils/certs')
 const resolver = new doh.DohResolver('https://1.1.1.1/dns-query')
 // const resolver2 = new doh.DohResolver('https://dns.google.com/resolve')
 // const resolver3 = new doh.DohResolver('https://dns.quad9.net/dns-query')
@@ -200,6 +201,8 @@ module.exports = (sequelize, DataTypes) => {
           deal_id: item.deal.id
         }
       })
+
+      await obtainAndRenewCertificate({host: item.resource.domain})
       console.log("Added CaddySources for domain:", item.resource.domain, item.resource.id)
     } else { //if cname is not valid
       //if it's not on any queue already, add it
