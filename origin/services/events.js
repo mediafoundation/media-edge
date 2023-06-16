@@ -155,12 +155,13 @@ let manageDealCreatedOrAccepted = async (MarketplaceInstance, ResourcesInstance,
                 //console.log(dealFormatted, resourceFormatted)
                 await models.Deals.addRecord(dealFormatted)
                 await models.Evm.addRecord(resourceFormatted)
-                await models.Caddy.upsertRecord({
+                let caddyFile = await models.Caddy.getRecords()
+                await models.Caddy.addRecords({
                     resource: resourceFormatted, 
                     deal: dealFormatted
-                })
-                let dealForBandwidth = await models.Bandwidth.formatDataToDb(dealFormatted)
-                await models.Bandwidth.upsertRecord(dealForBandwidth)
+                }, caddyFile)
+                //let dealForBandwidth = await models.Bandwidth.formatDataToDb(dealFormatted)
+                //await models.Bandwidth.upsertRecord(dealForBandwidth)
             }
         }
     }
