@@ -159,7 +159,7 @@ let manageDealCreatedOrAccepted = async (MarketplaceInstance, ResourcesInstance,
                     resource: resourceFormatted, 
                     deal: dealFormatted
                 })
-                await models.Bandwidth.upsertRecord()
+                await models.Bandwidth.upsertRecord(dealFormatted)
             }
         }
     }
