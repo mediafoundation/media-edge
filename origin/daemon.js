@@ -184,8 +184,7 @@ async function start(){
             await resetVarnish()
         }, 24 * 7 * 60 * 60 * 1000) */
     }
-    checkCerts();
-    setInterval(obtainAndRenewCertificates, 60 * 60 * 1000); // Update every 1 hour
+    setInterval(checkCerts(), 60 * 60 * 1000); // Update every 1 hour
 }
 
 start()
