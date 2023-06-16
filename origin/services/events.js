@@ -107,7 +107,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
 
     if (typeof removedResources !== "undefined" && removedResources.length > 0) {
         for (const event of removedResources) {
-            await models.Evm.deleteRecords(getId(event.returnValues._id, CURRENT_NETWORK))
+            await models.Evm.deleteRecords([getId(event.returnValues._id, CURRENT_NETWORK)])
         }
     }
 
