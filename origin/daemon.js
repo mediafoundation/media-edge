@@ -122,8 +122,7 @@ app.listen(7878, () => {
 
 async function checkCerts(){
     let domains = await models.Caddy.getCaddySources(['host']);
-    await obtainAndRenewCertificates(domains);
-    return true;
+    obtainAndRenewCertificates(domains);
 }
 async function start(){
     // let CURRENT_NETWORK = networks.bsc
@@ -185,7 +184,7 @@ async function start(){
             await resetVarnish()
         }, 24 * 7 * 60 * 60 * 1000) */
     }
-    setInterval(checkCerts(), 60 * 60 * 1000); // Update every 1 hour
+    setInterval(async() => checkCerts(), 60 * 60 * 1000); // Update every 1 hour
 }
 
 start()
