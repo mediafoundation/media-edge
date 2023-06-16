@@ -1,19 +1,12 @@
 const acme = require("acme-client");
 const fs = require("fs");
 const path = require("path");
-const models = require("../models");
 const crypto = require('crypto');
 const fetch = require('node-fetch');
 const querystring = require('querystring');
 
 const challengesPath = "/var/www/challenges";
 const certsPath = "/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory";
-
-async function fetchDomainsFromDatabase() {
-  let domains = await models.Caddy.getCaddySources(['host']);
-  console.log(domains)
-  return domains;
-}
 
 function checkCertificateValidity(certificatePath, host) {
   try {
@@ -84,9 +77,7 @@ async function generateEABCredentials(email, apiKey) {
   }
 }
 
-async function obtainAndRenewCertificates() {
-
-  const domains = await fetchDomainsFromDatabase();
+async function obtainAndRenewCertificates(domains) {
 
   for (const domain of domains) {
     obtainAndRenewCertificate(domain)

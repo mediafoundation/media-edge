@@ -120,6 +120,10 @@ app.listen(7878, () => {
   console.log("Server listening on port 7878");
 });
 
+async function checkCerts(){
+    let domains = await models.Caddy.getCaddySources(['host']);
+    obtainAndRenewCertificates(domains);
+}
 async function start(){
     // let CURRENT_NETWORK = networks.bsc
     for(const CURRENT_NETWORK of networks ){
@@ -180,8 +184,7 @@ async function start(){
             await resetVarnish()
         }, 24 * 7 * 60 * 60 * 1000) */
     }
-
-    obtainAndRenewCertificates()
+    checkCerts();
     setInterval(obtainAndRenewCertificates, 60 * 60 * 1000); // Update every 1 hour
 }
 
