@@ -8,6 +8,13 @@ const querystring = require('querystring');
 const challengesPath = "/var/www/challenges";
 const certsPath = "/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory";
 
+const issuers = [
+  { name: 'Let\'s Encrypt', url: acme.directory.letsencrypt.production },
+  { name: 'ZeroSSL', url: 'https://acme.zerossl.com/v2/DV90' },
+  { name: 'Buypass Go SSL', url: 'https://api.buypass.com/acme/directory' },
+  // Add more ACME endpoints as needed...
+];
+
 function checkCertificateValidity(certificatePath, host) {
   try {
     // Read the certificate file
@@ -85,12 +92,6 @@ async function obtainAndRenewCertificates(domains) {
 }
 
 async function obtainAndRenewCertificate(domain) {
-  const issuers = [
-    { name: 'Let\'s Encrypt', url: acme.directory.letsencrypt.production },
-    { name: 'ZeroSSL', url: 'https://acme.zerossl.com/v2/DV90' },
-    { name: 'Buypass Go SSL', url: 'https://api.buypass.com/acme/directory' },
-    // Add more ACME endpoints as needed...
-  ];
   const certPath = path.join(certsPath, `${domain.host}`, `${domain.host}.crt`);
   const keyPath = path.join(certsPath, `${domain.host}`, `${domain.host}.key`);
   const jsonPath = path.join(certsPath, `${domain.host}`, `${domain.host}.json`);
@@ -100,58 +101,58 @@ async function obtainAndRenewCertificate(domain) {
       const validCert = checkCertificateValidity(certPath, domain.host);
       if (!validCert) {
         console.log(`Renewing certificate for ${domain.host}`);
-      } else {
-        continue;
+
+        for (const issuer of issuers) {
+          try {
+            console.log(`Obtaining certificate for ${domain.host} from ${issuer.name} / ${issuer.url}`);
+            const client = new acme.Client({
+              directoryUrl: issuer.url,
+              accountKey: await acme.crypto.createPrivateKey(),
+              externalAccountBinding: issuer.name === 'ZeroSSL' ? await generateEABCredentials() : undefined,
+            });
+            const [key, csr] = await acme.crypto.createCsr({
+              commonName: String(domain.host),
+            });
+            const cert = await client.auto({
+              csr,
+              email: 'caddy@zerossl.com',
+              termsOfServiceAgreed: true,
+              challengePriority: ["http-01"],
+              challengeCreateFn: async (authz, challenge, keyAuthorization) => {
+                const filePath = path.join(
+                  challengesPath,
+                  challenge.token
+                );
+                fs.writeFileSync(filePath, keyAuthorization);
+                console.log("Written challenge")
+              },
+              challengeRemoveFn: async (authz, challenge) => {
+                const filePath = path.join(
+                  challengesPath,
+                  challenge.token
+                );
+                fs.unlinkSync(filePath);
+              },
+            });
+            // Certificate obtained successfully!
+            if (!fs.existsSync(path.join(certsPath, `${domain.host}`))){
+                fs.mkdirSync(path.join(certsPath, `${domain.host}`), { recursive: true });
+            }
+            const json = `{"sans": ["${domain.host}"],"issuer_data": {"url": "https://media.network/"}}`;
+            fs.writeFileSync(certPath, cert);
+            fs.writeFileSync(keyPath, key);
+            fs.writeFileSync(jsonPath, json);
+            console.log(`Certificate for ${domain.host} obtained and saved.`);
+            break;
+          } catch (error) {
+            console.error(`Failed to obtain certificate from ${issuer.name}:`, error);
+            // Try the next ACME endpoint...
+          }
+        }
+
       }
     }
 
-    for (const issuer of issuers) {
-      try {
-        console.log(`Obtaining certificate for ${domain.host} from ${issuer.name} / ${issuer.url}`);
-        const client = new acme.Client({
-          directoryUrl: issuer.url,
-          accountKey: await acme.crypto.createPrivateKey(),
-          externalAccountBinding: issuer.name === 'ZeroSSL' ? await generateEABCredentials() : undefined,
-        });
-        const [key, csr] = await acme.crypto.createCsr({
-          commonName: String(domain.host),
-        });
-        const cert = await client.auto({
-          csr,
-          email: 'caddy@zerossl.com',
-          termsOfServiceAgreed: true,
-          challengePriority: ["http-01"],
-          challengeCreateFn: async (authz, challenge, keyAuthorization) => {
-            const filePath = path.join(
-              challengesPath,
-              challenge.token
-            );
-            fs.writeFileSync(filePath, keyAuthorization);
-            console.log("Written challenge")
-          },
-          challengeRemoveFn: async (authz, challenge) => {
-            const filePath = path.join(
-              challengesPath,
-              challenge.token
-            );
-            fs.unlinkSync(filePath);
-          },
-        });
-        // Certificate obtained successfully!
-        if (!fs.existsSync(path.join(certsPath, `${domain.host}`))){
-            fs.mkdirSync(path.join(certsPath, `${domain.host}`), { recursive: true });
-        }
-        const json = `{"sans": ["${domain.host}"],"issuer_data": {"url": "https://media.network/"}}`;
-        fs.writeFileSync(certPath, cert);
-        fs.writeFileSync(keyPath, key);
-        fs.writeFileSync(jsonPath, json);
-        console.log(`Certificate for ${domain.host} obtained and saved.`);
-        break;
-      } catch (error) {
-        console.error(`Failed to obtain certificate from ${issuer.name}:`, error);
-        // Try the next ACME endpoint...
-      }
-    }
   } catch (error) {
     console.error(`Failed to obtain certificate for ${domain.host}:`, error);
   }
