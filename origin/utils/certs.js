@@ -100,6 +100,8 @@ async function obtainAndRenewCertificate(domain) {
       const validCert = checkCertificateValidity(certPath, domain.host);
       if (!validCert) {
         console.log(`Renewing certificate for ${domain.host}`);
+      } else {
+        continue;
       }
     }
 
