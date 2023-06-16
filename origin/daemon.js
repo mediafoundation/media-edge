@@ -94,65 +94,95 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
     return edgeStatus && rpcStatus*/
 }
 
+//Certificate manager
+const express = require("express");
+const app = express();
+const { obtainAndRenewCertificates, challengesPath } = require("./utils/certs");
 
-// let CURRENT_NETWORK = networks.bsc
-networks.forEach(async CURRENT_NETWORK => {
+const getDomains = async(req, res) => {
+  try {
+    let domain = false
+    //add protocol to validate URL object if missing (should be missing always)
+    let protocol = (/^https?:\/\//).test(req.query.domain) ? "" : "http://";
+    let url = new URL(protocol+req.query.domain)
+    domain = await models.Caddy.checkDomain(url.hostname)
+    return res.sendStatus(domain ? 200 : 404)
+  } catch(_){
+    console.log("Invalid domain requested", req.query.domain)
+    return res.sendStatus(404)
+  }
+}
 
-    const web3 = new Web3(
-        new Web3.providers.HttpProvider(CURRENT_NETWORK.URL)
-    );
-    console.log("Contract address:", Resources.networks[CURRENT_NETWORK.network_id].address, "Start daemon to:", CURRENT_NETWORK.URL)
+app.use("/.well-known/acme-challenge", express.static(challengesPath));
+app.use('/domains', getDomains)
 
-
-    const ResourcesInstance = new web3.eth.Contract(
-        Resources.abi,
-        Resources.networks[CURRENT_NETWORK.network_id].address
-    );
-
-    const MarketplaceInstance = new web3.eth.Contract(
-        Marketplace.abi,
-        Marketplace.networks[CURRENT_NETWORK.network_id].address
-    )
-
-    let initResult = await init(ResourcesInstance, MarketplaceInstance, CURRENT_NETWORK, web3)
-    //should set an interval and then cancel it when init is successful
-    if(initResult){
-        console.log("Edge started correctly")
-    }
-
-    if(lastReadBlock !== 0){
-        console.log("Start to check events")
-        setInterval(async () => {
-            try { 
-                let getLastBlock = await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK, web3)
-                lastReadBlock = getLastBlock ? getLastBlock : lastReadBlock;
-            } catch(e){
-                console.log("Something failed while checking events", e)
-            }
-        }, 10000)
-    }
-
-    //Check if deals has balance to remain
-    setInterval(async () => {
-        await checkDealsShouldBeActive()
-    }, 10000)
-
-    checkQueue()
-
-    setInterval(async () => {
-        await checkCaddy(CURRENT_NETWORK)
-    }, 60000)
-
-    /* setInterval(async () => {
-        console.log("Start checking bandwidth")
-        await checkBandwidth()
-        await manageBandwidth()
-    }, 60000)
-
-    //reset varnish every 1 week
-    setInterval(async() => {
-        await resetVarnish()
-    }, 24 * 7 * 60 * 60 * 1000) */
+app.listen(7878, () => {
+  console.log("Server listening on port 7878");
 });
 
+async function start(){
+    // let CURRENT_NETWORK = networks.bsc
+    for(const CURRENT_NETWORK of networks ){
 
+        const web3 = new Web3(
+            new Web3.providers.HttpProvider(CURRENT_NETWORK.URL)
+        );
+        console.log("Contract address:", Resources.networks[CURRENT_NETWORK.network_id].address, "Start daemon to:", CURRENT_NETWORK.URL)
+
+
+        const ResourcesInstance = new web3.eth.Contract(
+            Resources.abi,
+            Resources.networks[CURRENT_NETWORK.network_id].address
+        );
+
+        const MarketplaceInstance = new web3.eth.Contract(
+            Marketplace.abi,
+            Marketplace.networks[CURRENT_NETWORK.network_id].address
+        )
+
+        let initResult = await init(ResourcesInstance, MarketplaceInstance, CURRENT_NETWORK, web3)
+        //should set an interval and then cancel it when init is successful
+        if(initResult){
+            console.log("Edge started correctly")
+        }
+
+        if(lastReadBlock !== 0){
+            console.log("Start to check events")
+            setInterval(async () => {
+                try { 
+                    let getLastBlock = await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK, web3)
+                    lastReadBlock = getLastBlock ? getLastBlock : lastReadBlock;
+                } catch(e){
+                    console.log("Something failed while checking events", e)
+                }
+            }, 10000)
+        }
+
+        //Check if deals has balance to remain
+        setInterval(async () => {
+            await checkDealsShouldBeActive()
+        }, 10000)
+
+        checkQueue()
+
+        setInterval(async () => {
+            await checkCaddy(CURRENT_NETWORK)
+        }, 60000)
+
+        /* setInterval(async () => {
+            console.log("Start checking bandwidth")
+            await checkBandwidth()
+            await manageBandwidth()
+        }, 60000)
+
+        //reset varnish every 1 week
+        setInterval(async() => {
+            await resetVarnish()
+        }, 24 * 7 * 60 * 60 * 1000) */
+    }
+
+    obtainAndRenewCertificates()
+    setInterval(obtainAndRenewCertificates, 60 * 60 * 1000); // Update every 1 hour
+}
+
+start()
