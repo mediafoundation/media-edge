@@ -65,7 +65,7 @@ module.exports = (sequelize, DataTypes) => {
       where: { host: host },
       raw: true 
     })
-    if(env.debug) console.log(`Checking if domain ${host} is added to Caddy Database -> ${!!domain}`)
+    if(env.debug=="requests") console.log(`Checking if domain ${host} is added to Caddy Database -> ${!!domain}`)
     return !!domain;
   }
 

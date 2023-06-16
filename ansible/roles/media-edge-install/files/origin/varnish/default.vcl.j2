@@ -46,6 +46,7 @@ sub vcl_recv {
       req.method != "HEAD" &&
       req.method != "PUT" &&
       req.method != "POST" &&
+      req.method != "PATCH" &&
       req.method != "TRACE" &&
       req.method != "OPTIONS" &&
       req.method != "DELETE") {
@@ -73,23 +74,23 @@ sub vcl_backend_response {
     # Here you clean the response headers, removing silly Set-Cookie headers
     # and other mistakes your backend does.
 
-    # Sets grace to 1d
-    set beresp.grace = 1d;
-
-    # Keep the response in cache for 14 days if the response has
-    # validating headers.
-    if (beresp.http.ETag || beresp.http.Last-Modified) {
-        set beresp.keep = 1d;
+    # Respect any Cache-Control header from the backend
+    if (beresp.http.Cache-Control ~ "(must-revalidate|no-store|no-cache|private)") {
+        set beresp.uncacheable = true;
     }
 
-    # Cache 50x responses
-    if (beresp.status == 500 || beresp.status == 502 || beresp.status == 503 || beresp.status == 504) {
-        set beresp.ttl = 10s;
+    # Cache certain status codes regardless of what the backend says
+    if ((beresp.status == 404 || beresp.status == 410) ||
+      (beresp.status >= 500 && beresp.status < 600) ||
+      (beresp.status == 200 && beresp.http.content-length == "0")) {
+        set beresp.uncacheable = false;
+        set beresp.ttl = 1s;
     }
-    
-    # Cache empty responses for 5 seconds
-    if (beresp.status == 200 && beresp.http.content-length == "0"){
-        set beresp.ttl = 5s;
+
+    if (beresp.http.cache-control !~ "s-maxage" &&
+        bereq.url ~ "\.(avif|bmp|ejs|jpeg|pdf|ps|ttf|class|eot|jpg|pict|svg|webp|eps|pls|svgz|woff|csv|gif|mid|png|swf|woff2|doc|ico|midi|ppt|tif|xls|docx|jar|otf|pptx|tiff|xlsx|mp4|ts|m4v|m4a|m4s)$") {
+        set beresp.uncacheable = false;
+        set beresp.ttl = 1w;
     }
 }
 
@@ -111,7 +112,7 @@ sub vcl_deliver {
     unset resp.http.Via;
     unset resp.http.Server;
     unset resp.http.X-Varnish;
-    #unset resp.http.s-maxage;
+    # unset resp.http.s-maxage;
     if (obj.hits > 0) { # Add debug header to see if it's a HIT/MISS and the number of hits, disable when not needed
         set resp.http.MN-G-Cache-Status = obj.hits;
     } else {
