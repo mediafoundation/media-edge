@@ -122,7 +122,8 @@ app.listen(7878, () => {
 
 async function checkCerts(){
     let domains = await models.Caddy.getCaddySources(['host']);
-    obtainAndRenewCertificates(domains);
+    await obtainAndRenewCertificates(domains);
+    return true;
 }
 async function start(){
     // let CURRENT_NETWORK = networks.bsc
