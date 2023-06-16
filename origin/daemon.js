@@ -143,7 +143,7 @@ networks.forEach(async CURRENT_NETWORK => {
         await checkCaddy(CURRENT_NETWORK)
     }, 60000)
 
-    setInterval(async () => {
+    /* setInterval(async () => {
         console.log("Start checking bandwidth")
         await checkBandwidth()
         await manageBandwidth()
@@ -152,7 +152,7 @@ networks.forEach(async CURRENT_NETWORK => {
     //reset varnish every 1 week
     setInterval(async() => {
         await resetVarnish()
-    }, 24 * 7 * 60 * 60 * 1000)
+    }, 24 * 7 * 60 * 60 * 1000) */
 });
 
 
