@@ -5,7 +5,7 @@
 - include: varnish.apt.yml
 - include: caddy.yml
 - include: stats.yml
-- include: optimize.yml
 - include: gluster.yml
+- include: optimize.yml
 - include: origin.yml
   when: inventory_hostname in groups["origin"]

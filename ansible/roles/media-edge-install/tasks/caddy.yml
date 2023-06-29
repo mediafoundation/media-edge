@@ -113,19 +113,19 @@
   when: not caddy_installed
 
 #Copy files for Client or Server
-- name: Copy CaddyFile to /etc/caddy/Caddyfile
+- name: Copy edge CaddyFile to /etc/caddy/Caddyfile
   template:
     src: files/edge/caddy/Caddyfile.j2
     dest: /etc/caddy/Caddyfile
   when: inventory_hostname in groups["edge"]
 
-- name: Copy CaddyFile to /etc/caddy/Caddyfile
+- name: Copy origin CaddyFile to /etc/caddy/Caddyfile
   template:
     src: files/origin/caddy/Caddyfile.j2
     dest: /etc/caddy/Caddyfile
   when: inventory_hostname in groups["origin"]
 
-- name: Copy caddy service file to /etc/systemd/system/caddy.service
+- name: Copy caddy edge service file to /etc/systemd/system/caddy.service
   template:
     src: files/edge/caddy/caddy.service.j2
     dest: /etc/systemd/system/caddy.service
@@ -134,7 +134,7 @@
     mode: '0644'
   when: inventory_hostname in groups["edge"]
 
-- name: Copy caddy service file to /etc/systemd/system/caddy.service
+- name: Copy caddy origin service file to /etc/systemd/system/caddy.service
   template:
     src: files/origin/caddy/caddy.service.j2
     dest: /etc/systemd/system/caddy.service
