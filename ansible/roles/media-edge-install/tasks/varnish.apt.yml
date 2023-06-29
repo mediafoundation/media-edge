@@ -4,6 +4,7 @@
   apt: 
     name: varnish
     state: latest
+    update_cache: yes
 
 - name: Create vcache group
   group:

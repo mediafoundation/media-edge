@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
             blockedBalance: DataTypes.STRING,
             pricePerSecond: DataTypes.STRING,
             minDuration: DataTypes.STRING,
-            startTime: DataTypes.STRING,
+            billingStart: DataTypes.STRING,
             endTime: DataTypes.STRING,
             active: DataTypes.STRING,
             cancelled: DataTypes.STRING,
@@ -58,10 +58,10 @@ module.exports = (sequelize, DataTypes) => {
 
     Deals.dealIsActive = async (deal) => {
         let unixTime = BigNumber.from(Math.floor(Date.now() / 1000));
-        let elapsedTime = unixTime.sub(deal.startTime);
+        let elapsedTime = unixTime.sub(BigNumber.from(deal.billingStart));
         let totalTime = BigNumber.from(deal.blockedBalance).div(deal.pricePerSecond);
         totalTime.sub(elapsedTime);
-        let calculatedEnd = BigNumber.from(deal.startTime).add(totalTime);
+        let calculatedEnd = BigNumber.from(deal.billingStart).add(totalTime);
         let d = new Date(calculatedEnd * 1000);
         const pad2 = (n) => { return (n < 10 ? '0' : '') + n }
         let formattedCalculatedEnd = pad2(d.getFullYear()) + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) + "T" + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
@@ -111,10 +111,10 @@ module.exports = (sequelize, DataTypes) => {
         parsedData.blockedBalance = deal.blockedBalance
         parsedData.pricePerSecond = deal.pricePerSecond
         parsedData.minDuration = deal.minDuration
-        parsedData.startTime = deal.startTime
+        parsedData.billingStart = deal.status.billingStart
         parsedData.endTime = deal.endTime ? deal.endTime : ""
-        parsedData.active = deal.active
-        parsedData.cancelled = deal.cancelled
+        parsedData.active = deal.status.active
+        parsedData.cancelled = deal.status.cancelled
         parsedData.metadata = deal.metadata
         parsedData.domains = JSON.stringify(deal.domains)
         parsedData.network = network.name ? network.name : ""

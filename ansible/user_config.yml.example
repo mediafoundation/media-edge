@@ -21,11 +21,6 @@ networks:
   chain_id: 1336
   network_id: 5778
 
-# Server capabilities
-disk_space: 40G
-cpu_cores: 4
-system_ram: 4G
-
 # DNS Configuration: This allows caddy to create TXT records to pass acme challenges. Leave lego and env_vars commented to disable.
 # Domain is required, otherwise installation will fail!
 # Check https://go-acme.github.io/lego/dns/#dns-providers for providers and env variables settings.

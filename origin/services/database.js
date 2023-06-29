@@ -14,7 +14,8 @@ const initDatabase = async function (ResourcesContract, MarketplaceContract, net
 
     //add to an array all the deal's id to delete
     for (let i = 0; i < deals.length; i++) {
-        if (await db.Deals.dealIsActive(deals[i]) === false || deals[i].active === false) {
+        let dealFormatted = db.Deals.formatDataToDb(deals[i], network)
+        if (await db.Deals.dealIsActive(dealFormatted) === false || dealFormatted.active === false) {
             dealsToDelete.push(deals[i].id)
         }
     }

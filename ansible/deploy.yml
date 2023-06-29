@@ -8,3 +8,4 @@
     - user_config.yml
     - vars/variables.yml
   gather_facts: yes
+  any_errors_fatal: true

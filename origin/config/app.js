@@ -22,7 +22,66 @@ module.exports = {
           "listen": [
             ":80"
           ],
-          "routes": [],
+          "routes": [
+            { //media-api
+              "handle": [
+                {
+                  "handler": "subroute",
+                  "routes": [
+                    {
+                      "handle": [
+                        {
+                          "handler": "reverse_proxy",
+                          "upstreams": [
+                            {
+                              "dial": "127.0.0.1:8080"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "match": [
+                {
+                  "host": [
+                    "media-api."+env.host
+                  ]
+                }
+              ],
+              "terminal": true
+            },
+            { //appdev
+              "handle": [
+                {
+                  "handler": "subroute",
+                  "routes": [
+                    {
+                      "handle": [
+                        {
+                          "handler": "reverse_proxy",
+                          "upstreams": [
+                            {
+                              "dial": "localhost:3000"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "match": [
+                {
+                  "host": [
+                    "appdev."+env.host
+                  ]
+                }
+              ],
+              "terminal": true
+            }
+          ],
           "tls_connection_policies": [{}]
         }
       }

@@ -148,10 +148,9 @@ let manageDealCreatedOrAccepted = async (MarketplaceInstance, ResourcesInstance,
         let deal = await models.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
         let resource = await models.Evm.getResource(ResourcesInstance, deal.resourceId)
         if(resource !== false){
-            if (await models.Deals.dealIsActive(deal) !== false && deal.active !== false) {
-                let dealFormatted = models.Deals.formatDataToDb(deal, CURRENT_NETWORK)
+            let dealFormatted = models.Deals.formatDataToDb(deal, CURRENT_NETWORK)
+            if (await models.Deals.dealIsActive(dealFormatted) !== false && dealFormatted.active !== false) {
                 let resourceFormatted = models.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK)
-    
                 //console.log(dealFormatted, resourceFormatted)
                 await models.Deals.addRecord(dealFormatted)
                 await models.Evm.addRecord(resourceFormatted)

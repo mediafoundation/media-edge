@@ -1,0 +1,106 @@
+- name: Update auth.allow for GlusterFS volume
+  hosts: your_gluster_host_group
+  tasks:
+    - name: Get current auth.allow list
+      command: gluster volume get cert_vol auth.allow
+      register: current_auth_allow
+      changed_when: false
+
+    - name: Extract IP addresses from auth.allow list
+      set_fact:
+        existing_ips: "{{ current_auth_allow.stdout_lines[1].split()[-1].split(',') }}"
+
+    - name: Combine existing IPs with inventory IPs
+      set_fact:
+        all_ips: "{{ existing_ips + (groups['origin'] + groups['edge'] | map('extract', hostvars, 'ansible_host') | list) | unique }}"
+
+    - name: Set updated auth.allow list
+      command: "gluster volume set cert_vol auth.allow {{ all_ips | join(',') }}"
+      when: inventory_hostname == groups['origin'][0]
+
+
+- name: Add new server to GlusterFS volume
+  hosts: origin,edge
+  become: yes
+  tasks:
+    - name: Prompt for new server's IP address
+      prompt: "Please enter the new server's IP address"
+      private: no
+      register: new_server_ip
+
+    - name: Prompt for server type (origin or edge)
+      prompt: "Please enter the server type (origin or edge)"
+      private: no
+      register: server_type
+
+    - name: Probe and add the new server as a GlusterFS peer
+      command: gluster peer probe {{ new_server_ip }}
+      when: server_type == 'origin'
+      run_once: true
+
+    - name: Add a new brick to the GlusterFS volume for the new origin node
+      command: gluster volume add-brick cert_vol {{ new_server_ip }}/gluster/brick force
+      when: server_type == 'origin'
+      run_once: true
+
+    - name: Rebalance the GlusterFS volume
+      command: gluster volume rebalance cert_vol start
+      when: server_type == 'origin'
+      run_once: true
+
+    - name: Set primary and backup origin servers
+      set_fact:
+        primary_origin_server: "{{ groups['origin'][0] }}"
+        backup_origin_servers: "{{ groups['origin'][1:] + [new_server_ip] | join(',') }}"
+      when: server_type == 'origin'
+
+    - name: Update /etc/fstab to include the new origin server
+      lineinfile:
+        path: /etc/fstab
+        regexp: '^{{ primary_origin_server }}:/cert_vol'
+        line: "{{ primary_origin_server }}:/cert_vol /mnt/glusterfs_certs glusterfs defaults,_netdev,backup-volfile-servers={{ backup_origin_servers }} 0 0"
+      when: server_type == 'origin'
+
+    - name: Remount the GlusterFS volume with updated options
+      command: mount -o remount /mnt/glusterfs_certs
+      when: server_type == 'origin'
+
+    - name: Mount GlusterFS volume on the new server
+      delegate_to: "{{ new_server_ip }}"
+      block:
+        - name: Create mount point
+          file:
+            path: /mnt/glusterfs_certs
+            state: directory
+            owner: root
+            group: root
+            mode: '0755'
+
+        - name: Mount GlusterFS volume
+          mount:
+            path: /mnt/glusterfs_certs
+            src: "{{ primary_origin_server }}:/cert_vol"
+            fstype: glusterfs
+            opts: "defaults,_netdev,backup-volfile-servers={{ backup_origin_servers }}"
+            state: mounted
+      when: server_type == 'origin'
+
+    - name: Mount GlusterFS volume on the new edge server
+      delegate_to: "{{ new_server_ip }}"
+      block:
+        - name: Create mount point
+          file:
+            path: /mnt/glusterfs_certs
+            state: directory
+            owner: root
+            group: root
+            mode: '0755'
+
+        - name: Mount GlusterFS volume on the new edge server
+          mount:
+            path: /mnt/glusterfs_certs
+            src: "{{ primary_origin_server }}:/cert_vol"
+            fstype: glusterfs
+            opts: "defaults,_netdev,backup-volfile-servers={{ backup_origin_servers }}"
+            state: mounted
+      when: server_type == 'edge'

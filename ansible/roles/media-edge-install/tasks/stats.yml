@@ -14,13 +14,18 @@
   block:
     - name: Installing Elastic Stack
       apt:
-        update_cache: true
+        update_cache: yes
         install_recommends: true
         state: latest
         name:
           - elasticsearch
           - logstash
           - kibana
+
+    - name: Configure Elasticsearch
+      template:
+        src: files/origin/elasticsearch.yml.j2
+        dest: /etc/elasticsearch/elasticsearch.yml
 
     - name: Configure Logstash
       template:
@@ -61,7 +66,7 @@
   block:
     - name: Install Filebeat
       apt:
-        update_cache: true
+        update_cache: yes
         install_recommends: true
         state: latest
         name: filebeat

@@ -1,26 +1,6 @@
-- name: Prepare the system for Media-Edge
-  file:
-    state: absent
-    path: ~/media-edge/
-  when: inventory_hostname in groups["edge"]
-
-- name: Ensure all necessary directories exist before copying files
-  file:
-    path: "{{ item }}"
-    state: directory
-    recurse: yes
-    owner: root
-    group: root
-    mode: 0775
-  loop:
-    - ~/media-edge/
-    - ~/media-edge/caddy
-    - ~/media-edge/public/blocked
-  when: inventory_hostname in groups["edge"]
-
-- name: Cleaning up cron if necessary
-  shell: crontab -r
-  ignore_errors: true
+# - name: Cleaning up cron if necessary
+#   shell: crontab -r
+#   ignore_errors: true
 
 - name: Fixing apt package issues
   shell: |
@@ -37,7 +17,6 @@
   apt:
     upgrade: "yes"
     update_cache: yes
-    cache_valid_time: 3600
 
 - name: Preventing services to start after installed
   shell: |
@@ -52,101 +31,78 @@
     name:
       - apache2
       - nginx    
-      - exim4
-      - exim4-base   
-      - exim4-config
-      - exim4-daemon-light       
-      - rpcbind  
-      - nfs-server
-      - libunbound8
+      # - exim4
+      # - exim4-base   
+      # - exim4-config
+      # - exim4-daemon-light       
+      # - rpcbind  
+      # - nfs-server
+      # - libunbound8
 
 - name: Installing shared system packages
   apt:
-    update_cache: true
+    update_cache: yes
     install_recommends: true
     state: latest
     name:
-      - git
       - htop
-      - vim
-      - curl
-      - bmon
-      - gcc
-      - build-essential
-      - iftop
-      - net-tools
-      - python3-pycurl
-      - python3-apt
-      - python3-psycopg2
-      - dnsutils
-      - debian-keyring
-      - debian-archive-keyring
-      - apt-transport-https
-      - gnupg2
-      - libedit-dev
-      - libjemalloc-dev
-      - libncurses-dev
-      - libtool
-      - pkg-config
-      - ethtool
+      - gpg
       - rsync
       - tmux
       - jq
       - wget
-      - lsb-release
+      - curl
+      - bmon
+      - iftop
+      #- git
+      #- vim
+      #- gcc
+      #- build-essential
+      #- net-tools
+      #- python3-pycurl
+      #- python3-apt
+      #- dnsutils
+      #- debian-keyring
+      #- debian-archive-keyring
+      #- apt-transport-https
+      #- gnupg2
+      #- libedit-dev
+      #- libjemalloc-dev
+      #- libncurses-dev
+      #- libtool
+      #- pkg-config
+      #- ethtool
+      #- lsb-release
 
-- name: Installing Edge system packages
-  apt:
-    update_cache: true
-    install_recommends: true
-    state: latest
-    name:
-      - fzf
-      - python3-docutils
-      - python3-sphinx
-  when: inventory_hostname in groups["edge"]
+# - name: Installing Edge system packages
+#   apt:
+#     update_cache: true
+#     install_recommends: true
+#     state: latest
+#     name:
+#       - fzf
+#       - python3-docutils
+#       - python3-sphinx
+#   when: inventory_hostname in groups["edge"]
 
-- name: Installing Origin system packages
-  apt:
-    update_cache: true
-    install_recommends: true
-    state: latest
-    name:
-      - libunbound-dev
-      - gpg
-      - software-properties-common
-      - dirmngr
-      - locate
-      - unzip
-      - autotools-dev
-      - libpcre2-dev
-      - cpio
-      - graphviz
-      - autoconf-archive
-      - libpcre3
-  when: inventory_hostname in groups["origin"]
-
-- name: Copying blocked resource template 
-  copy:
-   src: files/edge/system/index.html
-   dest: ~/media-edge/public/blocked
-  when: inventory_hostname in groups["edge"]
-
-- name: Download and apply NodeJS sources
-  shell: curl -sL https://deb.nodesource.com/{{node_version}} | bash -
-  when: inventory_hostname in groups["origin"]
-
-- name: Installing NodeJS from apt
-  apt: 
-    pkg: nodejs 
-    state: latest 
-    update_cache: yes 
-    install_recommends: yes
-  when: inventory_hostname in groups["origin"]
-
-- name: Install PM2 and yarn
-  shell: npm install -g pm2 yarn
-  when: inventory_hostname in groups["origin"]
+# - name: Installing Origin system packages
+#   apt:
+#     update_cache: true
+#     install_recommends: true
+#     state: latest
+#     name:
+#       - libunbound-dev
+#       - software-properties-common
+#       - dirmngr
+#       - locate
+#       - unzip
+#       - autotools-dev
+#       - libpcre2-dev
+#       - cpio
+#       - graphviz
+#       - autoconf-archive
+#       - libpcre3
+#   when: inventory_hostname in groups["origin"]
 
 - name: Adds hostname to /etc/hostname based on IP
   shell: |

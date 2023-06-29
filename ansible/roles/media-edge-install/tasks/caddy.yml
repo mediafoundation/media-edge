@@ -1,17 +1,21 @@
-- name: Check if caddy is installed and it has the correct modules and version
+
+- name: Check if caddy is installed and it has the correct modules and version, then register shell output
   shell: caddy list-modules | grep -e "caddy.logging.encoders.elastic" -e "dns.providers.lego_deprecated" -e "http.handlers.bandwidth" | wc -l | awk '{if ($1 == 3) print "true"; else print "false";}' | grep -q "true" && caddy version | awk '{print $1}' | cut -c 2- | awk '{if ($1 > "2.6.3") print "true"; else print "false";}' || echo false
   register: shell_output
 
-- name: Set boolean variable based on the command output
+- name: Read shell output and set a variable with the result of the previous operation
   set_fact:
     caddy_installed: "{{ shell_output.stdout | trim | lower == 'true' }}"
 
-- name: Caddy compilation required
+- name: Caddy not installed, lets try copying executable
   block:
-    - name: Remove existing Go installation
-      file:
-        path: /usr/local/go
-        state: absent
+    - name: Copy caddy executable
+      copy:
+        src: files/caddy
+        dest: /usr/local/bin/caddy
+        owner: root
+        group: root
+        mode: '0775'
 
     - name: Create necessary directories
       file:
@@ -20,38 +24,10 @@
         recurse: yes
         owner: root
         group: root
-        mode: 0775
+        mode: '0775'
       loop:
-        - /root/caddy/go
         - /root/.local/share/caddy
-        - /usr/local/go
         - /etc/caddy
-
-    - name: Download Go installer
-      get_url:
-        url: https://golang.org/dl/go{{ go_version }}.linux-amd64.tar.gz
-        dest: /root/caddy
-
-    - name: Extract Go installer to /usr/local
-      unarchive:
-        src: /root/caddy/go{{ go_version }}.linux-amd64.tar.gz
-        dest: /usr/local/
-        remote_src: true
-
-    - name: Install XCaddy
-      shell: go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
-      environment:
-        PATH: '/usr/local/go/bin:$PATH'
-        GOROOT: '/usr/local/go'
-        GOPATH: '/root/caddy/go'
-
-    - name: Build Caddy
-      shell: /root/caddy/go/bin/xcaddy build --with github.com/mediafoundation/caddy-bandwidth@latest --with github.com/caddy-dns/lego-deprecated --with github.com/firecow/caddy-elastic-encoder
-      environment:
-        PATH: '/usr/local/go/bin:$PATH'
-        GOROOT: '/usr/local/go'
-        GOPATH: '/root/caddy/go'
-
 
     - name: Create caddy group
       group:
@@ -73,16 +49,68 @@
         group: caddy
         state: directory
 
-    - name: Copy caddy executable to /usr/local/bin
-      copy:
-        src: /root/caddy/caddy
-        dest: /usr/local/bin/caddy
-        owner: root
-        group: root
-        mode: '0755'
-        remote_src: true
-  when: not caddy_installed
+    - name: Check if executable is working and register shell output
+      shell: caddy list-modules | grep -e "caddy.logging.encoders.elastic" -e "dns.providers.lego_deprecated" -e "http.handlers.bandwidth" | wc -l | awk '{if ($1 == 3) print "true"; else print "false";}' | grep -q "true" && caddy version | awk '{print $1}' | cut -c 2- | awk '{if ($1 > "2.6.3") print "true"; else print "false";}' || echo false
+      register: shell_output
 
+    - name: Read shell output and set a variable with the result of the previous operation
+      set_fact:
+        caddy_installed_2: "{{ shell_output.stdout | trim | lower == 'true' }}"
+
+    - name: Caddy compilation required
+      block:
+        - name: Remove existing Go installation
+          file:
+            path: /usr/local/go
+            state: absent
+
+        - name: Create necessary directories
+          file:
+            path: "{{ item }}"
+            state: directory
+            recurse: yes
+            owner: root
+            group: root
+            mode: 0775
+          loop:
+            - /root/caddy/go
+            - /usr/local/go
+
+        - name: Download Go installer
+          get_url:
+            url: https://golang.org/dl/go{{ go_version }}.linux-amd64.tar.gz
+            dest: /root/caddy
+
+        - name: Extract Go installer to /usr/local
+          unarchive:
+            src: /root/caddy/go{{ go_version }}.linux-amd64.tar.gz
+            dest: /usr/local/
+            remote_src: true
+
+        - name: Install XCaddy
+          shell: go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+          environment:
+            PATH: '/usr/local/go/bin:$PATH'
+            GOROOT: '/usr/local/go'
+            GOPATH: '/root/caddy/go'
+
+        - name: Build Caddy
+          shell: /root/caddy/go/bin/xcaddy build --with github.com/mediafoundation/caddy-bandwidth@latest --with github.com/caddy-dns/lego-deprecated --with github.com/firecow/caddy-elastic-encoder
+          environment:
+            PATH: '/usr/local/go/bin:$PATH'
+            GOROOT: '/usr/local/go'
+            GOPATH: '/root/caddy/go'
+
+        - name: Copy caddy executable to /usr/local/bin
+          copy:
+            src: /root/caddy/caddy
+            dest: /usr/local/bin/caddy
+            owner: root
+            group: root
+            mode: '0755'
+            remote_src: true
+      when: not caddy_installed_2
+  when: not caddy_installed
 
 #Copy files for Client or Server
 - name: Copy CaddyFile to /etc/caddy/Caddyfile
@@ -124,8 +152,8 @@
     state: restarted
     daemon_reload: yes
 
-- name: Create cron job to restart caddy on reboot
-  cron:
-    name: "caddy restart"
-    special_time: reboot
-    job: "sleep 600 && systemctl restart caddy"
+# - name: Create cron job to restart caddy on reboot
+#   cron:
+#     name: "caddy restart"
+#     special_time: reboot
+#     job: "sleep 600 && systemctl restart caddy"

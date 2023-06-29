@@ -241,7 +241,7 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   Bandwidth.upsertRecord = async (deal) => {
-    //console.log(Bandwidth.calculatePeriodEnd(deal.startTime, deal))
+    //console.log(Bandwidth.calculatePeriodEnd(deal.status.billingStart, deal))
     let bandwidth_record = await Bandwidth.findOne({
       where: {
         id: deal.id
@@ -276,8 +276,8 @@ module.exports = (sequelize, DataTypes) => {
     return {
       id: deal.id,
       bytes_sent: 0,
-      last_read: deal.startTime,
-      period_end: Bandwidth.calculatePeriodEnd(deal.startTime, deal)
+      last_read: deal.billingStart,
+      period_end: Bandwidth.calculatePeriodEnd(deal.billingStart, deal)
     }
   }
 
