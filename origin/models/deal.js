@@ -15,14 +15,9 @@ module.exports = (sequelize, DataTypes) => {
             pricePerSecond: DataTypes.STRING,
             billFullPeriods: DataTypes.BOOLEAN,
             minDuration: DataTypes.STRING,
-<<<<<<< HEAD
-            billingStart: DataTypes.STRING,
-            endTime: DataTypes.STRING,
-=======
             createdAt: DataTypes.STRING,
             acceptedAt: DataTypes.STRING,
             billingStart: DataTypes.STRING,
->>>>>>> 04733f2 (start integrating remote with local changes. Integrations of changes in origin and those in the contracts)
             active: DataTypes.STRING,
             cancelled: DataTypes.STRING,
             cancelledAt: DataTypes.STRING,
@@ -121,18 +116,12 @@ module.exports = (sequelize, DataTypes) => {
         parsedData.blockedBalance = deal.blockedBalance
         parsedData.pricePerSecond = deal.pricePerSecond
         parsedData.minDuration = deal.minDuration
-<<<<<<< HEAD
-        parsedData.billingStart = deal.status.billingStart
-        parsedData.endTime = deal.endTime ? deal.endTime : ""
-        parsedData.active = deal.status.active
-        parsedData.cancelled = deal.status.cancelled
-=======
+
         parsedData.createdAt = deal.status['createdAt']
         parsedData.acceptedAt = deal.status['acceptedAt']
         parsedData.billingStart = deal.status['billingStart']
         parsedData.active = deal.status['active']
         parsedData.cancelled = deal.status['cancelled']
->>>>>>> 04733f2 (start integrating remote with local changes. Integrations of changes in origin and those in the contracts)
         parsedData.metadata = deal.metadata
         parsedData.domains = JSON.stringify(deal.domains)
         parsedData.network = network.name ? network.name : ""
