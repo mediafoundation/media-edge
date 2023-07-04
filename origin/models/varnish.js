@@ -30,6 +30,7 @@ module.exports = (sequelize, DataTypes) => {
                 varnish_record = await Varnish.create({ path: domain + path , bandwidth_limited: bandwidhtLimited})
                 console.log("Created record in varnish table: ", varnish_record.id)
                 Varnish.appendToFile({ id: varnish_record.id, path: varnish_record.path , bandwidth_limited: bandwidhtLimited}, '/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/varnish_queue.json')
+                await Varnish.purgeRecord(domain + path)
             }
         } catch (e) {
             console.log("Something went wrong during logging varnish purge:", e);

@@ -13,11 +13,19 @@ module.exports = (sequelize, DataTypes) => {
             totalBlockedBalance: DataTypes.STRING,
             blockedBalance: DataTypes.STRING,
             pricePerSecond: DataTypes.STRING,
+            billFullPeriods: DataTypes.BOOLEAN,
             minDuration: DataTypes.STRING,
+<<<<<<< HEAD
             billingStart: DataTypes.STRING,
             endTime: DataTypes.STRING,
+=======
+            createdAt: DataTypes.STRING,
+            acceptedAt: DataTypes.STRING,
+            billingStart: DataTypes.STRING,
+>>>>>>> 04733f2 (start integrating remote with local changes. Integrations of changes in origin and those in the contracts)
             active: DataTypes.STRING,
             cancelled: DataTypes.STRING,
+            cancelledAt: DataTypes.STRING,
             metadata: DataTypes.STRING,
             domains: DataTypes.STRING,
             network: DataTypes.STRING
@@ -58,10 +66,12 @@ module.exports = (sequelize, DataTypes) => {
 
     Deals.dealIsActive = async (deal) => {
         let unixTime = BigNumber.from(Math.floor(Date.now() / 1000));
-        let elapsedTime = unixTime.sub(BigNumber.from(deal.billingStart));
+
+        let billingStart = deal.status ? deal.status['billingStart'] : deal.billingStart
+        let elapsedTime = unixTime.sub(billingStart);
         let totalTime = BigNumber.from(deal.blockedBalance).div(deal.pricePerSecond);
         totalTime.sub(elapsedTime);
-        let calculatedEnd = BigNumber.from(deal.billingStart).add(totalTime);
+        let calculatedEnd = BigNumber.from(billingStart).add(totalTime);
         let d = new Date(calculatedEnd * 1000);
         const pad2 = (n) => { return (n < 10 ? '0' : '') + n }
         let formattedCalculatedEnd = pad2(d.getFullYear()) + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) + "T" + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
@@ -111,10 +121,18 @@ module.exports = (sequelize, DataTypes) => {
         parsedData.blockedBalance = deal.blockedBalance
         parsedData.pricePerSecond = deal.pricePerSecond
         parsedData.minDuration = deal.minDuration
+<<<<<<< HEAD
         parsedData.billingStart = deal.status.billingStart
         parsedData.endTime = deal.endTime ? deal.endTime : ""
         parsedData.active = deal.status.active
         parsedData.cancelled = deal.status.cancelled
+=======
+        parsedData.createdAt = deal.status['createdAt']
+        parsedData.acceptedAt = deal.status['acceptedAt']
+        parsedData.billingStart = deal.status['billingStart']
+        parsedData.active = deal.status['active']
+        parsedData.cancelled = deal.status['cancelled']
+>>>>>>> 04733f2 (start integrating remote with local changes. Integrations of changes in origin and those in the contracts)
         parsedData.metadata = deal.metadata
         parsedData.domains = JSON.stringify(deal.domains)
         parsedData.network = network.name ? network.name : ""

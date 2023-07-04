@@ -12,12 +12,27 @@ const manageBandwidth = async () => {
         console.log("Deal in varnish service:", deal);
         let domains = JSON.parse(deal.domains)
         for (const domain of domains) {
-            await models.Varnish.addRecord(domain[1], '/')
-            await models.Varnish.purgeRecord(domain[1]+'/')
+            await models.Varnish.addRecord(deal.id + domain[1], '/', dealFromDb.bandwidth_limit_applied)
         }
         let resource = await models.Evm.getResourceById(deal.resourceId)
+        let domain = resource.dataValues.domain
+        if(domain != ''){
+            await models.Varnish.addRecord(domain, "/", dealFromDb.bandwidth_limit_applied)
+        }
         console.log(resource);
     }
 }
 
-module.exports = {resetVarnish, manageBandwidth}
+const purgeRecord = async (dealId, path) => {
+    let deal = await models.Deals.getDealById(dealId)
+    console.log("Deal in varnish service:", deal);
+    let domains = JSON.parse(deal.domains)
+    for (const domain of domains) {
+        await models.Varnish.addRecord(domain[1], path)
+        await models.Varnish.purgeRecord(domain[1]+path)
+    }
+    let resource = await models.Evm.getResourceById(deal.resourceId)
+    console.log(resource);
+}
+
+module.exports = {resetVarnish, manageBandwidth, purgeRecord}
