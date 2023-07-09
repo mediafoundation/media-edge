@@ -94,36 +94,6 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
     return edgeStatus && rpcStatus*/
 }
 
-//Certificate manager
-const express = require("express");
-const app = express();
-const { obtainAndRenewCertificates, challengesPath } = require("./utils/certs");
-
-const getDomains = async(req, res) => {
-  try {
-    let domain = false
-    //add protocol to validate URL object if missing (should be missing always)
-    let protocol = (/^https?:\/\//).test(req.query.domain) ? "" : "http://";
-    let url = new URL(protocol+req.query.domain)
-    domain = await models.Caddy.checkDomain(url.hostname)
-    return res.sendStatus(domain ? 200 : 404)
-  } catch(_){
-    console.log("Invalid domain requested", req.query.domain)
-    return res.sendStatus(404)
-  }
-}
-
-app.use("/.well-known/acme-challenge", express.static(challengesPath));
-app.use('/domains', getDomains)
-
-app.listen(7878, () => {
-  console.log("Server listening on port 7878");
-});
-
-async function checkCerts(){
-    let domains = await models.Caddy.getCaddySources(['host']);
-    obtainAndRenewCertificates(domains);
-}
 async function start(){
     // let CURRENT_NETWORK = networks.bsc
     for(const CURRENT_NETWORK of networks ){
@@ -131,7 +101,11 @@ async function start(){
         const web3 = new Web3(
             new Web3.providers.HttpProvider(CURRENT_NETWORK.URL)
         );
-        console.log("Contract address:", Resources.networks[CURRENT_NETWORK.network_id].address, "Start daemon to:", CURRENT_NETWORK.URL)
+        console.log(
+            "Resources Contract:", Resources.networks[CURRENT_NETWORK.network_id].address, "\n",
+            "Marketplace Contract:", Marketplace.networks[CURRENT_NETWORK.network_id].address,"\n",
+            "RPC URL:", CURRENT_NETWORK.URL
+        )
 
 
         const ResourcesInstance = new web3.eth.Contract(
@@ -184,7 +158,6 @@ async function start(){
             await resetVarnish()
         }, 24 * 7 * 60 * 60 * 1000) */
     }
-    setInterval(async() => checkCerts(), 60 * 60 * 1000); // Update every 1 hour
 }
 
 start()

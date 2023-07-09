@@ -76,14 +76,6 @@ module.exports = (sequelize, DataTypes) => {
     })
   }
 
-  Caddy.getHostnames = (deal)  =>{
-    let hostnames = []
-    for (const domain of JSON.parse(deal.domains)) {
-      hostnames.push(deal.id + "." + domain[1])
-    }
-    return hostnames
-  }
-
   /*Caddy.getDHostname = (resource_id)  =>{
     return resource_id + "." + env.hns
   }*/
@@ -102,7 +94,12 @@ module.exports = (sequelize, DataTypes) => {
   }*/
 
   Caddy.newObject = async (res, deal) => {
-    let hostname = Caddy.getHostnames(deal)
+    let hosts = []
+
+    for(const host of env.hosts){
+      hosts.push(`${deal.id}.${host}`)
+    }
+
     let transport = res.protocol === "https" ? 
     { 
       "protocol": "http", 
@@ -149,7 +146,7 @@ module.exports = (sequelize, DataTypes) => {
         "routes": routes
       }],
       "match": [{
-        "host": hostname
+        "host": hosts
       }],
       "terminal": true
     }
@@ -236,7 +233,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  Caddy.getResource = async (id) => {s
+  Caddy.getResource = async (id) => {
     let url = Caddy.caddyBaseUrl + 'id/' + id;
     try { 
       let resp = await axios.get(
@@ -254,7 +251,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  Caddy.getRecord = async (id) => {
+  Caddy.getHosts = async (id) => {
     let url = Caddy.caddyBaseUrl + 'id/' + id + '/match/0/host';
     try { 
       let resp = await axios.get(
@@ -329,7 +326,7 @@ module.exports = (sequelize, DataTypes) => {
   
   Caddy.patchRecord = async (item) => {
     if (item.resource.domain) {
-      let host = Caddy.getHostnames(item.deal);
+      let host = Caddy.getHosts(item.deal.id);
       let hostUpdated = await Caddy.updateCaddyHost(host, item);
       if (hostUpdated) {
         try {
@@ -363,13 +360,13 @@ module.exports = (sequelize, DataTypes) => {
       await CaddySource.destroy({where: {}})
       /*await CaddySource.findOrCreate({
         where: {
-          host: Caddy.getHostnames("media-api"),
+          host: Caddy.getHosts("media-api"),
           resource_id: 0
         }
       })
       await CaddySource.findOrCreate({
         where: {
-          host: Caddy.getHostnames("appdev"),
+          host: Caddy.getHosts("appdev"),
           resource_id: 0
         }
       })*/
@@ -466,13 +463,13 @@ module.exports = (sequelize, DataTypes) => {
   Caddy.removeCname = async(id, cname) =>{
     try {
       //get all current domains for a given resource
-      const matches = await Caddy.getRecord(id)
-      const match = matches.indexOf(cname)
+      const hosts = await Caddy.getHosts(id)
+      const hostToRemove = hosts.indexOf(cname)
       //remove cname from resource
-      matches.splice(match, 1)
+      hosts.splice(hostToRemove, 1)
       axios.patch(
         Caddy.caddyBaseUrl + 'id/' + id + '/match/0/host',
-        JSON.stringify(matches),
+        JSON.stringify(hosts),
         Caddy.caddyReqCfg
       )
       //remove cname from CaddySources

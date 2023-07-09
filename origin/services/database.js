@@ -77,7 +77,7 @@ const initDatabase = async function (ResourcesContract, MarketplaceContract, net
     for (const resource of resourcesToBeUpdatedInCaddy) {
         let deals = await db.Deals.dealsThatHasResource(resource.id)
         for (const deal of deals) {
-            let caddyHosts = await db.Caddy.getRecord(deal.id)
+            let caddyHosts = await db.Caddy.getHosts(deal.id)
             await db.Caddy.upsertRecord({resource: resource, deal: deal}, caddyHosts)
         }
     }

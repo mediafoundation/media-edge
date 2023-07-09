@@ -71,12 +71,12 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
                         })
 
 /*                         //Check if cname is added or deleted
-                        let caddyRecords = await models.Caddy.getRecord(deal.id, CURRENT_NETWORK)
+                        let caddyRecords = await models.Caddy.getHosts(deal.id, CURRENT_NETWORK)
                         let dbRecords = []
                         if(formattedResource.domain){
                             dbRecords.push(formattedResource.domain)
                         }
-                        dbRecords.push(...(await models.Caddy.getHostnames(deal)))
+                        dbRecords.push(...(await models.Caddy.getHosts(deal)))
 
                         //Check change of domain
                         if(!models.Caddy.areArraysEqual(dbRecords, caddyRecords)){
