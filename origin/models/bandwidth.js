@@ -121,7 +121,7 @@ module.exports = (sequelize, DataTypes) => {
 
       if(env.debug) console.log("Total bytes for deal", deal.id, ":", totalBytes)
 
-      let bandwidthUsage = parseInt(bandwidth.dataValues.bytes_sent) + totalBytes
+      let bandwidthUsage = parseInt(deal.bytes_sent) + totalBytes
 
       // Update the resource with the new bandwidth usage
       if(env.debug) console.log("Updating bandwidth:", bandwidthUsage)
@@ -142,7 +142,7 @@ module.exports = (sequelize, DataTypes) => {
       let limitInBytes = Bandwidth.convertToBytes(bandwidthLimit);
 
       // Check if the bandwidth limit has been reached
-      if (bandwidthUsage >= limitInBytes && bandwidth.dataValues.is_limited == false) {
+      if (bandwidthUsage >= limitInBytes && deal.is_limited == false) {
         // Update the Caddy resource configuration to apply the bandwidth limiter
         await Bandwidth.applyBandwidthLimiter(deal, true);
         await bandwidth.update({
