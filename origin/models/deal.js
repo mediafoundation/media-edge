@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
             client: DataTypes.STRING,
             provider: DataTypes.STRING,
             resourceId: DataTypes.STRING,
-            totalBlockedBalance: DataTypes.STRING,
+            totalPayment: DataTypes.STRING,
             blockedBalance: DataTypes.STRING,
             pricePerSecond: DataTypes.STRING,
             minDuration: DataTypes.BIGINT,
@@ -112,7 +112,7 @@ module.exports = (sequelize, DataTypes) => {
         data.client = deal.client
         data.provider = deal.provider
         data.resourceId = `${deal.resourceId}_${network.network_id}_${network.chain_id}`
-        data.totalBlockedBalance = deal.totalBlockedBalance
+        data.totalPayment = deal.totalPayment
         data.blockedBalance = deal.blockedBalance
         data.pricePerSecond = deal.pricePerSecond
         data.minDuration = deal.minDuration
