@@ -15,6 +15,7 @@ module.exports = (sequelize, DataTypes) => {
             pricePerSecond: DataTypes.STRING,
             minDuration: DataTypes.BIGINT,
             billFullPeriods: DataTypes.BOOLEAN,
+            singlePeriodOnly: DataTypes.BOOLEAN,
             createdAt: DataTypes.BIGINT,
             acceptedAt: DataTypes.BIGINT,
             billingStart: DataTypes.BIGINT,
@@ -117,6 +118,7 @@ module.exports = (sequelize, DataTypes) => {
         data.pricePerSecond = deal.pricePerSecond
         data.minDuration = deal.minDuration
         data.billFullPeriods = deal.billFullPeriods
+        data.singlePeriodOnly = deal.singlePeriodOnly
         data.createdAt = deal.status['createdAt']
         data.acceptedAt = deal.status['acceptedAt']
         data.billingStart = deal.status['billingStart']
