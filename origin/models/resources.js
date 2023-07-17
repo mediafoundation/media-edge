@@ -1,11 +1,11 @@
 const crypto = require('crypto');
 const ethSigUtil = require('@metamask/eth-sig-util');
-const state = require("./../models/state")
+const state = require("./state")
 const env = require("../config/env")
 
 module.exports = (sequelize, DataTypes) => {
 
-    const Evm = sequelize.define('Evm', {
+    const Resources = sequelize.define('Resources', {
             id: {type: DataTypes.STRING, primaryKey: true},
             owner: DataTypes.STRING,
             label: DataTypes.STRING,
@@ -37,7 +37,7 @@ module.exports = (sequelize, DataTypes) => {
         return decrypted;
     }
 
-    Evm.getPaginatedResources = async (contract, start, count) => {
+    Resources.getPaginatedResources = async (contract, start, count) => {
         let resources = []
 
         let paginatorIndex = start
@@ -134,8 +134,8 @@ module.exports = (sequelize, DataTypes) => {
         return resources
     }
 
-    Evm.addRecord = async (resource) => {
-        let evm_record = await Evm.findOne({
+    Resources.addRecord = async (resource) => {
+        let evm_record = await Resources.findOne({
             where: {
                 id: resource.id
             }
@@ -146,13 +146,13 @@ module.exports = (sequelize, DataTypes) => {
             evm_record.save()
             return changed
         } else {
-            evm_record = await Evm.create(resource)
+            evm_record = await Resources.create(resource)
             console.log("Created resource in evm table: ", resource.id)
         }
         return true
     }
 
-    Evm.formatDataToDb = (resource_id, owner, data, network) => {
+    Resources.formatDataToDb = (resource_id, owner, data, network) => {
         let parsedData = JSON.parse(data)
         parsedData.id = resource_id + "_" + network.network_id + "_" + network.chain_id
         parsedData.owner = owner
@@ -166,9 +166,9 @@ module.exports = (sequelize, DataTypes) => {
         return parsedData
     }
 
-    Evm.compareBlockchainAndDbData = async (blockchainIds) => {
+    Resources.compareBlockchainAndDbData = async (blockchainIds) => {
         let difference = [];
-        let rawDbResources = await Evm.findAll({attributes: ['id']})
+        let rawDbResources = await Resources.findAll({attributes: ['id']})
         let dbResourcesIds = rawDbResources.map(row => row.id)
         let set1 = new Set(blockchainIds);
         for (let i = 0; i < dbResourcesIds.length; i++) {
@@ -180,7 +180,7 @@ module.exports = (sequelize, DataTypes) => {
 
     }
 
-    Evm.compareDealsResourcesWithResources = async (dealsIds, resourcesIds) => {
+    Resources.compareDealsResourcesWithResources = async (dealsIds, resourcesIds) => {
         let difference = [];
         let set1 = new Set(dealsIds);
         for (let i = 0; i < resourcesIds.length; i++) {
@@ -191,9 +191,9 @@ module.exports = (sequelize, DataTypes) => {
         return difference;
     }
 
-    Evm.deleteRecords = async (ids) => {
+    Resources.deleteRecords = async (ids) => {
         for (const id of ids) {
-            let row = await Evm.findOne({where: { id: id }})
+            let row = await Resources.findOne({where: { id: id }})
             if(row){
                 await row.destroy()
                 if(env.debug) console.log("Deleted resource in evm table: ", id)
@@ -203,16 +203,16 @@ module.exports = (sequelize, DataTypes) => {
         }
     }
 
-    Evm.getResources = async () => {
+    Resources.getResources = async () => {
         let resources = []
-        let resourcesInDb =  await Evm.findAll({attributes: {exclude: ['createdAt', 'updatedAt']}})
+        let resourcesInDb =  await Resources.findAll({attributes: {exclude: ['createdAt', 'updatedAt']}})
         resourcesInDb.forEach(resource => {
             resources.push(resource.dataValues)
         })
         return resources
     }
 
-    Evm.getResource = async (contract, resourceId) => {
+    Resources.getResource = async (contract, resourceId) => {
         let resource = await contract.methods.getResource(resourceId, env.WALLET).call()
         try{
             let attr = JSON.parse(resource.encryptedData)
@@ -236,8 +236,8 @@ module.exports = (sequelize, DataTypes) => {
         
     }
 
-    Evm.getResourceById = async (resourceId) => {
-        let resource = await Evm.findOne({
+    Resources.getResourceById = async (resourceId) => {
+        let resource = await Resources.findOne({
             where: {
                 id: resourceId
             }
@@ -246,7 +246,7 @@ module.exports = (sequelize, DataTypes) => {
         return resource
     }
 
-    //Evm.sync({force: state.resetDb})
+    //Resources.sync({force: state.resetDb})
     return Evm
 
 }

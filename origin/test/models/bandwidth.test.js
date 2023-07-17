@@ -27,7 +27,7 @@ describe('Bandwidth functions', () => {
             };
         });
 
-        const result = await models.Bandwidth.getBandwidthUsageFromElasticsearch(mockDeal, mockBandwidth);
+        const result = await models.DealsBandwidth.getBandwidthUsageFromElasticsearch(mockDeal, mockBandwidth);
 
         expect(mockSearch).toHaveBeenCalled();
         expect(result.totalBytes).toEqual(1000);
@@ -36,7 +36,7 @@ describe('Bandwidth functions', () => {
 
     test('convertToBytes', () => {
         const mockBandwidthLimit = { amount: 1, unit: 'gb' };
-        const result = models.Bandwidth.convertToBytes(mockBandwidthLimit);
+        const result = models.DealsBandwidth.convertToBytes(mockBandwidthLimit);
 
         expect(result).toEqual(Math.pow(1024, 3));
         // Add more assertions as needed
@@ -49,15 +49,15 @@ describe('Bandwidth functions', () => {
             update: jest.fn(),
         };
 
-        models.Bandwidth.findByPk = jest.fn().mockResolvedValue(mockBandwidth);
-        models.Bandwidth.getBandwidthUsageFromElasticsearch = jest.fn().mockResolvedValue({ totalBytes: 500, range: {} });
-        models.Bandwidth.convertToBytes = jest.fn().mockReturnValue(Math.pow(1024, 3));
+        models.DealsBandwidth.findByPk = jest.fn().mockResolvedValue(mockBandwidth);
+        models.DealsBandwidth.getBandwidthUsageFromElasticsearch = jest.fn().mockResolvedValue({ totalBytes: 500, range: {} });
+        models.DealsBandwidth.convertToBytes = jest.fn().mockReturnValue(Math.pow(1024, 3));
 
-        await models.Bandwidth.updateBandwidthUsage([mockDeal]);
+        await models.DealsBandwidth.updateBandwidthUsage([mockDeal]);
 
-        expect(models.Bandwidth.findByPk).toHaveBeenCalledWith(mockDeal.id);
-        expect(models.Bandwidth.getBandwidthUsageFromElasticsearch).toHaveBeenCalledWith(mockDeal, mockBandwidth);
-        expect(mockBandwidth.update).toHaveBeenCalled();
+        expect(models.DealsBandwidth.findByPk).toHaveBeenCalledWith(mockDeal.id);
+        expect(models.DealsBandwidth.getBandwidthUsageFromElasticsearch).toHaveBeenCalledWith(mockDeal, mockBandwidth);
+        expect(mockDealsBandwidth.update).toHaveBeenCalled();
         // Add more assertions as needed
     });
 
@@ -65,7 +65,7 @@ describe('Bandwidth functions', () => {
         const mockDeal = { minDuration: 1 };
         const mockBandwidth = { last_read: Date.now() / 1000 - 2 }; // 2 seconds ago
 
-        const result = models.Bandwidth.isBillingPeriodElapsed(mockDeal, mockBandwidth);
+        const result = models.DealsBandwidth.isBillingPeriodElapsed(mockDeal, mockBandwidth);
 
         expect(result).toBe(true);
         // Add more assertions as needed

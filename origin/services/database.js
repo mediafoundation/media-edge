@@ -1,7 +1,7 @@
 const db = require("../models");
 const initDatabase = async function (ResourcesContract, MarketplaceContract, network, web3Instance) {
     //fetch resources and deals
-    let resources = await db.Evm.getPaginatedResources(ResourcesContract, 0, 2);
+    let resources = await db.Resources.getPaginatedResources(ResourcesContract, 0, 2);
 
 
     let deals = await db.Deals.getPaginatedDeals(MarketplaceContract, 0, 2)
@@ -29,7 +29,7 @@ const initDatabase = async function (ResourcesContract, MarketplaceContract, net
     //check which resources are not in an active deal
     let resourcesIds = resources.map(obj => obj.resource_id)
     let dealResourcesIds = deals.map(obj => obj.resourceId)
-    let resourcesToDelete = await db.Evm.compareDealsResourcesWithResources(dealResourcesIds, resourcesIds)
+    let resourcesToDelete = await db.Resources.compareDealsResourcesWithResources(dealResourcesIds, resourcesIds)
     let resourcesToBeUpdatedInCaddy = []
 
     //delete resource from the array of resources
@@ -40,10 +40,10 @@ const initDatabase = async function (ResourcesContract, MarketplaceContract, net
 
     //upsert records in db
     for (const resource of resources) {
-        let resourceFormatted = db.Evm.formatDataToDb(resource.resource_id, resource.owner, resource.data, network)
+        let resourceFormatted = db.Resources.formatDataToDb(resource.resource_id, resource.owner, resource.data, network)
         //store formated resources to be use in caddy
         //formattedResources.push(resourceFormatted)
-        let evmRecord = await db.Evm.addRecord(resourceFormatted)
+        let evmRecord = await db.Resources.addRecord(resourceFormatted)
         //console.log(evmRecord);
         if(evmRecord.length > 0){
             if (evmRecord.includes('origin') || evmRecord.includes('protocol') || evmRecord.includes('path')) {
@@ -59,10 +59,10 @@ const initDatabase = async function (ResourcesContract, MarketplaceContract, net
 
     //delete records that are in db but not in blockchain
     resourcesIds = resources.map(obj => obj.resource_id + "_" + network.network_id + "_" + network.chain_id)
-    let notCompatibleResources = await db.Evm.compareBlockchainAndDbData(resourcesIds)
+    let notCompatibleResources = await db.Resources.compareBlockchainAndDbData(resourcesIds)
 
     if (notCompatibleResources.length > 0) {
-        await db.Evm.deleteRecords(notCompatibleResources)
+        await db.Resources.deleteRecords(notCompatibleResources)
     }
 
     let dealsIds = deals.map(obj => obj.id + "_" + network.network_id + "_" + network.chain_id)
@@ -70,7 +70,7 @@ const initDatabase = async function (ResourcesContract, MarketplaceContract, net
 
     if (notCompatibleDeals.length > 0) {
         await db.Deals.deleteRecords(notCompatibleDeals)
-        await db.Bandwidth.deleteRecords(notCompatibleDeals)
+        await db.DealsBandwidth.deleteRecords(notCompatibleDeals)
     }
 
     //Update records in caddy if needed

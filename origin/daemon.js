@@ -9,7 +9,7 @@ const {initDatabase} = require("./services/database");
 const {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy} = require("./services/caddy");
 const {checkEvents} = require("./services/events");
 const {checkBandwidth, initBandwidth} = require("./services/bandwidth");
-const { resetVarnish, manageBandwidth } = require('./services/varnish');
+const { resetPurgeLog, manageBandwidth } = require('./services/varnish');
 
 // Initialize the lastReadBlock variable to 0
 let lastReadBlock = 0;
@@ -34,11 +34,11 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
     const resetIndex = process.argv.indexOf('--reset');
     if(resetIndex !== -1){
         try{
-            await models.Evm.sync({force: true})
+            await models.Resources.sync({force: true})
             await models.Deals.sync({force: true})
             await models.Caddy.syncCaddySources({force: true})
-            await models.Varnish.sync({force: true})
-            await models.Bandwidth.sync({force: true})
+            await models.PurgeLog.sync({force: true})
+            await models.DealsBandwidth.sync({force: true})
             await resetVarnish()
         } catch (e) {
             console.log("Error syncing db", e)
@@ -147,7 +147,7 @@ async function start(){
             await checkCaddy(CURRENT_NETWORK)
         }, 60000)
 
-        /* setInterval(async () => {
+        setInterval(async () => {
             console.log("Start checking bandwidth")
             await checkBandwidth()
             await manageBandwidth()
@@ -155,8 +155,8 @@ async function start(){
 
         //reset varnish every 1 week
         setInterval(async() => {
-            await resetVarnish()
-        }, 24 * 7 * 60 * 60 * 1000) */
+            await resetPurgeLog()
+        }, 24 * 7 * 60 * 60 * 1000)
     }
 }
 

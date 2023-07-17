@@ -3,7 +3,7 @@ const axios = require('axios');
 
 module.exports = (sequelize, DataTypes) => {
 
-    const Varnish = sequelize.define('Varnish', {
+    const PurgeLog = sequelize.define('PurgeLog', {
       id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -18,28 +18,28 @@ module.exports = (sequelize, DataTypes) => {
 
     const queueFile = '/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/varnish_queue.json';
 
-    Varnish.addRecord = async (url) => {
+    PurgeLog.addRecord = async (url) => {
         try {
-          let created = await Varnish.create(
+          let created = await PurgeLog.create(
             { 
               url: url
             }
           )
           console.log("Created record in varnish table: ", created.id)
-          Varnish.writeToFile(
+          PurgeLog.writeToFile(
             { 
               id: created.id, 
               url: created.url
             }, 
             queueFile
           )
-          await Varnish.purgeRecord(url)
+          await PurgeLog.purgeRecord(url)
         } catch (e) {
             console.log("Something went wrong during logging varnish purge:", e);
         }
     };
 
-    Varnish.purgeRecord = async (url) => {
+    PurgeLog.purgeRecord = async (url) => {
         try {
             const response = await axios.request({
                 method: 'PURGE',
@@ -63,9 +63,9 @@ module.exports = (sequelize, DataTypes) => {
         }
     }
 
-    Varnish.deleteAllRecords = async () => {
+    PurgeLog.deleteAllRecords = async () => {
         try {
-            await Varnish.destroy({ where: {} });
+            await PurgeLog.destroy({ where: {} });
             console.log('All records deleted successfully.');
             fs.unlink(queueFile, (err) => {
                 if (err) {
@@ -79,7 +79,7 @@ module.exports = (sequelize, DataTypes) => {
         }
     }
 
-    Varnish.writeToFile = (dataObj, fileName) => {
+    PurgeLog.writeToFile = (dataObj, fileName) => {
       const jsonStr = JSON.stringify(dataObj);
       const line = `${jsonStr}\n`;
     
