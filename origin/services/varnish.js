@@ -28,11 +28,11 @@ const manageBandwidth = async () => {
     }
 }
 
-const purgeRecord = async (dealId, path) => {
+const purgeRecord = async (deal, path) => {
     
-    let caddyHosts = await db.Caddy.getHosts(dealId)
+    let caddyHosts = await models.Caddy.getHosts(deal.id)
     for (const host of caddyHosts) {
-        await models.PurgeLog.addRecord(host + path)
+        await models.PurgeLog.addRecord("http://"+host + path)
     }
 
     // let deal = await models.Deals.getDealById(dealId)

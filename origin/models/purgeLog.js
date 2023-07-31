@@ -107,5 +107,5 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     
-    return Varnish
+    return PurgeLog
   }

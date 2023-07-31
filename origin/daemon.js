@@ -1,6 +1,7 @@
 const networks = require('./config/networks')
 const Resources = require('../media-evm-abis/Resources.json');
 const Marketplace = require('../media-evm-abis/Marketplace.json')
+const MarketplaceViewer = require('../media-evm-abis/MarketplaceViewer.json')
 const Web3 = require('web3');
 const models = require("./models");
 const env = require("./config/env")
@@ -39,7 +40,7 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
             await models.Caddy.syncCaddySources({force: true})
             await models.PurgeLog.sync({force: true})
             await models.DealsBandwidth.sync({force: true})
-            await resetVarnish()
+            await resetPurgeLog()
         } catch (e) {
             console.log("Error syncing db", e)
             databaseInitStatus = false
@@ -114,8 +115,8 @@ async function start(){
         );
 
         const MarketplaceInstance = new web3.eth.Contract(
-            Marketplace.abi,
-            Marketplace.networks[CURRENT_NETWORK.network_id].address
+            MarketplaceViewer.abi,
+            MarketplaceViewer.networks[CURRENT_NETWORK.network_id].address
         )
 
         let initResult = await init(ResourcesInstance, MarketplaceInstance, CURRENT_NETWORK, web3)

@@ -247,6 +247,6 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     //Resources.sync({force: state.resetDb})
-    return Evm
+    return Resources
 
 }

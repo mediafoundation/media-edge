@@ -325,5 +325,5 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   DealsBandwidth.sync({ force: true })
-  return Bandwidth;
+  return DealsBandwidth;
 }
