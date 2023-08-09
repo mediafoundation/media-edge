@@ -1,3 +1,46 @@
+- name: Get installed NodeJS version
+  command: node --version
+  register: node_installed_version
+  failed_when: False
+  changed_when: False
+
+- name: Extract major version number from installed NodeJS version
+  set_fact:
+    node_installed_major_version: "{{ node_installed_version.stdout[1:].split('.')[0] }}"
+  when: node_installed_version.rc == 0
+
+- name: Extract major version number from desired NodeJS version
+  set_fact:
+    node_desired_major_version: "{{ node_version.split('_')[1].split('.')[0] }}"
+
+- name: Download and apply NodeJS sources
+  shell: curl -sL https://deb.nodesource.com/{{node_version}} | bash -
+  when: node_installed_version.rc != 0 or node_installed_major_version != node_desired_major_version
+
+- name: Installing NodeJS from apt
+  apt: 
+    pkg: nodejs 
+    state: latest 
+    update_cache: yes 
+    install_recommends: yes
+  when: node_installed_version.rc != 0 or node_installed_major_version != node_desired_major_version
+
+- name: Check if PM2 is installed
+  command: pm2 --version
+  register: pm2_result
+  failed_when: False
+  changed_when: False
+
+- name: Check if yarn is installed
+  command: yarn --version
+  register: yarn_result
+  failed_when: False
+  changed_when: False
+
+- name: Install PM2 and yarn
+  shell: npm install -g pm2 yarn
+  when: pm2_result.rc != 0 or yarn_result.rc != 0
+
 - name: Remove existing origin
   file:
     path: /root/origin
@@ -20,11 +63,14 @@
     rsync_opts:
       - "--exclude=node_modules/"
       - "--exclude=yarn.lock"
+      - "--exclude=.git"
 
 - name: Copy abis folder
-  copy:
+  synchronize:
     src: ../media-evm-abis/
     dest: /root/media-evm-abis
+    rsync_opts:
+      - "--exclude=.git"
 
 - name: Create env.js file
   template:

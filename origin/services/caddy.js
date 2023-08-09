@@ -12,7 +12,7 @@ let initCaddy = async function(){
     }
 
     let dealsFromDB = await models.Deals.getDealsFromDb()
-    let resourcesFromDB = await models.Evm.getResources()
+    let resourcesFromDB = await models.Resources.getResources()
 
     let matchDealResources = []
 
@@ -53,7 +53,7 @@ let checkDealsShouldBeActive = async function(network){
             let dealsOfResource = await models.Deals.dealsThatHasResource(deal.resourceId)
             if(dealsOfResource.length === 1){
                 //remove resource too
-                //await models.Evm.deleteRecords(deal.resourceId)
+                //await models.Resources.deleteRecords(deal.resourceId)
                 resourcesToDelete.push(deal.resourceId)
             }
         }
@@ -64,7 +64,7 @@ let checkDealsShouldBeActive = async function(network){
     if(dealsToDelete.length > 0){
         console.log("Deals id to delete:", dealsToDelete)
         await models.Deals.deleteRecords(dealsToDelete)
-        await models.Evm.deleteRecords(resourcesToDelete)
+        await models.Resources.deleteRecords(resourcesToDelete)
 
         //Delete deals from caddy
         for (const dealToDelete of dealsToDelete) {

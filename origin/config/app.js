@@ -1,5 +1,14 @@
 const env = require("./env");
 
+const getHosts = (subdomain) => {
+  console.log(env.hosts)
+  let hostnames = []
+  for(const host of env.hosts) {
+    hostnames.push(`${subdomain}.${host}`)
+  }
+  return hostnames
+}
+
 module.exports = {
   media: {
     minimum_amount: env.minimum_amount
@@ -45,9 +54,7 @@ module.exports = {
               ],
               "match": [
                 {
-                  "host": [
-                    "media-api."+env.host
-                  ]
+                  "host": getHosts("api")
                 }
               ],
               "terminal": true
@@ -74,9 +81,7 @@ module.exports = {
               ],
               "match": [
                 {
-                  "host": [
-                    "appdev."+env.host
-                  ]
+                  "host": getHosts("appdev")
                 }
               ],
               "terminal": true

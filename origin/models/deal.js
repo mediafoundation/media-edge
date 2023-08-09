@@ -10,16 +10,19 @@ module.exports = (sequelize, DataTypes) => {
             client: DataTypes.STRING,
             provider: DataTypes.STRING,
             resourceId: DataTypes.STRING,
-            totalBlockedBalance: DataTypes.STRING,
+            totalPayment: DataTypes.STRING,
             blockedBalance: DataTypes.STRING,
             pricePerSecond: DataTypes.STRING,
-            minDuration: DataTypes.STRING,
-            startTime: DataTypes.STRING,
-            endTime: DataTypes.STRING,
-            active: DataTypes.STRING,
-            cancelled: DataTypes.STRING,
+            minDuration: DataTypes.BIGINT,
+            billFullPeriods: DataTypes.BOOLEAN,
+            singlePeriodOnly: DataTypes.BOOLEAN,
+            createdAt: DataTypes.BIGINT,
+            acceptedAt: DataTypes.BIGINT,
+            billingStart: DataTypes.BIGINT,
+            active: DataTypes.BOOLEAN,
+            cancelled: DataTypes.BOOLEAN,
+            cancelledAt: DataTypes.BIGINT,
             metadata: DataTypes.STRING,
-            domains: DataTypes.STRING,
             network: DataTypes.STRING
         }, {freezeTableName: true}
     )
@@ -58,10 +61,12 @@ module.exports = (sequelize, DataTypes) => {
 
     Deals.dealIsActive = async (deal) => {
         let unixTime = BigNumber.from(Math.floor(Date.now() / 1000));
-        let elapsedTime = unixTime.sub(deal.startTime);
+
+        let billingStart = deal.status ? deal.status['billingStart'] : deal.billingStart
+        let elapsedTime = unixTime.sub(billingStart);
         let totalTime = BigNumber.from(deal.blockedBalance).div(deal.pricePerSecond);
         totalTime.sub(elapsedTime);
-        let calculatedEnd = BigNumber.from(deal.startTime).add(totalTime);
+        let calculatedEnd = BigNumber.from(billingStart).add(totalTime);
         let d = new Date(calculatedEnd * 1000);
         const pad2 = (n) => { return (n < 10 ? '0' : '') + n }
         let formattedCalculatedEnd = pad2(d.getFullYear()) + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) + "T" + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
@@ -70,19 +75,20 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     Deals.addRecord = async (deal) => {
-        let deal_record = await Deals.findOne({
-            where: {
-                id: deal.id
+        console.log(deal)
+        try {
+            // This will either create a new record or update the existing one
+            const [record, created] = await Deals.upsert(deal, {
+            returning: true // This option asks Sequelize to return the updated/created record
+            });
+            if (created) {
+            console.log("Created deal in deals table: ", deal.id);
             }
-        })
-        if(deal_record){
-            await deal_record.set(deal)
-            deal_record.save()
-        } else {
-            deal_record = await Deals.create(deal)
-            console.log("Created deal in deals table: ", deal.id)
+            return record;
+        } catch (err) {
+            console.error('Error in Deals.addRecord: ', err);
+            throw err;
         }
-        return deal_record
     }
 
     Deals.deleteRecords = async (ids) => {
@@ -101,25 +107,27 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     Deals.formatDataToDb = (deal, network) => {
-        let parsedData = {}
-        parsedData.id = deal.id + "_" + network.network_id + "_" + network.chain_id
-        parsedData.offerId = deal.offerId
-        parsedData.client = deal.client
-        parsedData.provider = deal.provider
-        parsedData.resourceId = deal.resourceId + "_" + network.network_id + "_" + network.chain_id
-        parsedData.totalBlockedBalance = deal.totalBlockedBalance
-        parsedData.blockedBalance = deal.blockedBalance
-        parsedData.pricePerSecond = deal.pricePerSecond
-        parsedData.minDuration = deal.minDuration
-        parsedData.startTime = deal.startTime
-        parsedData.endTime = deal.endTime ? deal.endTime : ""
-        parsedData.active = deal.active
-        parsedData.cancelled = deal.cancelled
-        parsedData.metadata = deal.metadata
-        parsedData.domains = JSON.stringify(deal.domains)
-        parsedData.network = network.name ? network.name : ""
-
-        return parsedData
+        let data = {}
+        data.id = `${deal.id}_${network.network_id}_${network.chain_id}`
+        data.offerId = deal.offerId
+        data.client = deal.client
+        data.provider = deal.provider
+        data.resourceId = `${deal.resourceId}_${network.network_id}_${network.chain_id}`
+        data.totalPayment = deal.totalPayment
+        data.blockedBalance = deal.blockedBalance
+        data.pricePerSecond = deal.pricePerSecond
+        data.minDuration = deal.minDuration
+        data.billFullPeriods = deal.billFullPeriods
+        data.singlePeriodOnly = deal.singlePeriodOnly
+        data.createdAt = deal.status['createdAt']
+        data.acceptedAt = deal.status['acceptedAt']
+        data.billingStart = deal.status['billingStart']
+        data.active = deal.status['active']
+        data.cancelled = deal.status['cancelled']
+        data.cancelledAt = deal.status['cancelledAt']
+        data.metadata = deal.metadata
+        data.network = network.name ? network.name : ""
+        return data
     }
 
     Deals.compareDealsResourcesWithResources = async (dealsIds, resourcesIds) => {
@@ -159,6 +167,15 @@ module.exports = (sequelize, DataTypes) => {
 
     Deals.getDeal = async (contract, dealId) => {
         return await contract.methods.getDeal(dealId).call()
+    }
+
+    Deals.getDealById = async(id) => {
+        try{
+            let deal = await Deals.findByPk(id, {raw: true})
+            return deal
+        } catch(e){
+            console.log("Error fetching deal from db:", e);
+        }
     }
 
     Deals.dealsThatHasResource = async (resourceId) => {

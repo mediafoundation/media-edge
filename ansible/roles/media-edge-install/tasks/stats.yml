@@ -14,13 +14,18 @@
   block:
     - name: Installing Elastic Stack
       apt:
-        update_cache: true
+        update_cache: yes
         install_recommends: true
         state: latest
         name:
           - elasticsearch
           - logstash
           - kibana
+
+    - name: Configure Elasticsearch
+      template:
+        src: files/origin/elasticsearch.yml.j2
+        dest: /etc/elasticsearch/elasticsearch.yml
 
     - name: Configure Logstash
       template:
@@ -55,13 +60,34 @@
         name: kibana
         state: restarted
         enabled: yes
+
+    - name: Copy dashboard
+      copy:
+        src: files/origin/dashboard.ndjson
+        dest: /root/dashboard.ndjson
+
+    - name: Check kibana status
+      uri:
+        url: http://localhost:5601/api/data_views
+        method: GET
+        status_code: 200
+      register: response
+      until: response.status == 200
+      retries: 10
+      delay: 5
+
+    - name: Import dashboard
+      command:
+        cmd: 'curl -X POST http://localhost:5601/api/saved_objects/_import?createNewCopies=true -H "kbn-xsrf: true" --form file=@dashboard.ndjson'
+        chdir: /root/       
+
   when: inventory_hostname in groups["origin"]
 
 - name: Install and configure Edge stats 
   block:
     - name: Install Filebeat
       apt:
-        update_cache: true
+        update_cache: yes
         install_recommends: true
         state: latest
         name: filebeat

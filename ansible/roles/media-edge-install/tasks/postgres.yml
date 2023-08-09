@@ -4,16 +4,16 @@
 - name: Add apt key for postgres
   shell: wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
-
 - name: Install PostgreSQL 14 from apt
   apt:
-    update_cache: true
+    update_cache: yes
     install_recommends: true
     state: latest
     name:
       - postgresql-server-dev-14
       - postgresql-client-14
       - postgresql-contrib
+      - python3-psycopg2
 
 - name: Restart and enable postgresql service
   systemd:

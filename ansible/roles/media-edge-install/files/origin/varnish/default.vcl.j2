@@ -1,15 +1,3 @@
-#
-# This is an example VCL file for Varnish.
-#
-# It does not do anything by default, delegating control to the
-# builtin VCL. The builtin VCL is called when there is no explicit
-# return statement.
-#
-# See the VCL chapters in the Users Guide at https://www.varnish-cache.org/docs/
-# and https://www.varnish-cache.org/trac/wiki/VCLExamples for more examples.
-
-# Marker to tell the VCL compiler that this VCL has been adapted to the
-# new 4.0 format.
 vcl 4.0;
 
 # Default backend definition. Set this to point to your content server.
@@ -21,31 +9,20 @@ backend default {
 import std;
 
 acl purge {
-        "localhost";
+    "localhost";
 }
 
 sub vcl_recv {
+    # upgrade websocket requests
     if (req.http.upgrade ~ "(?i)websocket") {
         return (pipe);
     }
-}
-
-sub vcl_pipe {
-    if (req.http.upgrade) {
-        set bereq.http.upgrade = req.http.upgrade;
-        set bereq.http.connection = req.http.connection;
-    }
-}
-
-sub vcl_recv {
-    # Happens before we check if we have this in cache already.
-    # Typically you clean up the request here, removing cookies you don't need,
-    # rewriting the request, etc.
 
     if (req.method != "GET" &&
       req.method != "HEAD" &&
       req.method != "PUT" &&
       req.method != "POST" &&
+      req.method != "PATCH" &&
       req.method != "TRACE" &&
       req.method != "OPTIONS" &&
       req.method != "DELETE") {
@@ -68,28 +45,41 @@ sub vcl_recv {
     return (hash);
 }
 
+sub vcl_pipe {
+    if (req.http.upgrade) {
+        set bereq.http.upgrade = req.http.upgrade;
+        set bereq.http.connection = req.http.connection;
+    }
+}
+
 sub vcl_backend_response {
     # Happens after we have read the response headers from the backend.
     # Here you clean the response headers, removing silly Set-Cookie headers
     # and other mistakes your backend does.
 
-    # Sets grace to 1d
-    set beresp.grace = 1d;
-
-    # Keep the response in cache for 14 days if the response has
-    # validating headers.
-    if (beresp.http.ETag || beresp.http.Last-Modified) {
-        set beresp.keep = 1d;
+    # Respect any Cache-Control header from the backend
+    if (beresp.http.Cache-Control ~ "(must-revalidate|no-store|no-cache|private)") {
+        set beresp.uncacheable = true;
+    } else {
+        if (beresp.http.Cache-Control !~ "(maxage|s-maxage)") {
+            set beresp.ttl = 1s;
+            set beresp.grace = 1y;
+            set beresp.keep = 1y;
+        }
     }
 
-    # Cache 50x responses
-    if (beresp.status == 500 || beresp.status == 502 || beresp.status == 503 || beresp.status == 504) {
-        set beresp.ttl = 10s;
+    # Cache certain status codes regardless of what the backend says
+    if ((beresp.status == 404 || beresp.status == 410) ||
+      (beresp.status >= 500 && beresp.status < 600) ||
+      (beresp.status == 200 && beresp.http.content-length == "0")) {
+        set beresp.uncacheable = false;
+        set beresp.ttl = 1s;
     }
-    
-    # Cache empty responses for 5 seconds
-    if (beresp.status == 200 && beresp.http.content-length == "0"){
-        set beresp.ttl = 5s;
+
+    if (beresp.http.cache-control !~ "maxage" &&
+        bereq.url ~ "\.(avif|bmp|ejs|jpeg|pdf|ps|ttf|class|eot|jpg|pict|svg|webp|eps|pls|svgz|woff|csv|gif|mid|png|swf|woff2|doc|ico|midi|ppt|tif|xls|docx|jar|otf|pptx|tiff|xlsx|mp4|ts|m4v|m4a|m4s)$") {
+        set beresp.uncacheable = false;
+        set beresp.ttl = 1y;
     }
 }
 
@@ -106,12 +96,15 @@ sub vcl_purge {
 sub vcl_deliver {
     # Happens when we have all the pieces we need, and are about to send the
     # response to the client.
-    #
     # You can do accounting or modifying the final object here.
+
+    # Disable Varnish headers
     unset resp.http.Via;
     unset resp.http.Server;
     unset resp.http.X-Varnish;
-    #unset resp.http.s-maxage;
+    # unset resp.http.s-maxage;
+
+    # Hit or miss log
     if (obj.hits > 0) { # Add debug header to see if it's a HIT/MISS and the number of hits, disable when not needed
         set resp.http.MN-G-Cache-Status = obj.hits;
     } else {

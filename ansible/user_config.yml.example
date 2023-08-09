@@ -2,9 +2,8 @@
 #
 # Specify your wallet address
 #
-# If it's a SOLANA wallet it should look something to this "B1QA24y1sLB7WGjVBDVnYhUe5kh9jbKqy93shuFgwbnF"
-# Or if it's an EVM wallet it should look something to this: "0x00f420693607b8079432296d2E34eb8a9dDC6e7B"
-# The use of "" is required otherwise this is taken as a number.
+# It should look something to this: "0x00f420693607b8079432296d2E34eb8a9dDC6e7B"
+# The use of "" is required otherwise this is taken as a hex number.
 wallet_address: "0xe2D5992C16b12D2682De9074592973065aA9221F"
 
 # Please specify the private key for decrypting resources (64 characters)
@@ -16,15 +15,10 @@ private_key:
 # Please specify the networks you are providing services (where you are staking your tokens). 
 networks: 
 - name: ganache
-  URL: http://109.236.84.2:8545
-  WSS: wss://109.236.84.2:8545
-  chain_id: 1336
-  network_id: 5778
-
-# Server capabilities
-disk_space: 40G
-cpu_cores: 4
-system_ram: 4G
+  URL: http://127.0.0.1:8545
+  WSS: wss://127.0.0.1:8545
+  chain_id: 1
+  network_id: 1
 
 # DNS Configuration: This allows caddy to create TXT records to pass acme challenges. Leave lego and env_vars commented to disable.
 # Domain is required, otherwise installation will fail!

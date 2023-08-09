@@ -25,7 +25,7 @@ module.exports = [
         name: "ganache",
         URL: "http://127.0.0.1:8545",
         WSS: "wss://127.0.0.1:8545",
-        chain_id: 1337,
-        network_id: 5777
+        chain_id: 1,
+        network_id: 1
     }
 ]

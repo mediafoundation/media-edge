@@ -1,12 +1,13 @@
 - include: set_facts.yml
 - include: system.yml
-- include: gluster.yml
 - include: postgres.yml
   when: inventory_hostname in groups["origin"]
 - include: varnish.apt.yml
 - include: caddy.yml
 - include: stats.yml
-# - include: hnsd.yml
+- include: gluster.yml
 - include: optimize.yml
 - include: origin.yml
   when: inventory_hostname in groups["origin"]
+# - include: origin2.yml
+#   when: inventory_hostname in groups["origin"]

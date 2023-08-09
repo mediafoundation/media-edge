@@ -1,3 +1,16 @@
+# - name: Confirm install method
+#   block:
+#     - pause:
+#         prompt: "Is this a first run install? Or you already have origins and edges and you are adding more servers to your cluster?\nFirst run: [0]\nAdding more servers: [1]\nDefault: [0]"
+#         echo: yes
+#       register: add_or_update_input
+#     - set_fact:
+#         first_run: "{{ add_or_update_input.user_input is not defined or add_or_update_input.user_input != '1' }}"
+
+# - name: First run check
+#   debug:
+#     msg: "{{first_run}}"
+
 - name: Check if origins group exists and is not empty
   set_fact:
     origin_ips_exist: "{{ (groups['origin'] | length > 0) | bool }}"
@@ -17,35 +30,38 @@
         origin_ips: "{{ origin_ips_input.user_input.split(',') | map('trim') | list }}"
   when: not origin_ips_exist | default(false)
 
-- name: Store postgresql password if not defined
+- name: Set origin facts
   block:
-    - pause:
-        prompt: "\nEnter your postgresql password"
-        echo: no
-      register: postgres_password_input
-    - set_fact:
-        postgres_password: "{{ postgres_password_input.user_input }}"
-  when: inventory_hostname in groups["origin"] and (postgres_password is not defined or postgres_password == "" or postgres_password == none)
+    - name: Store postgresql password if not defined
+      block:
+        - pause:
+            prompt: "\nEnter your postgresql password"
+            echo: no
+          register: postgres_password_input
+        - set_fact:
+            postgres_password: "{{ postgres_password_input.user_input }}"
+      when: postgres_password is not defined or postgres_password == "" or postgres_password == none
 
-- name: Store wallet address if not defined
-  block:
-    - pause:
-        prompt: "\nEnter your provider wallet address. (The one with the staking)"
-        echo: yes
-      register: wallet_address_input
-    - set_fact:
-        wallet_address: "{{ wallet_address_input.user_input }}"
-  when: inventory_hostname in groups["origin"] and (wallet_address is not defined or wallet_address == "" or wallet_address == none)
+    - name: Store wallet address if not defined
+      block:
+        - pause:
+            prompt: "\nEnter your provider wallet address. (The one with the staking)"
+            echo: yes
+          register: wallet_address_input
+        - set_fact:
+            wallet_address: "{{ wallet_address_input.user_input }}"
+      when: wallet_address is not defined or wallet_address == "" or wallet_address == none
 
-- name: Store private key if not defined
-  block:
-    - pause:
-        prompt: "\nEnter your wallet private key for resource(s) decrypt. This should match the public encryption key provided on the app. (It may or may not be the same as the staking one for security reasons)."
-        echo: no
-      register: private_key_input
-    - set_fact:
-        private_key: "{{ private_key_input.user_input }}"
-  when: inventory_hostname in groups["origin"] and (private_key is not defined or private_key == "" or private_key == none)
+    - name: Store private key if not defined
+      block:
+        - pause:
+            prompt: "\nEnter your wallet private key for resource(s) decrypt. This should match the public encryption key provided on the app. (It may or may not be the same as the staking one for security reasons)."
+            echo: no
+          register: private_key_input
+        - set_fact:
+            private_key: "{{ private_key_input.user_input }}"
+      when: private_key is not defined or private_key == "" or private_key == none
+  when: inventory_hostname in groups["origin"]
 
 - name: Set disk capacities as a fact
   set_fact:
@@ -53,27 +69,15 @@
 
 - name: Set disk space as variable
   set_fact:
-    disk_space: "{{((disk_capacities.size_available / (1024*1024))*0.8) | int}}"
-
-
-- name: Store cpu cores if not defined
-  block:
-    - pause:
-        prompt: "\nEnter your server cpu cores"
-      register: cpu_cores_input
-    - set_fact:
-        cpu_cores: "{{ cpu_cores_input.user_input }}"
-  when: inventory_hostname in groups["edge"] and (cpu_cores is not defined or cpu_cores == "" or cpu_cores == none)
+    disk_space: "{{((disk_capacities.size_available / (1024*1024))*0.6) | int}}"
 
 - name: Set CPU cores as a fact
   set_fact:
     cpu_cores: "{{ ansible_processor_vcpus }}"
-  when: inventory_hostname in groups["edge"]
 
 - name: Set RAM capacity as a fact
   set_fact:
     system_ram: "{{ ansible_memtotal_mb }}"
-  when: inventory_hostname in groups["edge"] and (system_ram is not defined or system_ram == "" or system_ram == none)
 
 # - name: 
 #   debug:
