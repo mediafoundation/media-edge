@@ -34,7 +34,7 @@ module.exports = (sequelize, DataTypes) => {
         let steps = count
 
         try {
-            let result = await contract.methods.getPaginatedDeals(env.WALLET, true, paginatorIndex, steps).call()
+            let result = await contract.methods.getPaginatedDeals(env.MARKETPLACE_ID, env.WALLET, true, paginatorIndex, steps).call()
 
             //console.log("Deal 1: ", result._deals)
             deals.push(...result._deals)
@@ -42,12 +42,12 @@ module.exports = (sequelize, DataTypes) => {
             if(result._totalDeals > deals.length){
                 let totalDeals = result._totalDeals
                 for (let i = 1; i * steps < totalDeals; i++) {
-                    let result = await contract.methods.getPaginatedDeals(env.WALLET, true, steps * i, steps).call()
+                    let result = await contract.methods.getPaginatedDeals(env.MARKETPLACE_ID, env.WALLET, true, steps * i, steps).call()
                     deals.push(...result._deals)
                 }
 
                 if(totalDeals > deals.length){
-                    let result = await contract.methods.getPaginatedDeals(env.WALLET, true, deals.length, totalDeals - deals.length).call()
+                    let result = await contract.methods.getPaginatedDeals(env.MARKETPLACE_ID, env.WALLET, true, deals.length, totalDeals - deals.length).call()
                     deals.push(...result._deals)
                 }
             }
@@ -166,7 +166,7 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     Deals.getDeal = async (contract, dealId) => {
-        return await contract.methods.getDeal(dealId).call()
+        return await contract.methods.getDeal(env.MARKETPLACE_ID, dealId).call()
     }
 
     Deals.getDealById = async(id) => {
