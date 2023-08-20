@@ -167,7 +167,7 @@ let manageDealCreatedOrAccepted = async (MarketplaceInstance, ResourcesInstance,
 }
 
 let getId = (id, network) => {
-    return id + "_" + network.network_id + "_" + network.chain_id
+    return id + "_" + network.network_id + "_" + network.chain_id + "_" + env.MARKETPLACE_ID
 }
 
 module.exports = {checkEvents}

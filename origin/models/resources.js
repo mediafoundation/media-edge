@@ -1,6 +1,5 @@
 const crypto = require('crypto');
 const ethSigUtil = require('@metamask/eth-sig-util');
-const state = require("./state")
 const env = require("../config/env")
 
 module.exports = (sequelize, DataTypes) => {
@@ -154,7 +153,7 @@ module.exports = (sequelize, DataTypes) => {
 
     Resources.formatDataToDb = (resource_id, owner, data, network) => {
         let parsedData = JSON.parse(data)
-        parsedData.id = resource_id + "_" + network.network_id + "_" + network.chain_id
+        parsedData.id = resource_id + "_" + network.network_id + "_" + network.chain_id + "_" + env.MARKETPLACE_ID
         parsedData.owner = owner
         parsedData.label = parsedData.label ? parsedData.label : ""
         parsedData.protocol = parsedData.protocol ? parsedData.protocol : ""

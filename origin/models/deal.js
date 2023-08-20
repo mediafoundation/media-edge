@@ -1,6 +1,8 @@
 const env = require('../config/env')
 const {BigNumber} = require("ethers");
 const state = require("./../models/state")
+const {generateSubdomain} = require("../utils/generateSubdomain");
+const {MARKETPLACE_ID} = require("../config/env.example");
 
 module.exports = (sequelize, DataTypes) => {
 
@@ -108,11 +110,11 @@ module.exports = (sequelize, DataTypes) => {
 
     Deals.formatDataToDb = (deal, network) => {
         let data = {}
-        data.id = `${deal.id}_${network.network_id}_${network.chain_id}`
+        data.id = `${deal.id}_${network.network_id}_${network.chain_id}_${env.MARKETPLACE_ID}`
         data.offerId = deal.offerId
         data.client = deal.client
         data.provider = deal.provider
-        data.resourceId = `${deal.resourceId}_${network.network_id}_${network.chain_id}`
+        data.resourceId = `${deal.resourceId}_${network.network_id}_${network.chain_id}_${env.MARKETPLACE_ID}`
         data.totalPayment = deal.totalPayment
         data.blockedBalance = deal.blockedBalance
         data.pricePerSecond = deal.pricePerSecond

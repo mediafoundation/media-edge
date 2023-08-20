@@ -31,7 +31,7 @@ function processRecords() {
   const fileStream = fs.createReadStream(fileName, { encoding: 'utf8' });
   let isFirstLine = true;
 
-  fileStream.on('data', (data) => {
+  fileStream.on('data', async (data) => {
     const records = data.split('\n');
     const startIndex = isFirstLine ? 0 : 1;
 
@@ -39,12 +39,12 @@ function processRecords() {
       const record = JSON.parse(records[i]);
 
       if (record.id > lastReadId) {
-        purgeRecord(record);
+        await purgeRecord(record);
         lastReadId = record.id;
       } else if (lastReadId < parseInt(records[0].id) - 1) {
         // If last read ID is less than the first record ID minus one,
         // purge all varnish (purge everything)
-        purgeRecord(record);
+        await purgeRecord(record);
         lastReadId = parseInt(records[0].id) - 1;
       }
     }

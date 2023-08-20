@@ -4,7 +4,7 @@ const http = require('http');
 
 let caddyNeedsUpdate = false
 
-let initCaddy = async function(){
+let initCaddy = async function(network){
     let caddyRecords = await models.Caddy.getRecords()
     if(!caddyRecords){
         await models.Caddy.initApps()
@@ -23,7 +23,7 @@ let initCaddy = async function(){
         matchDealResources.push(matchDealResource)
     })
 
-    await models.Caddy.addRecords(matchDealResources, caddyRecords)
+    await models.Caddy.addRecords(matchDealResources, caddyRecords, network)
 
     let caddyFile = await models.Caddy.getRecords()
 

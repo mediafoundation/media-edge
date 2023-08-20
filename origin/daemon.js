@@ -4,8 +4,6 @@ const Marketplace = require('../media-evm-abis/Marketplace.json')
 const MarketplaceViewer = require('../media-evm-abis/MarketplaceViewer.json')
 const Web3 = require('web3');
 const models = require("./models");
-const env = require("./config/env")
-
 const {initDatabase} = require("./services/database");
 const {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy} = require("./services/caddy");
 const {checkEvents} = require("./services/events");
@@ -114,12 +112,17 @@ async function start(){
             Resources.networks[CURRENT_NETWORK.network_id].address
         );
 
-        const MarketplaceInstance = new web3.eth.Contract(
+        const MarketplaceViewerInstance = new web3.eth.Contract(
             MarketplaceViewer.abi,
             MarketplaceViewer.networks[CURRENT_NETWORK.network_id].address
         )
 
-        let initResult = await init(ResourcesInstance, MarketplaceInstance, CURRENT_NETWORK, web3)
+        const MarketplaceInstance = new web3.eth.Contract(
+            Marketplace.abi,
+            Marketplace.networks[CURRENT_NETWORK.network_id].address
+        )
+
+        let initResult = await init(ResourcesInstance, MarketplaceViewerInstance, CURRENT_NETWORK, web3)
         //should set an interval and then cancel it when init is successful
         if(initResult){
             console.log("Edge started correctly")

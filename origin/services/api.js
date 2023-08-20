@@ -17,13 +17,13 @@ app.post('/api', async (req, res) => {
   const payload = req.body
   console.log(payload)
   
-  payload.deals.forEach(async dealId => {
+  for (const dealId of payload.deals) {
     try {
-      let network = networks.find((network) => network.chain_id == payload.chainId)
+      let network = networks.find((network) => network.chain_id === payload.chainId)
       const deal = await models.Deals.getDealById(`${dealId}_${network.network_id}_${network.chain_id}`)
-      
+
       //check if address is owner of deal
-      if (deal.client == payload.address) {
+      if (deal.client === payload.address) {
         //todo: check how the arguments comes from the request
         if (verifySignature(payload, Marketplace.networks[payload.chainId].address)) {
           switch (payload.action) {
@@ -43,9 +43,33 @@ app.post('/api', async (req, res) => {
       console.log(e)
       res.send(`Error performing action ${e}`, 500)
     }
-  });
+  }
 
 });
+
+app.get('/api/getAllDealsEndpoints', async (req, res) => {
+  let payload = req.query
+  try{
+    const endpoints = {}
+    for (const dealId of payload.dealIds) {
+        endpoints[dealId] = await models.Caddy.getHosts(dealId)
+    }
+    res.send(endpoints)
+  } catch (e){
+    res.send(e)
+  }
+})
+
+app.get('/api/getDealsEndpoints', async (req, res) => {
+  let payload = req.query
+  try{
+    const endpoints = {}
+    endpoints[payload.dealId] = await models.Caddy.getHosts(payload.dealId)
+    res.send(endpoints)
+  } catch (e){
+    res.send(e)
+  }
+})
 
 // Start the server
 app.listen(port, () => {
