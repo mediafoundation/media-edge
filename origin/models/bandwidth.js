@@ -112,7 +112,7 @@ module.exports = (sequelize, DataTypes) => {
   // This function checks the bandwidth of all deals using elasticsearch, 
   // updates the db and applies the header to the Caddyfile
   DealsBandwidth.updateBandwidthUsage = async () => {
-    let deals = await DealsBandwidth.findAll({raw: true})
+    let deals = await DealsBandwidth.findAll()
     for (const deal of deals) {
 
       // Fetch the bandwidth usage from Elasticsearch
@@ -128,10 +128,12 @@ module.exports = (sequelize, DataTypes) => {
       if(env.debug) console.log("Updating last_read:", range.lte, new Date(range.lte).getTime())
       let newDatetime = new Date(range.lte)
       if(env.debug) console.log("last read new value:", Math.floor(newDatetime.getTime() / 1000))
-      await DealsBandwidth.update({
+      
+      await deal.update({
         bytes_sent: bandwidthUsage,
         last_read: Math.floor(newDatetime.getTime() / 1000),
       });
+
 
       // Extract the bandwidthLimit from the deal's metadata
       const metadata = JSON.parse(deal.metadata);
