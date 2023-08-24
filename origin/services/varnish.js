@@ -4,7 +4,7 @@ const resetPurgeLog = async () => {
     await models.PurgeLog.deleteAllRecords()
 }
 
-const manageBandwidth = async () => {
+/*const manageBandwidth = async () => {
 
     let deals = await models.DealsBandwidth.getRecordsFromDb()
     for (const deal of deals) {
@@ -26,7 +26,7 @@ const manageBandwidth = async () => {
         // }
         // console.log(resource);
     }
-}
+}*/
 
 const purgeRecord = async (deal, path) => {
     
@@ -46,4 +46,4 @@ const purgeRecord = async (deal, path) => {
     // console.log(resource);
 }
 
-module.exports = {resetPurgeLog, manageBandwidth, purgeRecord}
+module.exports = {resetPurgeLog, purgeRecord}

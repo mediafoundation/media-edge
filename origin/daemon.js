@@ -8,7 +8,7 @@ const {initDatabase} = require("./services/database");
 const {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy} = require("./services/caddy");
 const {checkEvents} = require("./services/events");
 const {checkBandwidth, initBandwidth} = require("./services/bandwidth");
-const { resetPurgeLog, manageBandwidth } = require('./services/varnish');
+const { resetPurgeLog } = require('./services/varnish');
 
 // Initialize the lastReadBlock variable to 0
 let lastReadBlock = 0;
@@ -154,7 +154,7 @@ async function start(){
         setInterval(async () => {
             console.log("Start checking bandwidth")
             await checkBandwidth()
-            await manageBandwidth()
+            //await manageBandwidth()
         }, 60000)
 
         //reset varnish every 1 week
