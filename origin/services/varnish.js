@@ -7,7 +7,7 @@ const resetPurgeLog = async () => {
 const manageBandwidth = async () => {
 
     let deals = await models.DealsBandwidth.getRecordsFromDb()
-    for (const dealFromDb of deals) {
+    for (const deal of deals) {
         let caddyHosts = await models.Caddy.getHosts(deal.id)
         for (const host of caddyHosts) {
             await models.PurgeLog.addRecord(host+path)
