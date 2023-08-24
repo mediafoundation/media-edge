@@ -10,7 +10,7 @@ const manageBandwidth = async () => {
     for (const deal of deals) {
         let caddyHosts = await models.Caddy.getHosts(deal.id)
         for (const host of caddyHosts) {
-            await models.PurgeLog.addRecord(host+path)
+            await models.PurgeLog.addRecord(host+'/')
         }
 
         // let deal = await models.Deals.getDealById(dealFromDb.id)
