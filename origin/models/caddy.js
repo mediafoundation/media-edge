@@ -165,7 +165,7 @@ module.exports = (sequelize, DataTypes) => {
         }
         payload.push(caddyData)
       } else {
-        await Caddy.upsertRecord(item, dealInFile, network)
+        await Caddy.upsertRecord(item, /* dealInFile, */ network)
       }
     }
     //Add to caddy file

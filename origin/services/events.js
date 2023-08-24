@@ -65,10 +65,13 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
                     let evmRecord = await models.Resources.addRecord(formattedResource)
 
                     for (const deal of deals) {
-                        await models.Caddy.upsertRecord({
+                        await models.Caddy.upsertRecord(
+                        {
                             resource: formattedResource, 
                             deal: deal.dataValues
-                        })
+                        }, 
+                        CURRENT_NETWORK
+                        )
 
 /*                         //Check if cname is added or deleted
                         let caddyRecords = await models.Caddy.getHosts(deal.id, CURRENT_NETWORK)
