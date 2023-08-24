@@ -261,7 +261,7 @@ module.exports = (sequelize, DataTypes) => {
         if(env.debug) console.log("Reseting bandwidth record:", record.id)
         DealsBandwidth.update({
           bytes_sent: 0,
-          period_end: (record.period_end / record.periods) * record.periods + 1, 
+          period_end: parseInt((record.period_end / record.periods) * record.periods + 1), 
           periods: record.periods + 1, 
           is_limited: false
         }, {
