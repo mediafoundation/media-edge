@@ -85,6 +85,33 @@ module.exports = {
                 }
               ],
               "terminal": true
+            },
+            { //swaptest
+              "handle": [
+                {
+                  "handler": "subroute",
+                  "routes": [
+                    {
+                      "handle": [
+                        {
+                          "handler": "reverse_proxy",
+                          "upstreams": [
+                            {
+                              "dial": "localhost:3002"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "match": [
+                {
+                  "host": getHosts("swaptest")
+                }
+              ],
+              "terminal": true
             }
           ],
           "tls_connection_policies": [{}]
