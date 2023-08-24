@@ -262,7 +262,7 @@ module.exports = (sequelize, DataTypes) => {
     let bandwidthRecords = await DealsBandwidth.findAll({ raw:true })
     let dealsToBeUpdated = []
     for (const record of bandwidthRecords) {
-      if(now >= record.period_end){
+      if(now >= record.period_end && record.is_limited === true){
         if(env.debug) console.log("Reseting bandwidth record:", record.id)
         DealsBandwidth.update({
           bytes_sent: 0,
