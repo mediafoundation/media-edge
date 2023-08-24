@@ -327,7 +327,7 @@ module.exports = (sequelize, DataTypes) => {
   
   Caddy.patchRecord = async (item) => {
     if (item.resource.domain) {
-      let host = Caddy.getHosts(item.deal.id);
+      let host = await Caddy.getHosts(item.deal.id);
       let hostUpdated = await Caddy.updateCaddyHost(host, item);
       if (hostUpdated) {
         try {
