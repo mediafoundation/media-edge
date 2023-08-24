@@ -123,7 +123,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
 
             await models.Caddy.deleteRecord(getId(event.returnValues._dealId, CURRENT_NETWORK))
             await models.Deals.deleteRecords([getId(event.returnValues._dealId, CURRENT_NETWORK)])
-            await models.Deals.deleteRecords([event.returnValues._dealId])
+            await models.DealsBandwidth.deleteRecords([getId(event.returnValues._dealId, CURRENT_NETWORK)])
 
             //Check if the resource associated to that deal has any other deals or need to be removed
             let deal = await models.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
