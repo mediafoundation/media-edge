@@ -7,7 +7,7 @@ function generateSubdomain(marketplaceId, dealId, networkId, chainId) {
 
     let result = hash.digest('base64').replace(/[^a-z0-9]/gi, '0'); // replace invalid characters with '0'
 
-    return result.slice(0, 6);  // Only take first 6 characters
+    return result.toLocaleLowerCase().slice(0, 6);  // Only take first 6 characters
 }
 
 //Following an example of usage
