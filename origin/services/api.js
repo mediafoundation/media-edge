@@ -61,7 +61,7 @@ app.get('/api/getAllDealsEndpoints', async (req, res) => {
 })
 
 app.get('/api/getDealsEndpoints', async (req, res) => {
-  let payload = req.query
+  let payload = req.body
   try{
     const endpoints = {}
     endpoints[payload.dealId] = await models.Caddy.getHosts(payload.dealId)
