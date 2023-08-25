@@ -4,7 +4,7 @@ const { verifySignature } = require('../utils/signatures')
 const cors = require('cors')
 const app = express()
 app.use(cors())
-const port = 3000; // Change this to your desired port number
+const port = 8080; // Change this to your desired port number
 const models = require("../models")
 const networks = require("./../config/networks")
 const env = require("./../config/env")
@@ -13,7 +13,7 @@ const Marketplace = require("./../../media-evm-abis/Marketplace.json")
 app.use(express.json())
 
 // Define the endpoint for your remote function
-app.post('/api', async (req, res) => {
+app.post('/', async (req, res) => {
   const payload = req.body
   console.log(payload)
   
