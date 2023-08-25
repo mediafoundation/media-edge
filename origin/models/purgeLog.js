@@ -41,17 +41,17 @@ module.exports = (sequelize, DataTypes) => {
 
     PurgeLog.purgeRecord = async (url) => {
         try {
-	let _url = new URL(url);
-            const response = await axios.request({
-                method: 'PURGE',
-                url: "http://127.0.0.1:6969"+_url.pathname,
-                headers: {
-                    'host':_url.host
-                },
-                //proxy: {
-                //    host: '127.0.0.1',
-                //    port: 6969,
-                //}            
+	          let _url = new URL(url);
+            let headers = {
+              'host': _url.host
+            }       
+            if(_url.pathname.includes("*")){
+              headers['X-Purge-Method'] = 'regex'
+            } 
+            let response = await axios.request({
+              method: 'PURGE',
+              url: "http://127.0.0.1:6969"+_url.pathname,
+              headers
             });
 
             if (response.status === 200) {
