@@ -47,7 +47,7 @@ app.post('/', async (req, res) => {
 
 });
 
-app.get('/api/getAllDealsEndpoints', async (req, res) => {
+app.get('/getAllDealsEndpoints', async (req, res) => {
   let payload = req.query
   try{
     const endpoints = {}
@@ -60,8 +60,9 @@ app.get('/api/getAllDealsEndpoints', async (req, res) => {
   }
 })
 
-app.get('/api/getDealsEndpoints', async (req, res) => {
+app.post('/getDealsEndpoints', async (req, res) => {
   let payload = req.body
+console.log(req.body)
   try{
     const endpoints = {}
     endpoints[payload.dealId] = await models.Caddy.getHosts(payload.dealId)
