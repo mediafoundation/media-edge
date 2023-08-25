@@ -104,7 +104,7 @@ sub vcl_backend_response {
     }
 
     if (beresp.http.cache-control !~ "s-maxage" &&
-        bereq.url ~ "\.(avif|bmp|ejs|jpeg|pdf|ps|ttf|class|eot|jpg|pict|svg|webp|eps|pls|svgz|woff|csv|gif|mid|png|swf|woff2|doc|ico|midi|ppt|tif|xls|docx|jar|otf|pptx|tiff|xlsx|mp4|ts|m4v|m4a|m4s)$") {
+        bereq.url ~ "\.(avif|bmp|ejs|jpeg|pdf|ps|ttf|class|eot|jpg|pict|svg|webp|eps|pls|svgz|woff|csv|gif|mid|png|swf|woff2|doc|ico|midi|ppt|tif|xls|docx|jar|otf|pptx|tiff|xlsx|mp4|ts|m4v|m4a|m4s|txt|js)$") {
         set beresp.uncacheable = false;
         set beresp.ttl = 1y;
     }
