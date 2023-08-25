@@ -20,7 +20,7 @@ app.post('/', async (req, res) => {
   for (const dealId of payload.deals) {
     try {
       let network = networks.find((network) => network.chain_id === payload.chainId)
-      const deal = await models.Deals.getDealById(`${dealId}_${network.network_id}_${network.chain_id}`)
+      const deal = await models.Deals.getDealById(`${dealId}_${network.network_id}_${network.chain_id}_${env.MARKETPLACE_ID}`)
 
       //check if address is owner of deal
       if (deal.client === payload.address) {
