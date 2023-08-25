@@ -49,7 +49,7 @@ module.exports = (sequelize, DataTypes) => {
                 },
                 proxy: {
                     host: '127.0.0.1',
-                    port: 80,
+                    port: 6969,
                   }            
             });
 
