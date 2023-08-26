@@ -15,7 +15,6 @@ app.use(express.json())
 // Define the endpoint for your remote function
 app.post('/', async (req, res) => {
   const payload = req.body
-  console.log(payload)
   
   for (const dealId of payload.deals) {
     try {
@@ -48,7 +47,7 @@ app.post('/', async (req, res) => {
 });
 
 app.get('/getAllDealsEndpoints', async (req, res) => {
-  let payload = req.query
+  let payload = req.body
   try{
     const endpoints = {}
     for (const dealId of payload.dealIds) {
@@ -62,7 +61,6 @@ app.get('/getAllDealsEndpoints', async (req, res) => {
 
 app.post('/getDealsEndpoints', async (req, res) => {
   let payload = req.body
-console.log(req.body)
   try{
     const endpoints = {}
     endpoints[payload.dealId] = await models.Caddy.getHosts(payload.dealId)

@@ -1,5 +1,7 @@
 const fs = require('fs').promises;
 const axios = require('axios');
+const chokidar = require('chokidar');
+const async = require('async');
 
 const fileName = '/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/varnish_queue.json';
 let lastReadId = 0;
@@ -38,7 +40,7 @@ async function purgeRecord(record) {
 }
 
 // Function to read the file and process records
-async function processRecords() {
+async function processRecords(callback) {
   let processedURLs = [];
   try {
     const data = await fs.readFile(fileName, 'utf-8');
@@ -69,13 +71,36 @@ async function processRecords() {
         } 
       } catch(_){/* Invalid JSON */}
     }
+    callback(); // finished processing this task
   } catch(e){
-      console.log("Couldnt read file", e)
+    console.log("Couldnt read file", e)
+    callback(e); // forward the error to the queue
   }
 }
 
-processRecords()
+// Create a queue with a single worker to ensure tasks (processRecords) are executed one at a time.
+const q = async.queue((task, callback) => {
+  processRecords(callback);
+}, 1);
 
-setInterval(() => {
-  processRecords();
-}, 30000)
+// If there are any errors, handle them here
+q.error((err) => {
+  console.error('Error processing a task:', err);
+});
+
+processRecords(() => {});
+
+const watcher = chokidar.watch(fileName, {
+  persistent: true,
+  usePolling: true, // especially useful on network file systems
+  interval: 1000    // poll every second (adjust if needed)
+});
+
+watcher.on('change', path => {
+  if (path === fileName) {
+    // Push a task onto the queue. It won't run immediately if there's another task currently running.
+    q.push({}, (err) => {
+      if (err) console.error('Error:', err);
+    });
+  }
+});
