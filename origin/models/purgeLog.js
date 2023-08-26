@@ -40,28 +40,29 @@ module.exports = (sequelize, DataTypes) => {
     };
 
     PurgeLog.purgeRecord = async (url) => {
-        try {
-	          let _url = new URL(url);
-            let headers = {
-              'host': _url.host
-            }       
-            if(_url.pathname.includes("*")){
-              headers['X-Purge-Method'] = 'regex'
-            } 
-            let response = await axios.request({
-              method: 'PURGE',
-              url: "http://127.0.0.1:6969"+_url.pathname,
-              headers
-            });
-
-            if (response.status === 200) {
-                console.log(`Successfully purged Varnish record for ${url}`);
-            } else {
-                console.error(`Failed to purge Varnish record for ${url}`);
-            }
-        } catch (error) {
-            console.error('Error purging Varnish record:', error);
+      try {
+        let _url = new URL(url);
+        let headers = { 'host': _url.host }
+        if(_url.pathname.includes("*")){
+          headers['X-Purge-Method'] = 'regex'
         }
+        let response = await axios.request({
+          method: 'PURGE',
+          url: "http://127.0.0.1:6969"+_url.pathname,
+          headers
+        });
+        if (response.status === 200) {
+          console.log(`Successfully purged Varnish record for ${url}`);
+        } else {
+          console.error(`Failed to purge Varnish record for ${url}`);
+        }
+      } catch (error) {
+        if (error.response.status === 503) {
+          console.log(`Successfully purged Varnish record for ${url}`);
+        } else {
+          console.error(`Failed to purge Varnish record for ${url}`);
+        }
+      }
     }
 
     PurgeLog.deleteAllRecords = async () => {
