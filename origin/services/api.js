@@ -46,6 +46,24 @@ app.post('/', async (req, res) => {
 
 });
 
+app.get('/purge', async (req, res) => {
+  const password = req.query.password
+  const host = req.query.host
+  const path = req.query.path ? req.query.path : '/*'
+  if (password === env.PURGE_PASSWORD) {
+    try {
+      await models.PurgeLog.addRecord("http://"+host + path)
+      res.send('Purge executed successfully!')
+    } catch (e) {
+      console.log(e)
+      res.send(`Error performing purge ${e}`, 500)
+    }
+  } else {
+    res.send(`Bad password`, 403)
+  }
+});
+
+
 app.get('/getAllDealsEndpoints', async (req, res) => {
   let payload = req.body
   try{
