@@ -4,7 +4,7 @@
 #
 # It should look something to this: "0x00f420693607b8079432296d2E34eb8a9dDC6e7B"
 # The use of "" is required otherwise this is taken as a hex number.
-wallet_address: "0xe2D5992C16b12D2682De9074592973065aA9221F"
+wallet_address: "0x81974B05Dc9C1E744CD509b2E11F84897373af7d"
 
 # Please specify the private key for decrypting resources (64 characters)
 # It may look something like: 545cdcd19de92805371d9644fa7d5a154e51204e41c8cbc8ff3bc9fdd5083efd
@@ -19,6 +19,9 @@ networks:
   WSS: wss://127.0.0.1:8545
   chain_id: 1
   network_id: 1
+
+# Select the marketplace ID where you are providing services.
+marketplace_id: 1
 
 # DNS Configuration: This allows caddy to create TXT records to pass acme challenges. Leave lego and env_vars commented to disable.
 # Domain is required, otherwise installation will fail!

@@ -7,7 +7,10 @@
 - include: stats.yml
 - include: gluster.yml
 - include: optimize.yml
+- include: nodejs.yml
 - include: origin.yml
   when: inventory_hostname in groups["origin"]
+- include: edge.yml
+  when: inventory_hostname in groups["edge"]
 # - include: origin2.yml
 #   when: inventory_hostname in groups["origin"]
