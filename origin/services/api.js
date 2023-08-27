@@ -19,6 +19,9 @@ app.post('/', async (req, res) => {
   if (!verifySignature(payload, Marketplace.networks[payload.chainId].address)) {
     return res.status(403).send(`Bad Signature`)
   }
+
+  let responsesSucceed = []
+  let responseFailed = []
   
   for (const dealId of payload.deals) {
     try {
@@ -35,16 +38,24 @@ app.post('/', async (req, res) => {
               await purgeRecord(deal, path)
             });
 
-          res.status(200).send('Remote function executed successfully!')
+          //res.status(200).send('Remote function executed successfully!')
+            responsesSucceed.push(dealId)
         }
       } else {
-        res.status(403).send(`Not owner`)
+        //res.status(403).send(`Not owner`)
+        responseFailed.push(dealId)
       }
     } catch (e) {
       console.log(e)
-      res.status(500).send(`Error performing action ${e}`)
+      //res.status(500).send(`Error performing action ${e}`)
+      responseFailed.push(dealId)
     }
   }
+
+  let _res = {}
+  responsesSucceed && (_res["Succeed"] = responsesSucceed)
+  responseFailed && (_res["Failed"] = responseFailed)
+  res.status(200).send(_res)
 
 });
 
