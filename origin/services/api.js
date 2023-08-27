@@ -15,6 +15,10 @@ app.use(express.json())
 // Define the endpoint for your remote function
 app.post('/', async (req, res) => {
   const payload = req.body
+
+  if (!verifySignature(payload, Marketplace.networks[payload.chainId].address)) {
+    return res.status(403).send(`Bad Signature`)
+  }
   
   for (const dealId of payload.deals) {
     try {
@@ -24,23 +28,21 @@ app.post('/', async (req, res) => {
       //check if address is owner of deal
       if (deal.client === payload.address) {
         //todo: check how the arguments comes from the request
-        if (verifySignature(payload, Marketplace.networks[payload.chainId].address)) {
-          switch (payload.action) {
-            case 'PURGE':
-              payload.params.paths.forEach(async path => {
-                await purgeRecord(deal, path)
-              });
-          }
-          res.send('Remote function executed successfully!')
-        } else {
-          res.send(`Bad signature`, 403)
+
+        switch (payload.action) {
+          case 'PURGE':
+            payload.params.paths.forEach(async path => {
+              await purgeRecord(deal, path)
+            });
+
+          res.status(200).send('Remote function executed successfully!')
         }
       } else {
-        res.send(`Not owner`, 403)
+        res.status(403).send(`Not owner`)
       }
     } catch (e) {
       console.log(e)
-      res.send(`Error performing action ${e}`, 500)
+      res.status(500).send(`Error performing action ${e}`)
     }
   }
 
