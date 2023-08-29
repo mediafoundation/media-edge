@@ -1,0 +1,29 @@
+- name: Check if ganache-cli is installed and get its version
+  command: npm list -g ganache-cli --depth=0
+  register: ganache_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Set ganache installed version
+  set_fact:
+    ganache_installed_version: "{{ ganache_check.stdout | regex_search('ganache-cli@([0-9.]+)', '\\1') | first }}"
+  when: ganache_check.rc == 0 and 'ganache-cli@' in ganache_check.stdout
+
+- name: Uninstall ganache-cli if the installed version {{ganache_version}} doesn't match the desired one
+  command: npm uninstall -g ganache-cli
+  when: ganache_installed_version is defined and ganache_installed_version != ganache_version
+  ignore_errors: true
+  changed_when: true
+
+- name: Install ganache-cli if not already installed or if the version was different
+  command: npm install -g ganache-cli@{{ ganache_version }}
+  when: ganache_installed_version is not defined or ganache_installed_version != ganache_version
+
+- name: Remove ganache db folder if persist_db is false
+  file:
+    path: /root/ganache-instance
+    state: absent
+  when: not persist_ganache_db
+
+- name: Execute ganache with pm2
+  command: pm2 start ganache-cli --name ganache -- -h {{ ganache_host }} -p {{ ganache_port }} --mnemonic {{ganache_mnemonic}} -q --networkId {{ganache_network_id}} --chainId={{ganache_chain_id}} --db /root/ganache-instance

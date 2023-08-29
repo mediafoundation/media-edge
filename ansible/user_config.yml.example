@@ -36,3 +36,14 @@ dns_config:
 
 # Postgres config
 postgres_password: kjhn2f3FQ@eh
+
+# Testing server, set to true to provision the server with ganache
+testing: false
+
+# Ganache config, set up all the ganache environment. Only if testing is true
+persist_ganache_db: true
+ganache_host: 0.0.0.0
+ganache_port: 8545
+ganache_mnemonic: "blue stone rain outer bomb like lounge spoil stuff prison shoe own"
+ganache_network_id: 418
+ganache_chain_id: 418

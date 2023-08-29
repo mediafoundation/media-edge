@@ -14,7 +14,7 @@
 - name: Check if origins group exists and is not empty
   set_fact:
     origin_ips_exist: "{{ (groups['origin'] | length > 0) | bool }}"
-    
+
 - name: Store origins IP addresses in a variable
   set_fact:
     origin_ips: "{{ groups['origin'] | map('extract', hostvars, 'ansible_host') | list }}"
@@ -61,6 +61,86 @@
         - set_fact:
             private_key: "{{ private_key_input.user_input }}"
       when: private_key is not defined or private_key == "" or private_key == none
+
+    - name: Store testing if not defined
+      block:
+        - pause:
+            prompt: "\n Enter whether or not is a testing server (true | false)"
+            echo: yes
+          register: testing_input
+        - set_fact:
+            testing: "{{testing_input.user_input}}"
+      when: testing is not defined or testing == "" or testing == none
+
+    - name: Store persist_ganache_db if not defined
+      block:
+        - pause:
+            prompt: "\n Enter whether or not to persist ganache db (true | false) "
+            echo: yes
+          register: persist_ganache_db_input
+        - set_fact:
+            persist_ganache_db: "{{persist_ganache_db_input.user_input}}"
+      when: (persist_ganache_db is not defined or persist_ganache_db == "" or persist_ganache_db == none) and testing == true
+
+    - name: Store ganache_host if not defined
+      block:
+        - pause:
+            prompt: "\n Enter ganache host (e.g., 0.0.0.0) "
+            echo: yes
+          register: ganache_host_input
+        - set_fact:
+            ganache_host: "{{ganache_host_input.user_input}}"
+      when: (ganache_host is not defined or ganache_host == "" or ganache_host == none) and testing == true
+
+    - name: Store persist_ganache_db if not defined
+      block:
+        - pause:
+            prompt: "\n Enter whether or not to persist ganache db (true | false) "
+            echo: yes
+          register: persist_ganache_db_input
+        - set_fact:
+            persist_ganache_db: "{{persist_ganache_db_input.user_input}}"
+      when: (persist_ganache_db is not defined or persist_ganache_db == "" or persist_ganache_db == none) and testing == true
+
+    - name: Store ganache_port if not defined
+      block:
+        - pause:
+            prompt: "\n Enter ganache host (e.g., 8545) "
+            echo: yes
+          register: ganache_port_input
+        - set_fact:
+            ganache_port: "{{ganache_port_input.user_input}}"
+      when: (ganache_port is not defined or ganache_port == "" or ganache_port == none) and testing == true
+
+    - name: Store ganache_mnemonic if not defined
+      block:
+        - pause:
+            prompt: "\n Enter ganache mnemonic (e.g., 'blue example stuff') "
+            echo: yes
+          register: ganache_mnemonic_input
+        - set_fact:
+            ganache_mnemonic: "{{ganache_mnemonic_input.user_input}}"
+      when: (ganache_mnemonic is not defined or ganache_mnemonic == "" or ganache_mnemonic == none) and testing == true
+
+    - name: Store ganache_network_id if not defined
+      block:
+        - pause:
+            prompt: "\n Enter ganache network id (e.g., 1) "
+            echo: yes
+          register: ganache_network_id_input
+        - set_fact:
+            ganache_network_id: "{{ganache_network_id_input.user_input}}"
+      when: (ganache_network_id is not defined or ganache_network_id == "" or ganache_network_id == none) and testing == true
+
+    - name: Store ganache_chain_id if not defined
+      block:
+        - pause:
+            prompt: "\n Enter ganache chain id (e.g., 1) "
+            echo: yes
+          register: ganache_chain_id_input
+        - set_fact:
+            ganache_chain_id: "{{ganache_chain_id_input.user_input}}"
+      when: (ganache_chain_id is not defined or ganache_chain_id == "" or ganache_chain_id == none) and testing == true
   when: inventory_hostname in groups["origin"]
 
 - name: Set disk capacities as a fact

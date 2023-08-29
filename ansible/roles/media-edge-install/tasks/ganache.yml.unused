@@ -1,7 +1,0 @@
-- name: Install ganache
-  npm:
-    name: ganache
-    global: yes
-
-- name: Run ganache
-  shell: ganache --mnemonic "blue stone rain outer bomb like lounge spoil stuff prison shoe own" -q --networkId 5777 --db /root/ganache-instance/ --detach
