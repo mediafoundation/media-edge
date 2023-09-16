@@ -79,9 +79,9 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
 
     //Read block to use in events
     try {
-        lastReadBlock[CURRENT_NETWORK.chain_id] = await web3Instance.eth.getBlockNumber()
+        lastReadBlock[network.chain_id] = await web3Instance.eth.getBlockNumber()
     }catch (e){
-        lastReadBlock[CURRENT_NETWORK.chain_id] = 0
+        lastReadBlock[network.chain_id] = 0
         console.log("Error when getting last block", e)
         blockReadStatus = false
     }
