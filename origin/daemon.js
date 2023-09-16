@@ -132,7 +132,7 @@ async function start(){
             console.log("Start to check events")
             setInterval(async () => {
                 try { 
-                    let getLastBlock = await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK, web3)
+                    let getLastBlock = await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock[CURRENT_NETWORK.chain_id], CURRENT_NETWORK, web3)
                     lastReadBlock[CURRENT_NETWORK.chain_id] = getLastBlock ? getLastBlock : lastReadBlock[CURRENT_NETWORK.chain_id];
                 } catch(e){
                     console.log("Something failed while checking events", e)
