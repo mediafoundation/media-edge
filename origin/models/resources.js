@@ -165,9 +165,16 @@ module.exports = (sequelize, DataTypes) => {
         return parsedData
     }
 
-    Resources.compareBlockchainAndDbData = async (blockchainIds) => {
+    Resources.compareBlockchainAndDbData = async (blockchainIds, network) => {
         let difference = [];
-        let rawDbResources = await Resources.findAll({attributes: ['id']})
+        //let rawDbResources = await Resources.findAll({attributes: ['id']})
+        //find where network is the same
+        let rawDbResources = await Resources.findAll({
+            where: {
+                network: network.name
+            },
+            attributes: ['id']
+        })
         let dbResourcesIds = rawDbResources.map(row => row.id)
         let set1 = new Set(blockchainIds);
         for (let i = 0; i < dbResourcesIds.length; i++) {

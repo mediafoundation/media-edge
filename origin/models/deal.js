@@ -143,9 +143,17 @@ module.exports = (sequelize, DataTypes) => {
         return difference;
     }
 
-    Deals.compareBlockchainAndDbData = async (blockchainIds) => {
+    Deals.compareBlockchainAndDbData = async (blockchainIds, network) => {
         let difference = [];
-        let rawDbDeals = await Deals.findAll({attributes: ['id']})
+        //let rawDbDeals = await Deals.findAll({attributes: ['id']})
+        //find where network is the same
+        let rawDbDeals = await Deals.findAll({
+            where: {
+                network: network.name
+            },
+            attributes: ['id']
+        });
+
         let dbDealsIds = rawDbDeals.map(row => row.id)
         let set1 = new Set(blockchainIds);
         for (let i = 0; i < dbDealsIds.length; i++) {
