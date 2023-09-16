@@ -58,7 +58,7 @@ const initDatabase = async function (ResourcesContract, MarketplaceContract, net
         await db.Deals.addRecord(dealFormatted)
     }
 
-/*     //delete records that are in db but not in blockchain
+    //delete records that are in db but not in blockchain
     resourcesIds = resources.map(obj => obj.resource_id + "_" + network.network_id + "_" + network.chain_id + "_" + env.MARKETPLACE_ID)
     let notCompatibleResources = await db.Resources.compareBlockchainAndDbData(resourcesIds, network)
 
@@ -72,7 +72,7 @@ const initDatabase = async function (ResourcesContract, MarketplaceContract, net
     if (notCompatibleDeals.length > 0) {
         await db.Deals.deleteRecords(notCompatibleDeals)
         await db.DealsBandwidth.deleteRecords(notCompatibleDeals)
-    } */
+    }
 
     //Update records in caddy if needed
     for (const resource of resourcesToBeUpdatedInCaddy) {
