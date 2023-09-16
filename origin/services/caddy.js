@@ -33,7 +33,7 @@ let initCaddy = async function(network){
     )
     
     for (const deal of difference) {
-        await models.Caddy.deleteRecord(deal)
+        //await models.Caddy.deleteRecord(deal)
     }
 
     await models.Caddy.checkQueue(models.Caddy.queues.Minutely, "Minutely", 60)
