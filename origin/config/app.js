@@ -8,6 +8,56 @@ const getHosts = (subdomain) => {
   }
   return hostnames
 }
+function createRoute(name, dialAddress) {
+  return {
+      "handle": [
+          {
+              "handler": "subroute",
+              "routes": [
+                  {
+                      "handle": [
+                          {
+                              "handler": "reverse_proxy",
+                              "upstreams": [
+                                  {
+                                      "dial": dialAddress
+                                  }
+                              ]
+                          }
+                      ]
+                  }
+              ]
+          }
+      ],
+      "match": [
+          {
+              "host": getHosts(name)
+          }
+      ],
+      "terminal": true
+  };
+}
+
+let caddyInitialApps = {
+  "http": {
+      "servers": {
+          "srv0": {
+              "automatic_https": {
+                  "disable": true
+              },
+              "listen": [
+                  ":80"
+              ],
+              "routes": [
+                  createRoute("api", "localhost:8080"),
+                  createRoute("appdev", "localhost:3000"),
+                  createRoute("swaptest", "localhost:3002")
+              ],
+              "tls_connection_policies": [{}]
+          }
+      }
+  }
+};
 
 module.exports = {
   media: {
@@ -21,75 +71,5 @@ module.exports = {
     privateKey: "/etc/letsencrypt/live/xxxx/privkey.pem",
     certificate: "/etc/letsencrypt/live/xxxx/cert.pem"
   },
-  caddyInitialApps: {
-    "http": {
-      "servers": {
-        "srv0": {
-          "automatic_https": {
-            "disable": true
-          },
-          "listen": [
-            ":80"
-          ],
-          "routes": [
-            { //media-api
-              "handle": [
-                {
-                  "handler": "subroute",
-                  "routes": [
-                    {
-                      "handle": [
-                        {
-                          "handler": "reverse_proxy",
-                          "upstreams": [
-                            {
-                              "dial": "127.0.0.1:8080"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ],
-              "match": [
-                {
-                  "host": getHosts("api")
-                }
-              ],
-              "terminal": true
-            },
-            { //appdev
-              "handle": [
-                {
-                  "handler": "subroute",
-                  "routes": [
-                    {
-                      "handle": [
-                        {
-                          "handler": "reverse_proxy",
-                          "upstreams": [
-                            {
-                              "dial": "localhost:3000"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ],
-              "match": [
-                {
-                  "host": getHosts("appdev")
-                }
-              ],
-              "terminal": true
-            }
-          ],
-          "tls_connection_policies": [{}]
-        }
-      }
-    }
-  }
+  caddyInitialApps: caddyInitialApps
 }

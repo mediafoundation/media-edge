@@ -3,6 +3,7 @@ const config = require('../config/app')
 const env = require("../config/env")
 const doh = require('dohjs')
 const { obtainAndRenewCertificate } = require('../utils/certs')
+const {generateSubdomain} = require("../utils/generateSubdomain");
 const resolver = new doh.DohResolver('https://1.1.1.1/dns-query')
 // const resolver2 = new doh.DohResolver('https://dns.google.com/resolve')
 // const resolver3 = new doh.DohResolver('https://dns.quad9.net/dns-query')
@@ -93,11 +94,11 @@ module.exports = (sequelize, DataTypes) => {
       ).toLowerCase();
   }*/
 
-  Caddy.newObject = async (res, deal) => {
+  Caddy.newObject = async (res, deal, network) => {
     let hosts = []
 
     for(const host of env.hosts){
-      hosts.push(`${deal.id}.${host}`)
+      hosts.push(`${generateSubdomain(env.MARKETPLACE_ID, deal.id, network.network_id, network.chain_id)}.${host}`)
     }
 
     let transport = res.protocol === "https" ? 
@@ -152,10 +153,10 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  Caddy.addRecords = async(dealsResources, Caddyfile) => {
+  Caddy.addRecords = async(dealsResources, Caddyfile, network) => {
     let payload = []
     for(const item of dealsResources) {
-      let caddyData = await Caddy.newObject(item.resource, item.deal)
+      let caddyData = await Caddy.newObject(item.resource, item.deal, network)
       let dealInFile = Caddyfile.find(o => o["@id"] === item.deal.id);
       //if resource is not on caddyfile already, add to payload
       if(!dealInFile) {
@@ -164,7 +165,7 @@ module.exports = (sequelize, DataTypes) => {
         }
         payload.push(caddyData)
       } else {
-        await Caddy.upsertRecord(item, dealInFile)
+        await Caddy.upsertRecord(item, /* dealInFile, */ network)
       }
     }
     //Add to caddy file
@@ -181,7 +182,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  Caddy.upsertRecord = async (item) => {
+  Caddy.upsertRecord = async (item, network) => {
 
     //Destroy previous custom cnames records associated to deal id
     let destroyed = await CaddySource.destroy({
@@ -195,7 +196,7 @@ module.exports = (sequelize, DataTypes) => {
     await Caddy.deletefromAllQueues(item.deal.id)
 
     //create Caddy object required to be posted on caddyFile
-    let newCaddyData = await Caddy.newObject(item.resource, item.deal)
+    let newCaddyData = await Caddy.newObject(item.resource, item.deal, network)
     
     //if the resource has a custom cname
     if(item.resource.domain) {
@@ -326,7 +327,7 @@ module.exports = (sequelize, DataTypes) => {
   
   Caddy.patchRecord = async (item) => {
     if (item.resource.domain) {
-      let host = Caddy.getHosts(item.deal.id);
+      let host = await Caddy.getHosts(item.deal.id);
       let hostUpdated = await Caddy.updateCaddyHost(host, item);
       if (hostUpdated) {
         try {

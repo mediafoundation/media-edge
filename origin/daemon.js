@@ -4,16 +4,14 @@ const Marketplace = require('../media-evm-abis/Marketplace.json')
 const MarketplaceViewer = require('../media-evm-abis/MarketplaceViewer.json')
 const Web3 = require('web3');
 const models = require("./models");
-const env = require("./config/env")
-
 const {initDatabase} = require("./services/database");
 const {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy} = require("./services/caddy");
 const {checkEvents} = require("./services/events");
 const {checkBandwidth, initBandwidth} = require("./services/bandwidth");
-const { resetPurgeLog, manageBandwidth } = require('./services/varnish');
+const { resetPurgeLog } = require('./services/varnish');
 
 // Initialize the lastReadBlock variable to 0
-let lastReadBlock = 0;
+let lastReadBlock = {};
 
 /**
  * Initializes the dApp on a specific network
@@ -81,9 +79,9 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
 
     //Read block to use in events
     try {
-        lastReadBlock = await web3Instance.eth.getBlockNumber()
+        lastReadBlock[CURRENT_NETWORK.chain_id] = await web3Instance.eth.getBlockNumber()
     }catch (e){
-        lastReadBlock = 0
+        lastReadBlock[CURRENT_NETWORK.chain_id] = 0
         console.log("Error when getting last block", e)
         blockReadStatus = false
     }
@@ -114,23 +112,28 @@ async function start(){
             Resources.networks[CURRENT_NETWORK.network_id].address
         );
 
-        const MarketplaceInstance = new web3.eth.Contract(
+        const MarketplaceViewerInstance = new web3.eth.Contract(
             MarketplaceViewer.abi,
             MarketplaceViewer.networks[CURRENT_NETWORK.network_id].address
         )
 
-        let initResult = await init(ResourcesInstance, MarketplaceInstance, CURRENT_NETWORK, web3)
+        const MarketplaceInstance = new web3.eth.Contract(
+            Marketplace.abi,
+            Marketplace.networks[CURRENT_NETWORK.network_id].address
+        )
+
+        let initResult = await init(ResourcesInstance, MarketplaceViewerInstance, CURRENT_NETWORK, web3)
         //should set an interval and then cancel it when init is successful
         if(initResult){
             console.log("Edge started correctly")
         }
 
-        if(lastReadBlock !== 0){
+        if(lastReadBlock[CURRENT_NETWORK.chain_id] !== 0){
             console.log("Start to check events")
             setInterval(async () => {
                 try { 
                     let getLastBlock = await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK, web3)
-                    lastReadBlock = getLastBlock ? getLastBlock : lastReadBlock;
+                    lastReadBlock[CURRENT_NETWORK.chain_id] = getLastBlock ? getLastBlock : lastReadBlock[CURRENT_NETWORK.chain_id];
                 } catch(e){
                     console.log("Something failed while checking events", e)
                 }
@@ -151,7 +154,7 @@ async function start(){
         setInterval(async () => {
             console.log("Start checking bandwidth")
             await checkBandwidth()
-            await manageBandwidth()
+            //await manageBandwidth()
         }, 60000)
 
         //reset varnish every 1 week

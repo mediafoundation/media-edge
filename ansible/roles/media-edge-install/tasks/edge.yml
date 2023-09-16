@@ -1,0 +1,38 @@
+- name: Remove existing origin
+  file:
+    path: /root/edge
+    state: absent
+
+- name: Create program directory
+  file:
+    path: /root/edge
+    state: directory
+
+- name: Copy program folder
+  synchronize:
+    src: ../edge/
+    dest: /root/edge
+    rsync_opts:
+      - "--exclude=node_modules/"
+      - "--exclude=yarn.lock"
+      - "--exclude=.git"
+
+- name: Run yarn install in program folder
+  command: yarn install
+  args:
+    chdir: /root/edge/
+
+- name: Start pm2 from ecosystem
+  command:
+    cmd: 'pm2 start ecosystem.config.js'
+    chdir: /root/edge/
+
+- name: pm2 startup for restart
+  command:
+    cmd: 'pm2 startup'
+    chdir: /root/edge/
+
+- name: pm2 save
+  command:
+    cmd: 'pm2 save'
+    chdir: /root/edge/

@@ -112,7 +112,8 @@ module.exports = (sequelize, DataTypes) => {
   // This function checks the bandwidth of all deals using elasticsearch, 
   // updates the db and applies the header to the Caddyfile
   DealsBandwidth.updateBandwidthUsage = async () => {
-    let deals = await DealsBandwidth.findAll({raw: true})
+    let deals = await DealsBandwidth.findAll()
+    let dealsToBeUpdated = []
     for (const deal of deals) {
 
       // Fetch the bandwidth usage from Elasticsearch
@@ -128,10 +129,12 @@ module.exports = (sequelize, DataTypes) => {
       if(env.debug) console.log("Updating last_read:", range.lte, new Date(range.lte).getTime())
       let newDatetime = new Date(range.lte)
       if(env.debug) console.log("last read new value:", Math.floor(newDatetime.getTime() / 1000))
-      await DealsBandwidth.update({
+      
+      await deal.update({
         bytes_sent: bandwidthUsage,
         last_read: Math.floor(newDatetime.getTime() / 1000),
       });
+
 
       // Extract the bandwidthLimit from the deal's metadata
       const metadata = JSON.parse(deal.metadata);
@@ -142,12 +145,13 @@ module.exports = (sequelize, DataTypes) => {
       let limitInBytes = DealsBandwidth.convertToBytes(bandwidthLimit);
 
       // Check if the bandwidth limit has been reached
-      if (bandwidthUsage >= limitInBytes && deal.is_limited == false) {
+      if (bandwidthUsage >= limitInBytes && deal.is_limited === false) {
         // Update the Caddy resource configuration to apply the bandwidth limiter
         await DealsBandwidth.applyBandwidthLimiter(deal, true);
         await DealsBandwidth.update({
           is_limited: true
         })
+        dealsToBeUpdated.push(deal)
       } else {
         // todo: check why would we want to remove it if its already applied
         // in any case it would be removed if the next period starts.
@@ -155,6 +159,8 @@ module.exports = (sequelize, DataTypes) => {
         //await DealsBandwidth.applyBandwidthLimiter(deal, false);
       }
     }
+
+    return dealsToBeUpdated
 
   }
 
@@ -254,20 +260,24 @@ module.exports = (sequelize, DataTypes) => {
   DealsBandwidth.resetBandwidthLimitPeriods = async () => {
     let now = new Date().getTime()
     let bandwidthRecords = await DealsBandwidth.findAll({ raw:true })
+    let dealsToBeUpdated = []
     for (const record of bandwidthRecords) {
-      if(now >= record.period_end){
+      if(now >= record.period_end && record.is_limited === true){
         if(env.debug) console.log("Reseting bandwidth record:", record.id)
         DealsBandwidth.update({
           bytes_sent: 0,
-          period_end: (record.period_end / record.periods) * record.periods + 1, 
+          period_end: parseInt((record.period_end / record.periods) * record.periods + 1), 
           periods: record.periods + 1, 
           is_limited: false
         }, {
           where: { id: record.id }
         })
         await DealsBandwidth.removeBandwidthHeader(record.id)
+        dealsToBeUpdated.push(record)
       } 
     }
+
+    return dealsToBeUpdated
   }
 
   DealsBandwidth.isBillingPeriodElapsed = (deal, bandwidth) => {

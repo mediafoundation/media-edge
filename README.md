@@ -21,7 +21,7 @@
 
 ## About Media Edge
 
-Media Edge is a new and powerful software that allows CDN providers to create their content delivery network and sell their services in the decentralized Media Network marketplace. With the Media Edge, providers can easily set up their CDN networks, offer them within the Media Network marketplace, and get MEDIA rewards in exchange for the services provided.
+Media Edge is a new and powerful software that allows CDN providers to create their content delivery network and sell their services in the decentralized Media Cloud marketplace. With the Media Edge, providers can easily set up their CDN networks, offer them within the Media Cloud marketplace, and get MEDIA rewards in exchange for the services provided.
 
 ## What is Media Edge?
 
@@ -41,6 +41,7 @@ Media Edge is an open-source software that serves as a web server and blockchain
 * [NodeJs](https://nodejs.org/)
 * [PostgreSQL](https://www.postgresql.org/)
 * [TweetNaCl.js](https://tweetnacl.js.org/)
+* [Vagrant](https://www.vagrantup.com/)
 * [Varnish](https://varnish-cache.org/)
 * [web3.js](https://web3js.org/#/)
 
@@ -54,6 +55,7 @@ Follow these simple example steps to get your Media Edge setup and running in no
 * [Debian 10 x64](https://www.debian.org/releases/buster/debian-installer/) @ target server(s)
 
 ### Installation
+In the following example we will be using vagrant and virtualbox to create a test enviroment.
 
 1. Clone the repo and submodule (abis)
   ```
@@ -68,7 +70,7 @@ Follow these simple example steps to get your Media Edge setup and running in no
    cd ansible
    ```
 
-3. Copy `hosts.example` to `hosts` and edit the file: replace with your server's IP addresses. You can add multiple servers (one per line) and also install origins or edges.
+3. Copy `hosts.example` to `hosts` and edit the file: replace with your servers IP addresses. You can add multiple origin and edge servers.
     ```sh
     [origin]
     origin ansible_host=192.168.0.170 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_user=root ansible_port=22
@@ -85,8 +87,38 @@ Follow these simple example steps to get your Media Edge setup and running in no
     ```
 
 
-<!-- USAGE EXAMPLES -->
-## Usage & Troubleshooting
+## Testing with Vagrant
+
+Vagrant config files to deploy testing instances are included. To install dependencies use:
+
+```sh
+apt install vagrant virtualbox
+```
+Then in the `ansible` folder, you should run 
+
+```sh
+vagrant up --provider virtualbox
+```
+
+### Using dnsmasq keeping systemd-resolved
+
+Add the following lines to `/etc/dnsmasq.conf`
+
+```sh
+listen-address=127.0.55.1
+bind-interfaces
+address=/medianetwork.test/192.168.0.171
+```
+And then restart with ``systemctl restart dnsmasq``
+
+Then, let systemd-resolved to listen to dnsmasq for any queries. This can be done safely by creating a file under /etc/systemd/resolved.conf.d/dnsmasq.conf like the following...
+
+```sh
+[Resolve]
+DNS=127.0.55.1
+```
+
+And lastly restart using ``systemctl restart systemd-resolved``
 
 For more information, please refer to the [Media Edge Docs](https://docs.media.network/cdn-marketplace-edge).
 

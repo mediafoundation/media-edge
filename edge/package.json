@@ -1,0 +1,12 @@
+{
+  "name": "media-edge-connector",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Media Foundation <hello@media.foundation>",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^3.2.4",
+    "axios": "^1.4.0",
+    "chokidar": "^3.5.3"
+  }
+}

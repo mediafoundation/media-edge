@@ -65,10 +65,13 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
                     let evmRecord = await models.Resources.addRecord(formattedResource)
 
                     for (const deal of deals) {
-                        await models.Caddy.upsertRecord({
+                        await models.Caddy.upsertRecord(
+                        {
                             resource: formattedResource, 
                             deal: deal.dataValues
-                        })
+                        }, 
+                        CURRENT_NETWORK
+                        )
 
 /*                         //Check if cname is added or deleted
                         let caddyRecords = await models.Caddy.getHosts(deal.id, CURRENT_NETWORK)
@@ -123,7 +126,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
 
             await models.Caddy.deleteRecord(getId(event.returnValues._dealId, CURRENT_NETWORK))
             await models.Deals.deleteRecords([getId(event.returnValues._dealId, CURRENT_NETWORK)])
-            await models.Deals.deleteRecords([event.returnValues._dealId])
+            await models.DealsBandwidth.deleteRecords([getId(event.returnValues._dealId, CURRENT_NETWORK)])
 
             //Check if the resource associated to that deal has any other deals or need to be removed
             let deal = await models.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
@@ -158,7 +161,7 @@ let manageDealCreatedOrAccepted = async (MarketplaceInstance, ResourcesInstance,
                 await models.Caddy.addRecords([{
                     resource: resourceFormatted, 
                     deal: dealFormatted
-                }], caddyFile)
+                }], caddyFile, CURRENT_NETWORK)
                 let dealForBandwidth = await models.DealsBandwidth.formatDataToDb(dealFormatted)
                 await models.DealsBandwidth.upsertRecord(dealForBandwidth)
             }
@@ -167,7 +170,7 @@ let manageDealCreatedOrAccepted = async (MarketplaceInstance, ResourcesInstance,
 }
 
 let getId = (id, network) => {
-    return id + "_" + network.network_id + "_" + network.chain_id
+    return id + "_" + network.network_id + "_" + network.chain_id + "_" + env.MARKETPLACE_ID
 }
 
 module.exports = {checkEvents}

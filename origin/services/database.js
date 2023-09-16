@@ -1,4 +1,5 @@
 const db = require("../models");
+const env = require("../config/env")
 const initDatabase = async function (ResourcesContract, MarketplaceContract, network, web3Instance) {
     //fetch resources and deals
     let resources = await db.Resources.getPaginatedResources(ResourcesContract, 0, 2);
@@ -58,14 +59,14 @@ const initDatabase = async function (ResourcesContract, MarketplaceContract, net
     }
 
     //delete records that are in db but not in blockchain
-    resourcesIds = resources.map(obj => obj.resource_id + "_" + network.network_id + "_" + network.chain_id)
+    resourcesIds = resources.map(obj => obj.resource_id + "_" + network.network_id + "_" + network.chain_id + "_" + env.MARKETPLACE_ID)
     let notCompatibleResources = await db.Resources.compareBlockchainAndDbData(resourcesIds)
 
     if (notCompatibleResources.length > 0) {
         await db.Resources.deleteRecords(notCompatibleResources)
     }
 
-    let dealsIds = deals.map(obj => obj.id + "_" + network.network_id + "_" + network.chain_id)
+    let dealsIds = deals.map(obj => obj.id + "_" + network.network_id + "_" + network.chain_id + "_" + env.MARKETPLACE_ID)
     let notCompatibleDeals = await db.Deals.compareBlockchainAndDbData(dealsIds)
 
     if (notCompatibleDeals.length > 0) {
@@ -78,7 +79,7 @@ const initDatabase = async function (ResourcesContract, MarketplaceContract, net
         let deals = await db.Deals.dealsThatHasResource(resource.id)
         for (const deal of deals) {
             let caddyHosts = await db.Caddy.getHosts(deal.id)
-            await db.Caddy.upsertRecord({resource: resource, deal: deal}, caddyHosts)
+            await db.Caddy.upsertRecord({resource: resource, deal: deal}, /* caddyHosts,  */network)
         }
     }
 }

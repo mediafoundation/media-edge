@@ -1,4 +1,5 @@
 go_version: 1.18.6
+ganache_version: 6.12.2
 varnish_version: 6.6.2
 media_edge_version: 0.2
 node_version: setup_16.x
