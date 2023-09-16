@@ -11,7 +11,7 @@ const {checkBandwidth, initBandwidth} = require("./services/bandwidth");
 const { resetPurgeLog } = require('./services/varnish');
 
 // Initialize the lastReadBlock variable to 0
-let lastReadBlock = 0;
+let lastReadBlock = {};
 
 /**
  * Initializes the dApp on a specific network
@@ -79,9 +79,9 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
 
     //Read block to use in events
     try {
-        lastReadBlock = await web3Instance.eth.getBlockNumber()
+        lastReadBlock[CURRENT_NETWORK.chain_id] = await web3Instance.eth.getBlockNumber()
     }catch (e){
-        lastReadBlock = 0
+        lastReadBlock[CURRENT_NETWORK.chain_id] = 0
         console.log("Error when getting last block", e)
         blockReadStatus = false
     }
@@ -128,12 +128,12 @@ async function start(){
             console.log("Edge started correctly")
         }
 
-        if(lastReadBlock !== 0){
+        if(lastReadBlock[CURRENT_NETWORK.chain_id] !== 0){
             console.log("Start to check events")
             setInterval(async () => {
                 try { 
                     let getLastBlock = await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK, web3)
-                    lastReadBlock = getLastBlock ? getLastBlock : lastReadBlock;
+                    lastReadBlock[CURRENT_NETWORK.chain_id] = getLastBlock ? getLastBlock : lastReadBlock[CURRENT_NETWORK.chain_id];
                 } catch(e){
                     console.log("Something failed while checking events", e)
                 }
