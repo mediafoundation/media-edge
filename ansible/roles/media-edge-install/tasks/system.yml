@@ -7,16 +7,24 @@
     sed -i '/Acquire::AllowReleaseInfoChange::Suite/d' /etc/apt/apt.conf.d/90releaseinfo-change
     echo 'Acquire::AllowReleaseInfoChange::Suite "true";' >> /etc/apt/apt.conf.d/90releaseinfo-change
 
-- name: Updating apt package
-  shell: apt-get update -y --allow-releaseinfo-change
+- name: Update apt cache directly
+  command: apt-get update
+  register: apt_update_result
+  ignore_errors: yes
+
+- name: Print apt update output if failed
+  debug:
+    var: apt_update_result.stdout_lines
+  when: apt_update_result is failed
+
+- name: Upgrade system packages
+  apt:
+    upgrade: "yes"
+  when: apt_update_result is succeeded
 
 - name: Reconfigure dpkg
   command: dpkg --configure -a
 
-- name: Upgrading system packages
-  apt:
-    upgrade: "yes"
-    update_cache: yes
 
 - name: Preventing services to start after installed
   shell: |

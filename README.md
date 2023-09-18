@@ -2,8 +2,12 @@
 
 ![Logo](media-edge.png)
 
+**Media Edge** is your one-stop solution for creating and monetizing Content Delivery Networks in the decentralized Media Network marketplace.
+
+[![Version Badge](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/mediafoundation/media-edge/releases)
+
 [**Explore the docs »**](https://docs.media.network)  
-[Use the dCDN](https://app.media.network)  
+[Use the Markeplace](https://app.media.network)  
 [Report Bug](https://github.com/mediafoundation/media-edge/issues)  
 [Request Feature](https://github.com/mediafoundation/media-edge/issues)
 
@@ -21,11 +25,12 @@
 
 ## About Media Edge
 
-Media Edge is a new and powerful software that allows CDN providers to create their content delivery network and sell their services in the decentralized Media Cloud marketplace. With the Media Edge, providers can easily set up their CDN networks, offer them within the Media Cloud marketplace, and get MEDIA rewards in exchange for the services provided.
+Media Edge is a software that allows CDN providers to create their content delivery network and sell their services in the decentralized Media Network marketplace. With the Media Edge, providers can easily set up their CDN networks, offer them within the Media Network marketplace, and get MEDIA rewards in exchange for the services provided.
 
 ## What is Media Edge?
 
-Media Edge is an open-source software that serves as a web server and blockchain resource manager for CDN providers. It is a tool that simplifies the process of setting up a CDN network, and it includes all the necessary features to interact with the Media Network smart contracts from the provider stand point.
+Media Edge allows CDN providers to create their content delivery network, sell their services in the decentralized Media Network marketplace, and earn MEDIA rewards in exchange for the services provided. It serves as a web server and blockchain resource manager, simplifying the CDN setup process and enabling interaction with the Media smart contracts.
+
 
 ### Built With:
 
@@ -119,6 +124,40 @@ DNS=127.0.55.1
 ```
 
 And lastly restart using ``systemctl restart systemd-resolved``
+
+## Usage & Troubleshooting
+
+If you encounter issues while setting up or using Media Edge, this section provides solutions to some common problems.
+
+### GlusterFS Authentication Issue
+
+If you encounter an error related to GlusterFS authentication when trying to mount the GlusterFS volume, follow these steps:
+
+1. **Check auth.allow**: Ensure that the `auth.allow` option for the GlusterFS volume includes the IP address of the client. You can check this with:
+   ```bash
+   gluster volume get cert_vol auth.allow
+   ```
+   If the IP address of the client is not listed, you need to add it.
+
+2. **Set auth.allow**: To add the IP address of the client to the `auth.allow` list, use:
+   ```bash
+   gluster volume set cert_vol auth.allow <existing IPs>,<client IP>
+   ```
+   Replace `<existing IPs>` with the current list of IPs (if any) and `<client IP>` with the IP address of the client.
+
+3. **Firewall**: Ensure that there are no firewall rules blocking the necessary ports for GlusterFS communication. This includes port `24007` for GlusterD and other ports for brick communication.
+
+4. **Restart GlusterD**: After making changes, restart the GlusterD service:
+   ```bash
+   systemctl restart glusterd
+   ```
+
+5. **Re-run Ansible Playbook**: After addressing the GlusterFS authentication issue, re-run the Ansible script to ensure Media Edge is correctly installed and configured:
+   ```bash
+   ansible-playbook deploy.yml -i hosts
+   ```
+
+For more detailed troubleshooting, always refer to the GlusterFS logs, typically located in `/var/log/glusterfs/`.
 
 For more information, please refer to the [Media Edge Docs](https://docs.media.network/cdn-marketplace-edge).
 

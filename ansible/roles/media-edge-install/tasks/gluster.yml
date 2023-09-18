@@ -82,7 +82,7 @@
 
 - name: Set mount options based on group membership
   set_fact:
-    mount_opts: "{{ 'defaults,_netdev,ro' + (',backup-volfile-servers=' + backup_origin_servers if groups['origin'] | length > 1 else '') if inventory_hostname in groups['edge'] else 'defaults,_netdev' + (',backup-volfile-servers=' + backup_origin_servers if groups['origin'] | length > 1 else '') }}"
+    mount_opts: "{{ 'defaults,_netdev' + (',backup-volfile-servers=' + backup_origin_servers if groups['origin'] | length > 1 else '') if inventory_hostname in groups['edge'] else 'defaults,_netdev' + (',backup-volfile-servers=' + backup_origin_servers if groups['origin'] | length > 1 else '') }}"
 
 - name: Clear mount point just in case
   file:

@@ -13,3 +13,4 @@ ansible/hosts
 ansible/user_config.yml
 ansible/.DS_Store
 ansible/Vagrantfile
+.DS_Store

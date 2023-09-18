@@ -83,25 +83,25 @@
 
   when: inventory_hostname in groups["origin"]
 
-- name: Install and configure Edge stats 
-  block:
-    - name: Install Filebeat
-      apt:
-        update_cache: yes
-        install_recommends: true
-        state: latest
-        name: filebeat
+- name: Copying Filebeat .deb package to target
+  copy:
+    src: files/edge/filebeat/filebeat-8.10.1-amd64.deb
+    dest: /tmp/filebeat-8.10.1-amd64.deb
 
-    - name: Configure Filebeat
-      template:
-        src: files/edge/filebeat.yml.j2
-        dest: /etc/filebeat/filebeat.yml
-      vars:
-        origin_ip: "{{ hostvars[groups['origin'][0]]['ansible_host'] }}"
+- name: Install Filebeat from local .deb package
+  apt:
+    deb: /tmp/filebeat-8.10.1-amd64.deb
 
-    - name: Start and enable Filebeat service
-      systemd:
-        name: filebeat
-        state: restarted
-        enabled: yes
+- name: Configure Filebeat
+  template:
+    src: files/edge/filebeat/filebeat.yml.j2
+    dest: /etc/filebeat/filebeat.yml
+  vars:
+     origin_ip: "{{ hostvars[groups['origin'][0]]['ansible_host'] }}"
+
+- name: Start and enable Filebeat service
+  systemd:
+    name: filebeat
+    state: restarted
+    enabled: yes
   when: inventory_hostname in groups["edge"]
