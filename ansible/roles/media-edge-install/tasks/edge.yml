@@ -36,3 +36,60 @@
   command:
     cmd: 'pm2 save'
     chdir: /root/edge/
+
+# This section attempts to automatically add this Edge to ClouDNS.
+# If you're using a different DNS provider or wish to handle DNS updates manually, 
+# you might need to modify this section or skip it entirely.
+
+- name: Load user_config.yml vars for ClouDNS configuration
+  include_vars:
+    file: user_config.yml
+  ignore_errors: yes
+
+- name: Extract CLOUDNS_SUB_AUTH_ID from user_config
+  set_fact:
+    CLOUDNS_SUB_AUTH_ID: "{{ dns_config.env_vars[0].split('=')[1] }}"
+  ignore_errors: yes
+
+- name: Extract CLOUDNS_AUTH_PASSWORD from user_config
+  set_fact:
+    CLOUDNS_AUTH_PASSWORD: "{{ dns_config.env_vars[1].split('=')[1] }}"
+  ignore_errors: yes
+
+- name: Extract domain from user_config
+  set_fact:
+    DOMAIN_NAME: "{{ dns_config.domains[0] }}"
+  ignore_errors: yes
+
+- name: Fetch current IP address from ClouDNS API
+  uri:
+    url: "https://api.cloudns.net/ip/get-my-ip.json"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      sub-auth-id: "{{ CLOUDNS_SUB_AUTH_ID }}"
+      auth-password: "{{ CLOUDNS_AUTH_PASSWORD }}"
+  register: ip_result
+  ignore_errors: yes
+
+- name: Extract IP address from API response
+  set_fact:
+    CURRENT_IP: "{{ ip_result.json.ip }}"
+  when: ip_result is defined and 'ip' in ip_result.json
+  ignore_errors: yes
+
+- name: Add wildcard record to ClouDNS
+  uri:
+    url: "https://api.cloudns.net/dns/add-record.json"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      sub-auth-id: "{{ CLOUDNS_SUB_AUTH_ID }}"
+      auth-password: "{{ CLOUDNS_AUTH_PASSWORD }}"
+      domain-name: "{{ DOMAIN_NAME }}"
+      record-type: "A"
+      host: "*"
+      record: "{{ CURRENT_IP }}"
+      ttl: 3600
+  when: CURRENT_IP is defined and CURRENT_IP != ''
+  ignore_errors: yes

@@ -1,26 +1,31 @@
+# - name: Prepare the system for Media-Edge
+#   file:
+#     state: absent
+#     path: /usr/share/keyrings/elasticsearch-keyring.gpg
 
-
-- name: Prepare the system for Media-Edge
-  file:
-    state: absent
-    path: /usr/share/keyrings/elasticsearch-keyring.gpg
-
-- name: Adding elasticsearch keyring
-  shell: |
-    wget -O - https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg
-    echo "deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main" | tee /etc/apt/sources.list.d/elastic-8.x.list
+# - name: Adding elasticsearch keyring
+#   shell: |
+#     wget -O - https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg
+#     echo "deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main" | tee /etc/apt/sources.list.d/elastic-8.x.list
 
 - name: Install and configure Origin stats 
   block:
-    - name: Installing Elastic Stack
+    - name: Download Elastic Stack components
+      get_url:
+        url: "{{ item.url }}"
+        dest: "/tmp/{{ item.name }}"
+      loop:
+        - { url: 'https://github.com/mediafoundation/media-edge-dependencies/releases/download/8.10/elasticsearch-8.10.1-amd64.deb', name: 'elasticsearch-8.10.1-amd64.deb' }
+        - { url: 'https://github.com/mediafoundation/media-edge-dependencies/releases/download/8.10/kibana-8.10.1-amd64.deb', name: 'logstash-8.10.1-amd64.deb' }
+        - { url: 'https://github.com/mediafoundation/media-edge-dependencies/releases/download/8.10/logstash-8.10.1-amd64.deb', name: 'kibana-8.10.1-amd64.deb' }
+
+    - name: Install Elastic Stack components
       apt:
-        update_cache: yes
-        install_recommends: true
-        state: latest
-        name:
-          - elasticsearch
-          - logstash
-          - kibana
+        deb: "/tmp/{{ item }}"
+      loop:
+        - elasticsearch-8.10.1-amd64.deb
+        - logstash-8.10.1-amd64.deb
+        - kibana-8.10.1-amd64.deb
 
     - name: Configure Elasticsearch
       template:
@@ -83,25 +88,28 @@
 
   when: inventory_hostname in groups["origin"]
 
-- name: Copying Filebeat .deb package to target
-  copy:
-    src: files/edge/filebeat/filebeat-8.10.1-amd64.deb
-    dest: /tmp/filebeat-8.10.1-amd64.deb
+- name: Install and configure Edge stats 
+  block:
+    - name: Download Filebeat
+      get_url:
+        url: 'https://github.com/mediafoundation/media-edge-dependencies/releases/download/8.10/filebeat-8.10.1-amd64.deb'
+        dest: '/tmp/filebeat-8.10.1-amd64.deb'
 
-- name: Install Filebeat from local .deb package
-  apt:
-    deb: /tmp/filebeat-8.10.1-amd64.deb
+    - name: Install Filebeat
+      apt:
+        deb: '/tmp/filebeat-8.10.1-amd64.deb'
 
-- name: Configure Filebeat
-  template:
-    src: files/edge/filebeat/filebeat.yml.j2
-    dest: /etc/filebeat/filebeat.yml
-  vars:
-     origin_ip: "{{ hostvars[groups['origin'][0]]['ansible_host'] }}"
+    - name: Configure Filebeat
+      template:
+        src: files/edge/filebeat/filebeat.yml.j2
+        dest: /etc/filebeat/filebeat.yml
+      vars:
+        origin_ip: "{{ hostvars[groups['origin'][0]]['ansible_host'] }}"
 
-- name: Start and enable Filebeat service
-  systemd:
-    name: filebeat
-    state: restarted
-    enabled: yes
+    - name: Start and enable Filebeat service
+      systemd:
+        name: filebeat
+        state: restarted
+        enabled: yes
+
   when: inventory_hostname in groups["edge"]
