@@ -15,12 +15,10 @@
     state: present
     update_cache: yes
   when: inventory_hostname in groups["edge"]
-#
 
 # Only origins tasks
 - name: Configure GlusterFS for origin nodes
   block:
-    ## All origins
     - name: Install GlusterFS server on origins
       apt:
         name: glusterfs-server
@@ -41,7 +39,7 @@
         owner: root
         group: root
         mode: '0755'
-    ##
+
     ## Only on first origin
     - name: First Origin configuration for GlusterFS
       block:
@@ -50,6 +48,30 @@
           with_items: "{{ groups['origin'][1:] }}"
           loop_control:
             pause: 5
+
+        - name: Check peer status
+          command: gluster peer status
+          register: peer_status
+          changed_when: false
+
+        - name: Detach peers not in 'Peer in Cluster' state
+          command: gluster peer detach {{ item }}
+          with_items: "{{ groups['origin'][1:] }}"
+          when: item not in peer_status.stdout or "'Peer in Cluster' not in peer_status.stdout"
+          loop_control:
+            pause: 5
+
+        - name: Re-probe peers
+          command: gluster peer probe {{ hostvars[item]['ansible_host'] }}
+          with_items: "{{ groups['origin'][1:] }}"
+          loop_control:
+            pause: 5
+
+        - name: Check if GlusterFS volume exists
+          command: gluster volume info cert_vol
+          register: volume_info
+          failed_when: false
+          changed_when: false
 
         - name: Create GlusterFS volume
           command: >
@@ -62,17 +84,26 @@
             {{ hostvars[host]['ansible_host'] }}:/etc/ssl/caddy
             {% endfor %}
             force
+          when: "'Volume Name: cert_vol' not in volume_info.stdout"
 
         - name: Set auth.allow for GlusterFS volume
           command: >
             gluster volume set cert_vol auth.allow {{ ((groups['origin'] | map('extract', hostvars, 'ansible_host') | list) + (groups['edge'] | map('extract', hostvars, 'ansible_host') | list)) | join(',') }}
 
+        - name: Check if GlusterFS volume is started
+          command: gluster volume info cert_vol
+          register: volume_status
+          failed_when: false
+          changed_when: false
+          when: 
+            - inventory_hostname == groups["origin"][0]
+
         - name: Start GlusterFS volume
           command: gluster volume start cert_vol
+          when: 
+            - "'Status: Started' not in volume_status.stdout"
+            - inventory_hostname == groups["origin"][0]
       when: inventory_hostname == groups["origin"][0]
-    ##
-  when: inventory_hostname in groups["origin"]
-#
 
 - name: Prepare to mount GlusterFS volume on all nodes
   set_fact: 
@@ -83,6 +114,11 @@
 - name: Set mount options based on group membership
   set_fact:
     mount_opts: "{{ 'defaults,_netdev' + (',backup-volfile-servers=' + backup_origin_servers if groups['origin'] | length > 1 else '') if inventory_hostname in groups['edge'] else 'defaults,_netdev' + (',backup-volfile-servers=' + backup_origin_servers if groups['origin'] | length > 1 else '') }}"
+
+- name: Unmount GlusterFS volume if mounted
+  mount:
+    path: "{{ mount_point }}"
+    state: unmounted
 
 - name: Clear mount point just in case
   file:

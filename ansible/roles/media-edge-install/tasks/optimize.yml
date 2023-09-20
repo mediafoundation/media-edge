@@ -68,6 +68,11 @@
 #   shell: dd if=/dev/zero of=/root/media-edge/public/1GB.bin bs=1 count=0 seek=1G
 #   when: inventory_hostname in groups["edge"]
 
+- name: Disable UFW if enabled
+  ufw:
+    state: disabled
+  ignore_errors: yes
+
 # - name: Configure iptables
 #   iptables:
 #     chain: INPUT

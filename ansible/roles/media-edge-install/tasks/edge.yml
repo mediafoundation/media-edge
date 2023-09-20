@@ -1,41 +1,41 @@
-- name: Remove existing origin
-  file:
-    path: /root/edge
-    state: absent
+# - name: Remove existing origin
+#   file:
+#     path: /root/edge
+#     state: absent
 
-- name: Create program directory
-  file:
-    path: /root/edge
-    state: directory
+# - name: Create program directory
+#   file:
+#     path: /root/edge
+#     state: directory
 
-- name: Copy program folder
-  synchronize:
-    src: ../edge/
-    dest: /root/edge
-    rsync_opts:
-      - "--exclude=node_modules/"
-      - "--exclude=yarn.lock"
-      - "--exclude=.git"
+# - name: Copy program folder
+#   synchronize:
+#     src: ../edge/
+#     dest: /root/edge
+#     rsync_opts:
+#       - "--exclude=node_modules/"
+#       - "--exclude=yarn.lock"
+#       - "--exclude=.git"
 
-- name: Run yarn install in program folder
-  command: yarn install
-  args:
-    chdir: /root/edge/
+# - name: Run yarn install in program folder
+#   command: yarn install
+#   args:
+#     chdir: /root/edge/
 
-- name: Start pm2 from ecosystem
-  command:
-    cmd: 'pm2 start ecosystem.config.js'
-    chdir: /root/edge/
+# - name: Start pm2 from ecosystem
+#   command:
+#     cmd: 'pm2 start ecosystem.config.js'
+#     chdir: /root/edge/
 
-- name: pm2 startup for restart
-  command:
-    cmd: 'pm2 startup'
-    chdir: /root/edge/
+# - name: pm2 startup for restart
+#   command:
+#     cmd: 'pm2 startup'
+#     chdir: /root/edge/
 
-- name: pm2 save
-  command:
-    cmd: 'pm2 save'
-    chdir: /root/edge/
+# - name: pm2 save
+#   command:
+#     cmd: 'pm2 save'
+#     chdir: /root/edge/
 
 # This section attempts to automatically add this Edge to ClouDNS.
 # If you're using a different DNS provider or wish to handle DNS updates manually, 
@@ -61,24 +61,21 @@
     DOMAIN_NAME: "{{ dns_config.domains[0] }}"
   ignore_errors: yes
 
-- name: Fetch current IP address from ClouDNS API
+- name: Fetch current IPv4 address
   uri:
-    url: "https://api.cloudns.net/ip/get-my-ip.json"
-    method: POST
-    body_format: form-urlencoded
-    body:
-      sub-auth-id: "{{ CLOUDNS_SUB_AUTH_ID }}"
-      auth-password: "{{ CLOUDNS_AUTH_PASSWORD }}"
+    url: "https://httpbin.org/ip"
+    return_content: yes
   register: ip_result
   ignore_errors: yes
 
-- name: Extract IP address from API response
+- name: Extract IPv4 address from API response
   set_fact:
-    CURRENT_IP: "{{ ip_result.json.ip }}"
-  when: ip_result is defined and 'ip' in ip_result.json
+    CURRENT_IP: "{{ ip_result.json.origin }}"
+  when: ip_result is defined and 'origin' in ip_result.json
   ignore_errors: yes
 
-- name: Add wildcard record to ClouDNS
+
+- name: Add wildcard record to ClouDNS with retry logic
   uri:
     url: "https://api.cloudns.net/dns/add-record.json"
     method: POST
@@ -91,5 +88,17 @@
       host: "*"
       record: "{{ CURRENT_IP }}"
       ttl: 3600
+  register: dns_add_result
+  retries: 3
+  delay: 10
+  until: dns_add_result.json.status != 'Failed'
   when: CURRENT_IP is defined and CURRENT_IP != ''
   ignore_errors: yes
+
+- name: Verify record was added to ClouDNS
+  assert:
+    that:
+      - "'status' in dns_add_result.json"
+      - "dns_add_result.json.status != 'Failed'"
+    fail_msg: "Failed to add record to ClouDNS: {{ dns_add_result.json.statusDescription }}"
+  when: dns_add_result is defined and 'status' in dns_add_result.json
