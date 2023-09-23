@@ -11,15 +11,20 @@
 #   debug:
 #     msg: "{{first_run}}"
 
+# Start by checking if the 'origin' group exists and is not empty
 - name: Check if origins group exists and is not empty
   set_fact:
     origin_ips_exist: "{{ (groups['origin'] | length > 0) | bool }}"
+  run_once: true
 
+# If the 'origin' group exists, extract the IP addresses
 - name: Store origins IP addresses in a variable
   set_fact:
     origin_ips: "{{ groups['origin'] | map('extract', hostvars, 'ansible_host') | list }}"
   when: origin_ips_exist
+  run_once: true
 
+# If the 'origin' group doesn't exist or is empty, prompt for the IP addresses
 - name: Prompt for origins IP addresses if not defined
   block:
     - pause:
@@ -28,7 +33,8 @@
       register: origin_ips_input
     - set_fact:
         origin_ips: "{{ origin_ips_input.user_input.split(',') | map('trim') | list }}"
-  when: not origin_ips_exist | default(false)
+  when: not origin_ips_exist or (origin_ips is defined and origin_ips | length == 0)
+  run_once: true
 
 - name: Set origin facts
   block:
@@ -40,7 +46,10 @@
           register: postgres_password_input
         - set_fact:
             postgres_password: "{{ postgres_password_input.user_input }}"
-      when: postgres_password is not defined or postgres_password == "" or postgres_password == none
+      when: 
+        - (postgres_password is not defined or postgres_password == "" or postgres_password == none)
+        - inventory_hostname in groups["origin"]
+
 
     - name: Store wallet address if not defined
       block:

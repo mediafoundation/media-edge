@@ -120,21 +120,26 @@
 
 
 - name: Get current auth.allow list for GlusterFS volume
-  delegate_to: "{{ item }}"
+  delegate_to: "{{ primary_origin_server }}"
   command: gluster volume get cert_vol auth.allow
   register: current_auth_allow
   changed_when: false
-  loop: "{{ origin_ips }}"
   when: inventory_hostname in groups["edge"]
 
-- name: Add edge IP to the origin auth.allow list. Make sure you have ssh access to it or this might fail.
-  delegate_to: "{{ item }}"
+- name: Extract auth.allow IPs
+  set_fact:
+    current_auth_allow_ips: "{{ current_auth_allow.stdout_lines[-1] | regex_replace('^auth.allow[ \t]+', '') }}"
+  when: current_auth_allow is defined
+
+- name: Add edge IP to the origin auth.allow list if missing
+  delegate_to: "{{ primary_origin_server }}"
   command: >
-    gluster volume set cert_vol auth.allow "{{ (current_auth_allow['results'] | map(attribute='stdout_lines') | list | first | last) + ',' + hostvars['edge1']['ansible_host'] }}"
+    gluster volume set cert_vol auth.allow "{{ current_auth_allow_ips + ',' + hostvars[inventory_hostname]['ansible_host'] }}"
   when: 
     - inventory_hostname in groups["edge"]
-    - hostvars['edge1']['ansible_host'] not in (current_auth_allow['results'] | map(attribute='stdout_lines') | list | first | last)
-  loop: "{{ origin_ips }}"
+    - hostvars[inventory_hostname]['ansible_host'] not in current_auth_allow_ips.split(',')
+
+
 
 
 - name: Mount GlusterFS volume using command
