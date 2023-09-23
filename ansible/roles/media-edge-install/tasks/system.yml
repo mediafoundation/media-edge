@@ -1,55 +1,78 @@
-# - name: Cleaning up cron if necessary
-#   shell: crontab -r
-#   ignore_errors: true
+# Start by resetting APT sources to avoid issues with third-party repositories
+- name: Find all files in sources.list.d
+  find:
+    paths: "/etc/apt/sources.list.d/"
+    file_type: file
+  register: found_files
 
+- name: Remove all files from sources.list.d
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ found_files.files }}"
+  when: found_files.matched > 0
+
+- name: Reset main sources.list to default for Debian 10
+  copy:
+    content: |
+      deb http://deb.debian.org/debian/ buster main
+      deb-src http://deb.debian.org/debian/ buster main
+
+      deb http://deb.debian.org/debian/ buster-updates main
+      deb-src http://deb.debian.org/debian/ buster-updates main
+
+      deb http://security.debian.org/debian-security buster/updates main
+      deb-src http://security.debian.org/debian-security buster/updates main
+    dest: /etc/apt/sources.list
+
+# Adjust APT configurations to allow release info changes
 - name: Fixing apt package issues
   shell: |
     sed -i '/Acquire::AllowReleaseInfoChange::Suite/d' /etc/apt/apt.conf.d/90releaseinfo-change
     echo 'Acquire::AllowReleaseInfoChange::Suite "true";' >> /etc/apt/apt.conf.d/90releaseinfo-change
 
+# Update the APT cache
 - name: Update apt cache directly
-  command: apt-get update
+  apt:
+    update_cache: yes
   register: apt_update_result
   ignore_errors: yes
 
+# Display any errors encountered during the APT cache update
 - name: Print apt update output if failed
   debug:
     var: apt_update_result.stdout_lines
   when: apt_update_result is failed
 
+# Upgrade all system packages if APT cache update was successful
 - name: Upgrade system packages
   apt:
     upgrade: "yes"
   when: apt_update_result is succeeded
 
+# Address any unconfigured packages
 - name: Reconfigure dpkg
   command: dpkg --configure -a
 
-
+# Prevent services from auto-starting after installation
 - name: Preventing services to start after installed
   shell: |
     echo '#!/bin/sh' > /usr/sbin/policy-rc.d
     echo 'exit 101' >> /usr/sbin/policy-rc.d
     chmod +x /usr/sbin/policy-rc.d
 
+# Remove packages that might conflict with our setup
 - name: Removing potential conflicting packages
   apt:
     state: absent 
     autoremove: true
     name:
       - apache2
-      - nginx    
-      # - exim4
-      # - exim4-base   
-      # - exim4-config
-      # - exim4-daemon-light       
-      # - rpcbind  
-      # - nfs-server
-      # - libunbound8
+      - nginx
 
+# Install shared system packages, ensuring APT cache update was successful
 - name: Installing shared system packages
   apt:
-    update_cache: yes
     install_recommends: true
     state: latest
     name:
@@ -62,58 +85,17 @@
       - curl
       - bmon
       - iftop
-      #- git
-      #- vim
-      #- gcc
-      #- build-essential
-      #- net-tools
-      #- python3-pycurl
-      #- python3-apt
-      #- dnsutils
-      #- debian-keyring
-      #- debian-archive-keyring
-      #- apt-transport-https
-      #- gnupg2
-      #- libedit-dev
-      #- libjemalloc-dev
-      #- libncurses-dev
-      #- libtool
-      #- pkg-config
-      #- ethtool
-      #- lsb-release
+  when: apt_update_result is succeeded
 
-# - name: Installing Edge system packages
-#   apt:
-#     update_cache: true
-#     install_recommends: true
-#     state: latest
-#     name:
-#       - fzf
-#       - python3-docutils
-#       - python3-sphinx
-#   when: inventory_hostname in groups["edge"]
-
-# - name: Installing Origin system packages
-#   apt:
-#     update_cache: true
-#     install_recommends: true
-#     state: latest
-#     name:
-#       - libunbound-dev
-#       - software-properties-common
-#       - dirmngr
-#       - locate
-#       - unzip
-#       - autotools-dev
-#       - libpcre2-dev
-#       - cpio
-#       - graphviz
-#       - autoconf-archive
-#       - libpcre3
-#   when: inventory_hostname in groups["origin"]
-
+# Set the hostname based on the IP and group membership
 - name: Adds hostname to /etc/hostname based on IP
   shell: |
     echo "{{ 'media-origin-' if inventory_hostname in groups["origin"] else 'media-edge-' }}$(wget -q whatismyip.akamai.com -O -)" > /etc/hostname.tmp
     sed 's/\./-/g' /etc/hostname.tmp > /etc/hostname
     hostname -F /etc/hostname
+
+# Disable Firewall to allow connectivity between edge and origin
+- name: Disable UFW if enabled
+  ufw:
+    state: disabled
+  ignore_errors: yes
