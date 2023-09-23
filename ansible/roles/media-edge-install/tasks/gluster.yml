@@ -124,7 +124,7 @@
   command: gluster volume get cert_vol auth.allow
   register: current_auth_allow
   changed_when: false
-  when: inventory_hostname in groups["edge"]
+  when: inventory_hostname in groups["edge"] or inventory_hostname in groups["origin"]
 
 - name: Extract auth.allow IPs
   set_fact:
