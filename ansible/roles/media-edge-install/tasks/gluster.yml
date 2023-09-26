@@ -45,6 +45,13 @@
     ## Only on first origin
     - name: First Origin configuration for GlusterFS
       block:
+        - name: Check if GlusterFS volume exists
+          command: gluster volume info cert_vol
+          register: volume_info
+          failed_when: false
+          changed_when: false
+          when: inventory_hostname in groups["origin"]
+      
         - name: Configure GlusterFS peers
           command: gluster peer probe {{ hostvars[item]['ansible_host'] }}
           with_items: "{{ groups['origin'][1:] }}"
@@ -62,6 +69,9 @@
             {{ hostvars[host]['ansible_host'] }}:/etc/ssl/caddy
             {% endfor %}
             force
+          when: 
+            - inventory_hostname in groups["origin"]
+            - "'Volume Name: cert_vol' not in volume_info.stdout"
 
         - name: Set auth.allow for GlusterFS volume
           command: >
@@ -69,10 +79,12 @@
 
         - name: Start GlusterFS volume
           command: gluster volume start cert_vol
-      when: inventory_hostname == groups["origin"][0]
-    ##
+          when: 
+            - inventory_hostname in groups["origin"]
+            - "'Status: Started' not in volume_info.stdout"
+
   when: inventory_hostname in groups["origin"]
-#
+
 
 - name: Prepare to mount GlusterFS volume on all nodes
   set_fact: 
@@ -84,10 +96,19 @@
   set_fact:
     mount_opts: "{{ 'defaults,_netdev' + (',backup-volfile-servers=' + backup_origin_servers if groups['origin'] | length > 1 else '') if inventory_hostname in groups['edge'] else 'defaults,_netdev' + (',backup-volfile-servers=' + backup_origin_servers if groups['origin'] | length > 1 else '') }}"
 
+
+- name: Check if GlusterFS volume is mounted
+  shell: mountpoint -q "{{ mount_point }}"
+  register: is_mounted
+  failed_when: false
+  changed_when: false
+
+
 - name: Clear mount point just in case
   file:
     state: absent
     path: "{{ mount_point }}"
+  when: is_mounted.rc != 0
 
 - name: Create mount point
   file:
@@ -97,8 +118,34 @@
     group: root
     mode: '0755'
 
+
+- name: Get current auth.allow list for GlusterFS volume
+  delegate_to: "{{ primary_origin_server }}"
+  command: gluster volume get cert_vol auth.allow
+  register: current_auth_allow
+  changed_when: false
+  when: inventory_hostname in groups["edge"] or inventory_hostname in groups["origin"]
+
+- name: Extract auth.allow IPs
+  set_fact:
+    current_auth_allow_ips: "{{ current_auth_allow.stdout_lines[-1] | regex_replace('^auth.allow[ \t]+', '') }}"
+  when: current_auth_allow is defined
+
+- name: Add edge IP to the origin auth.allow list if missing
+  delegate_to: "{{ primary_origin_server }}"
+  command: >
+    gluster volume set cert_vol auth.allow "{{ current_auth_allow_ips + ',' + hostvars[inventory_hostname]['ansible_host'] }}"
+  when: 
+    - inventory_hostname in groups["edge"]
+    - hostvars[inventory_hostname]['ansible_host'] not in current_auth_allow_ips.split(',')
+
+
+
+
 - name: Mount GlusterFS volume using command
   command: "mount -t glusterfs -o {{ mount_opts }} {{ primary_origin_server }}:/cert_vol {{ mount_point }}"
+  when: is_mounted.rc != 0
+
 
 - name: Add GlusterFS volume to /etc/fstab
   ansible.builtin.lineinfile:
