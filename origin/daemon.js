@@ -1,14 +1,11 @@
 const networks = require('./config/networks')
-const Resources = require('../media-evm-abis/Resources.json');
-const Marketplace = require('../media-evm-abis/Marketplace.json')
-const MarketplaceViewer = require('../media-evm-abis/MarketplaceViewer.json')
-const Web3 = require('web3');
 const models = require("./models");
 const {initDatabase} = require("./services/database");
 const {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy} = require("./services/caddy");
 const {checkEvents} = require("./services/events");
 const {checkBandwidth, initBandwidth} = require("./services/bandwidth");
 const { resetPurgeLog } = require('./services/varnish');
+const {resetDB} = require("./utils/resetDB");
 
 // Initialize the lastReadBlock variable to 0
 let lastReadBlock = {};
@@ -33,11 +30,7 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
     const resetIndex = process.argv.indexOf('--reset');
     if(resetIndex !== -1){
         try{
-            await models.Resources.sync({force: true})
-            await models.Deals.sync({force: true})
-            await models.Caddy.syncCaddySources({force: true})
-            await models.PurgeLog.sync({force: true})
-            await models.DealsBandwidth.sync({force: true})
+            await resetDB()
             await resetPurgeLog()
         } catch (e) {
             console.log("Error syncing db", e)
@@ -54,7 +47,7 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
 
     //Init database (get data from blockchain)
     try{
-        await initDatabase(ResourcesContract, MarketplaceContract, network, web3Instance)
+        await initDatabase(network)
     } catch (e) {
         databaseInitStatus = false
         console.log("Error when init database:", e)
@@ -62,29 +55,29 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
     }
 
     //Init caddy (get data from db)
-    try{
+    /*try{
         await initCaddy(network)
     }catch (e) {
         console.log("Error when init caddy", e)
         caddyInitStatus = false
-    }
+    }*/
 
     //Init bandwidth limiter
-    try{
+    /*try{
         await initBandwidth()
     }catch(e) {
         console.log("Error when init bandwidth", e)
         bandwidthInitStatus = false
-    }
+    }*/
 
     //Read block to use in events
-    try {
+    /*try {
         lastReadBlock[network.chain_id] = await web3Instance.eth.getBlockNumber()
     }catch (e){
         lastReadBlock[network.chain_id] = 0
         console.log("Error when getting last block", e)
         blockReadStatus = false
-    }
+    }*/
 
     return databaseInitStatus && caddyInitStatus && bandwidthInitStatus && blockReadStatus
 /*
@@ -97,32 +90,9 @@ async function start(){
     // let CURRENT_NETWORK = networks.bsc
     for(const CURRENT_NETWORK of networks ){
 
-        const web3 = new Web3(
-            new Web3.providers.HttpProvider(CURRENT_NETWORK.URL)
-        );
-        console.log(
-            "Resources Contract:", Resources.networks[CURRENT_NETWORK.network_id].address, "\n",
-            "Marketplace Contract:", Marketplace.networks[CURRENT_NETWORK.network_id].address,"\n",
-            "RPC URL:", CURRENT_NETWORK.URL
-        )
+        console.log(CURRENT_NETWORK)
 
-
-        const ResourcesInstance = new web3.eth.Contract(
-            Resources.abi,
-            Resources.networks[CURRENT_NETWORK.network_id].address
-        );
-
-        const MarketplaceViewerInstance = new web3.eth.Contract(
-            MarketplaceViewer.abi,
-            MarketplaceViewer.networks[CURRENT_NETWORK.network_id].address
-        )
-
-        const MarketplaceInstance = new web3.eth.Contract(
-            Marketplace.abi,
-            Marketplace.networks[CURRENT_NETWORK.network_id].address
-        )
-
-        let initResult = await init(ResourcesInstance, MarketplaceViewerInstance, CURRENT_NETWORK, web3)
+        let initResult = init(CURRENT_NETWORK)
         //should set an interval and then cancel it when init is successful
         if(initResult){
             console.log("Edge started correctly")
@@ -132,7 +102,7 @@ async function start(){
             console.log("Start to check events")
             setInterval(async () => {
                 try { 
-                    let getLastBlock = await checkEvents(MarketplaceInstance, ResourcesInstance, lastReadBlock[CURRENT_NETWORK.chain_id], CURRENT_NETWORK, web3)
+                    let getLastBlock = await checkEvents("MarketplaceInstance", "ResourcesInstance", lastReadBlock[CURRENT_NETWORK.chain_id], CURRENT_NETWORK, web3)
                     lastReadBlock[CURRENT_NETWORK.chain_id] = getLastBlock ? getLastBlock : lastReadBlock[CURRENT_NETWORK.chain_id];
                 } catch(e){
                     console.log("Something failed while checking events", e)
@@ -141,7 +111,7 @@ async function start(){
         }
 
         //Check if deals has balance to remain
-        setInterval(async () => {
+        /*setInterval(async () => {
             await checkDealsShouldBeActive()
         }, 10000)
 
@@ -160,7 +130,7 @@ async function start(){
         //reset varnish every 1 week
         setInterval(async() => {
             await resetPurgeLog()
-        }, 24 * 7 * 60 * 60 * 1000)
+        }, 24 * 7 * 60 * 60 * 1000)*/
     }
 }
 
