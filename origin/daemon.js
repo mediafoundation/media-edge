@@ -6,20 +6,19 @@ const {checkEvents} = require("./services/events");
 const {checkBandwidth, initBandwidth} = require("./services/bandwidth");
 const { resetPurgeLog } = require('./services/varnish');
 const {resetDB} = require("./utils/resetDB");
+const {initSdk} = require("media-sdk");
+const {PRIVATE_KEY} = require("./config/env");
 
 // Initialize the lastReadBlock variable to 0
 let lastReadBlock = {};
 
 /**
  * Initializes the dApp on a specific network
- * @param {Object} ResourcesContract - The Resources smart contract instance
- * @param {Object} MarketplaceContract - The Marketplace smart contract instance
  * @param {Object} network - The network configuration object
- * @param {Object} web3Instance - The web3 provider instance
  * @returns {boolean} - True if initialization was successful, false otherwise
  */
 
-const init = async (ResourcesContract, MarketplaceContract, network, web3Instance) => {
+const init = async (network) => {
 
     let databaseInitStatus = true
     let caddyInitStatus = true
@@ -28,21 +27,24 @@ const init = async (ResourcesContract, MarketplaceContract, network, web3Instanc
 
     //Check if daemon needs to run a full reset
     const resetIndex = process.argv.indexOf('--reset');
+
+    initSdk({privateKey: PRIVATE_KEY})
+
     if(resetIndex !== -1){
         try{
             await resetDB()
-            await resetPurgeLog()
+            //await resetPurgeLog()
         } catch (e) {
             console.log("Error syncing db", e)
             databaseInitStatus = false
         }
 
-        try{
+        /*try{
             await models.Caddy.initApps()
         }catch (e){
             console.log("Error syncing caddy", e)
             caddyInitStatus = false
-        }
+        }*/
     }
 
     //Init database (get data from blockchain)
@@ -98,7 +100,7 @@ async function start(){
             console.log("Edge started correctly")
         }
 
-        if(lastReadBlock[CURRENT_NETWORK.chain_id] !== 0){
+        /*if(lastReadBlock[CURRENT_NETWORK.chain_id] !== 0){
             console.log("Start to check events")
             setInterval(async () => {
                 try { 
@@ -108,7 +110,7 @@ async function start(){
                     console.log("Something failed while checking events", e)
                 }
             }, 10000)
-        }
+        }*/
 
         //Check if deals has balance to remain
         /*setInterval(async () => {

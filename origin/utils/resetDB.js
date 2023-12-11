@@ -8,20 +8,29 @@ const {DealsBandwidthLimit} = require("../models/deals/DealsBandwidthLimit");
 const {DealsNodeLocations} = require("../models/deals/DealsNodeLocations");
 const {DealsMetadataNodeLocations} = require("../models/deals/DealsMetadataNodeLocations");
 const resetDB = async () => {
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-
-    await Client.sync({force: true});
-    await Provider.sync({force: true});
-    await Resource.sync({force: true});
 
     // Deals
-    await Deal.sync({force: true});
-    await DealsMetadata.sync({force: true});
+    await Deal.drop();
+    await DealsMetadataNodeLocations.drop();
+    await DealsMetadata.drop();
+    await DealsNodeLocations.drop();
+    await DealsBandwidthLimit.drop();
+
+    await Client.drop();
+    await Provider.drop();
+    await Resource.drop();
+
+    // Recreate tables
+    await Resource.sync({force: true});
+    await Provider.sync({force: true});
+    await Client.sync({force: true});
+
     await DealsBandwidthLimit.sync({force: true});
     await DealsNodeLocations.sync({force: true});
+    await DealsMetadata.sync({force: true});
     await DealsMetadataNodeLocations.sync({force: true});
+    await Deal.sync({force: true});
 
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
 }
 
 module.exports = {resetDB}

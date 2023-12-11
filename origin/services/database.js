@@ -10,11 +10,13 @@ const initDatabase = async function (network) {
     let marketplaceViewer = new MarketplaceViewer();
     let resourcesInstance = new Resources();
 
-    let resources = await resourcesInstance.getPaginatedResources({address: env.WALLET, start: 0, end: 10})
+    let resources = await resourcesInstance.getPaginatedResources({address: env.WALLET, start: 0, steps: 10})
     let deals = await marketplaceViewer.getPaginatedDeals({
         marketPlaceId: 1,
-        address: process.env.userAddress,
-        isProvider: true
+        address: env.WALLET,
+        isProvider: true,
+        start: 0,
+        steps: 10
     })
 
     deals[0] = deals[0].filter((deal) => deal.status.active === true)
