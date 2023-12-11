@@ -9,7 +9,9 @@ wallet_address: "0x81974B05Dc9C1E744CD509b2E11F84897373af7d"
 # Please specify the private key for decrypting resources (64 characters)
 # It may look something like: 545cdcd19de92805371d9644fa7d5a154e51204e41c8cbc8ff3bc9fdd5083efd
 # This should be the private key to the public encryption key provided in the app at provider registering.
-# Which may or may not be the same as your provider wallet address (staking wallet).
+
+# *** CAUTION *** To prevent hacking and fund loss, use a public key from a wallet without funds. Avoid using your main wallet address (staking wallet). 
+
 private_key: 
 
 # Please specify the networks you are providing services (where you are staking your tokens). 
