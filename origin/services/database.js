@@ -1,10 +1,10 @@
 const env = require("../config/env")
 const {Resources, MarketplaceViewer, Encryption} = require("media-sdk");
 const {resourcesNotMatchingDeal} = require("../utils/resources");
-const {ResourcesController} = require("../controllers/resourcesController");
 const {DealsController} = require("../controllers/dealsController");
 const {z} = require("zod");
 const {DealsMetadataType} = require("../models/deals/DealsMetadata");
+const {ResourcesController} = require("../controllers/resourcesController");
 const initDatabase = async function (network) {
     //fetch resources and deals
     let marketplaceViewer = new MarketplaceViewer();
@@ -18,6 +18,7 @@ const initDatabase = async function (network) {
         start: 0,
         steps: 10
     })
+    let resourcesToBeUpdatedInCaddy = []
 
     deals[0] = deals[0].filter((deal) => deal.status.active === true)
 
@@ -29,7 +30,7 @@ const initDatabase = async function (network) {
         let attr = JSON.parse(resource.encryptedData)
         let decryptedSharedKey = await Encryption.ethSigDecrypt(
             resource.encryptedSharedKey,
-            process.env.PRIVATE_KEY
+            env.PRIVATE_KEY
         );
 
         let decrypted = await Encryption.decrypt(
@@ -41,7 +42,9 @@ const initDatabase = async function (network) {
 
         let data = JSON.parse(decrypted)
 
-        await ResourcesController.upsertResource({id: resource.id, owner: resource.owner, ...data})
+        const upsertResult = await ResourcesController.upsertResource({id: resource.id, owner: resource.owner, ...data})
+        let resourceNeedsToBeUpdated = compareOldAndNewResourceOnDB(upsertResult.instance.dataValues, upsertResult.originalResource.dataValues)
+        if(resourceNeedsToBeUpdated) resourcesToBeUpdatedInCaddy.push(upsertResult.instance.dataValues)
     }
 
     for (const deal of deals[0]) {
@@ -61,12 +64,23 @@ const initDatabase = async function (network) {
 
     //Update records in caddy if needed
     for (const resource of resourcesToBeUpdatedInCaddy) {
-        let deals = await db.Deals.dealsThatHasResource(resource.id)
         for (const deal of deals) {
             let caddyHosts = await db.Caddy.getHosts(deal.id)
             await db.Caddy.upsertRecord({resource: resource, deal: deal}, /* caddyHosts,  */network)
         }
     }
+}
+
+function compareOldAndNewResourceOnDB(obj1, obj2) {
+    const propertiesToCheck = ['path', 'protocol', 'origin'];
+
+    for (const property of propertiesToCheck) {
+        if (obj1[property] !== obj2[property]) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 module.exports = {initDatabase}

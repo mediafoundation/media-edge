@@ -1,5 +1,5 @@
 const { Resource } = require("../models/Resource");
-module.exports = class ResourcesController {
+class ResourcesController {
     static upsertResource = async (resource) => {
         try {
             const originalResource = await Resource.findByPk(resource.id);
@@ -43,3 +43,5 @@ module.exports = class ResourcesController {
         }
     };
 }
+
+module.exports = {ResourcesController}

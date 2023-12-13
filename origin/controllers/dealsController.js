@@ -7,7 +7,7 @@ const { DealsBandwidthLimit } = require("../models/deals/DealsBandwidthLimit");
 const { DealsNodeLocations } = require("../models/deals/DealsNodeLocations");
 const { DealsMetadataNodeLocations } = require("../models/deals/DealsMetadataNodeLocations");
 
-module.exports = class DealsController {
+class DealsController {
     constructor() {}
 
 
@@ -124,3 +124,5 @@ module.exports = class DealsController {
         DealsMetadataType.parse(JSON.parse(metadata));
     }
 }
+
+module.exports = {DealsController}
