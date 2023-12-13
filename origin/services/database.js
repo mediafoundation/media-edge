@@ -5,6 +5,7 @@ const {DealsController} = require("../controllers/dealsController");
 const {z} = require("zod");
 const {DealsMetadataType} = require("../models/deals/DealsMetadata");
 const {ResourcesController} = require("../controllers/resourcesController");
+const {CaddyController} = require("../controllers/caddyController");
 const initDatabase = async function (network) {
     //fetch resources and deals
     let marketplaceViewer = new MarketplaceViewer();
@@ -65,7 +66,7 @@ const initDatabase = async function (network) {
     //Update records in caddy if needed
     for (const resource of resourcesToBeUpdatedInCaddy) {
         for (const deal of deals) {
-            await db.Caddy.upsertRecord({resource: resource, deal: deal}, network)
+            await CaddyController.upsertRecord({resource: resource, deal: deal}, network)
         }
     }
 }
