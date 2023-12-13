@@ -44,8 +44,10 @@ const initDatabase = async function (network) {
         let data = JSON.parse(decrypted)
 
         const upsertResult = await ResourcesController.upsertResource({id: resource.id, owner: resource.owner, ...data})
-        let resourceNeedsToBeUpdated = compareOldAndNewResourceOnDB(upsertResult.instance.dataValues, upsertResult.originalResource.dataValues)
-        if(resourceNeedsToBeUpdated) resourcesToBeUpdatedInCaddy.push(upsertResult.instance.dataValues)
+        if(upsertResult.originalResource){
+            let resourceNeedsToBeUpdated = compareOldAndNewResourceOnDB(upsertResult.instance.dataValues, upsertResult.originalResource.dataValues)
+            if(resourceNeedsToBeUpdated) resourcesToBeUpdatedInCaddy.push(upsertResult.instance.dataValues)
+        }
     }
 
     for (const deal of deals[0]) {

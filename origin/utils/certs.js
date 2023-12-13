@@ -2,7 +2,7 @@ const acme = require("acme-client");
 const fs = require("fs");
 const path = require("path");
 const crypto = require('crypto');
-const fetch = require('node-fetch');
+//const fetch = require('node-fetch');
 const querystring = require('querystring');
 
 const challengesPath = "/var/www/challenges";
