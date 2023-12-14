@@ -42,6 +42,17 @@ class ResourcesController {
             throw error;
         }
     };
+
+    static getNumberOfMatchingDeals = async (resourceId) => {
+        const resource = await Resource.findByPk(resourceId);
+
+        if(resource){
+            return await resource.getDeals()
+        }
+        else{
+            throw new Error("Resource not found")
+        }
+    }
 }
 
 module.exports = {ResourcesController}

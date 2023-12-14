@@ -1,18 +1,20 @@
-const models = require("../models");
 const env = require("../config/env")
 const http = require('http');
+const {CaddyController, queues} = require("../controllers/caddyController");
+const {DealsController} = require("../controllers/dealsController");
+const {ResourcesController} = require("../controllers/resourcesController");
 
 let caddyNeedsUpdate = false
 
 let initCaddy = async function(network){
-    let caddyRecords = await models.Caddy.getRecords()
+    let caddyRecords = await CaddyController.getRecords()
     if(!caddyRecords){
-        await models.Caddy.initApps()
-        caddyRecords = await models.Caddy.getRecords()
+        await CaddyController.initApps()
+        caddyRecords = await CaddyController.getRecords()
     }
 
-    let dealsFromDB = await models.Deals.getDealsFromDb()
-    let resourcesFromDB = await models.Resources.getResources()
+    let dealsFromDB = await DealsController.getDeals()
+    let resourcesFromDB = await ResourcesController.getResources()
 
     let matchDealResources = []
 
@@ -23,34 +25,34 @@ let initCaddy = async function(network){
         matchDealResources.push(matchDealResource)
     })
 
-    await models.Caddy.addRecords(matchDealResources, caddyRecords, network)
+    await CaddyController.addRecords(matchDealResources, caddyRecords, network)
 
-    let caddyFile = await models.Caddy.getRecords()
+    let caddyFile = await CaddyController.getRecords()
 
-    let difference = await models.Caddy.compareDbAndCaddyData(
+    let difference = await CaddyController.compareDbAndCaddyData(
         dealsFromDB.map(deal => deal.id),
 	    caddyFile.map(obj => obj['@id']).filter(id => id)
     )
     
     for (const deal of difference) {
-        await models.Caddy.deleteRecord(deal)
+        await CaddyController.deleteRecord(deal)
     }
 
-    await models.Caddy.checkQueue(models.Caddy.queues.Minutely, "Minutely", 60)
+    await CaddyController.checkQueue(queues.Minutely, "Minutely", 60)
 }
 
-let checkDealsShouldBeActive = async function(network){
+let checkDealsShouldBeActive = async function(){
     //get all deals
     //console.log("Checking deal")
-    let deals = await models.Deals.getDealsFromDb()
+    let deals = await DealsController.getDeals()
     let dealsToDelete = []
     let resourcesToDelete = []
     for (const deal of deals) {
-        let dealIsActive = await models.Deals.dealIsActive(deal)
+        let dealIsActive = deal.active === true
         if(!dealIsActive){
             dealsToDelete.push(deal.id)
             //Check if deleted deal's resource has another deals or need to be removed
-            let dealsOfResource = await models.Deals.dealsThatHasResource(deal.resourceId)
+            let dealsOfResource = await ResourcesController.getNumberOfMatchingDeals(deal.resourceId)
             if(dealsOfResource.length === 1){
                 //remove resource too
                 //await models.Resources.deleteRecords(deal.resourceId)
@@ -63,24 +65,29 @@ let checkDealsShouldBeActive = async function(network){
 
     if(dealsToDelete.length > 0){
         console.log("Deals id to delete:", dealsToDelete)
-        await models.Deals.deleteRecords(dealsToDelete)
-        await models.Resources.deleteRecords(resourcesToDelete)
+        /*await models.Deals.deleteRecords(dealsToDelete)
+        await models.Resources.deleteRecords(resourcesToDelete)*/
 
         //Delete deals from caddy
         for (const dealToDelete of dealsToDelete) {
-            models.Caddy.deleteRecord(dealToDelete, network)
+            await CaddyController.deleteRecord(dealToDelete)
+            await DealsController.deleteDealById(dealToDelete.id)
+        }
+
+        for (const resource of resourcesToDelete) {
+            await ResourcesController.deleteResourceById(resource.id)
         }
     }
 }
 
 let checkQueue = () => {
-    setInterval(() => models.Caddy.checkQueue(models.Caddy.queues.Minutely, "Minutely", 60), 60000);
-    setInterval(() => models.Caddy.checkQueue(models.Caddy.queues.Hourly, "Hourly", 24), 3600000);
-    setInterval(() => models.Caddy.checkQueue(models.Caddy.queues.Daily, "Daily", 30), 86400*1000);
-    setInterval(() => models.Caddy.checkQueue(models.Caddy.queues.Monthly, "Monthly", 12), 259200*1000);
+    setInterval(() => CaddyController.checkQueue(queues.Minutely, "Minutely", 60), 60000);
+    setInterval(() => CaddyController.checkQueue(queues.Hourly, "Hourly", 24), 3600000);
+    setInterval(() => CaddyController.checkQueue(queues.Daily, "Daily", 30), 86400*1000);
+    setInterval(() => CaddyController.checkQueue(queues.Monthly, "Monthly", 12), 259200*1000);
 }
 
-let checkCaddy = async (network) => {
+let checkCaddy = async () => {
     let url = new URL(env.caddyUrl)
     let host = url.hostname
     let port = url.port

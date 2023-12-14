@@ -450,4 +450,4 @@ class CaddyController {
     }
 }
 
-module.exports = {CaddyController}
+module.exports = {CaddyController, queues}
