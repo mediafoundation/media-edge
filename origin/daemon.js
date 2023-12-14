@@ -8,6 +8,7 @@ const { resetPurgeLog } = require('./services/varnish');
 const {resetDB} = require("./utils/resetDB");
 const {initSdk} = require("media-sdk");
 const {PRIVATE_KEY} = require("./config/env");
+const {CaddyController} = require("./controllers/caddyController");
 
 // Initialize the lastReadBlock variable to 0
 let lastReadBlock = {};
@@ -39,12 +40,12 @@ const init = async (network) => {
             databaseInitStatus = false
         }
 
-        /*try{
-            await models.Caddy.initApps()
+        try{
+            await CaddyController.initApps()
         }catch (e){
             console.log("Error syncing caddy", e)
             caddyInitStatus = false
-        }*/
+        }
     }
 
     //Init database (get data from blockchain)
@@ -57,12 +58,12 @@ const init = async (network) => {
     }
 
     //Init caddy (get data from db)
-    /*try{
+    try{
         await initCaddy(network)
     }catch (e) {
         console.log("Error when init caddy", e)
         caddyInitStatus = false
-    }*/
+    }
 
     //Init bandwidth limiter
     /*try{

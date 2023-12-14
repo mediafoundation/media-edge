@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../index");
+const {DealsMetadata} = require("./DealsMetadata");
 
 const Deal = sequelize.define("Deals",
     {
@@ -43,7 +44,8 @@ const Deal = sequelize.define("Deals",
             references: {
                 model: 'DealsMetadata',
                 key: 'id'
-            }
+            },
+            allowNull: false,
         },
         network: DataTypes.STRING
     },
@@ -52,5 +54,10 @@ const Deal = sequelize.define("Deals",
         freezeTableName: true
     }
 );
+
+Deal.belongsTo(DealsMetadata, {
+    foreignKey: 'metadataId',
+    as: "Metadata"
+});
 
 module.exports = {Deal};

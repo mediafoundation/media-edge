@@ -7,9 +7,10 @@ const {DealsMetadata} = require("../models/deals/DealsMetadata");
 const {DealsBandwidthLimit} = require("../models/deals/DealsBandwidthLimit");
 const {DealsNodeLocations} = require("../models/deals/DealsNodeLocations");
 const {DealsMetadataNodeLocations} = require("../models/deals/DealsMetadataNodeLocations");
+const {CaddySource} = require("../models/caddy");
 const resetDB = async () => {
 
-    // Deals
+    // Drop tables
     await Deal.drop();
     await DealsMetadataNodeLocations.drop();
     await DealsMetadata.drop();
@@ -20,7 +21,12 @@ const resetDB = async () => {
     await Provider.drop();
     await Resource.drop();
 
+    await CaddySource.drop()
+
     // Recreate tables
+
+    await CaddySource.sync({force: true})
+
     await Resource.sync({force: true});
     await Provider.sync({force: true});
     await Client.sync({force: true});

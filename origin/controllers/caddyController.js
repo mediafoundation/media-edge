@@ -7,22 +7,22 @@ const resolver = new doh.DohResolver('https://1.1.1.1/dns-query')
 const config = require("../config/app");
 const {CaddySource} = require("../models/caddy");
 
-class CaddyController {
+const queues = {
+    Minutely: [],
+    Hourly: [],
+    Daily: [],
+    Monthly: []
+};
 
-    queues = {
-        Minutely: [],
-        Hourly: [],
-        Daily: [],
-        Monthly: []
-    };
-
-    caddyBaseUrl = env.caddyUrl
-    caddyRoutesUrl = this.caddyBaseUrl+'config/apps/http/servers/srv0/routes'
-    caddyReqCfg = {
-        headers: {
-            'Content-Type': 'application/json'
-        }
+const caddyBaseUrl = env.caddyUrl
+const caddyRoutesUrl = caddyBaseUrl+'config/apps/http/servers/srv0/routes'
+const caddyReqCfg = {
+    headers: {
+        'Content-Type': 'application/json'
     }
+}
+
+class CaddyController {
     static async checkDomain(host){
         let domain = await CaddySource.findOne({
             where: { host: host },
@@ -106,7 +106,7 @@ class CaddyController {
             //if resource is not on caddyfile already, add to payload
             if(!dealInFile) {
                 if(item.resource.domain) {
-                    this.addToQueue(this.queues.Minutely, item.deal.id, item);
+                    await this.addToQueue(queues.Minutely, item.deal.id, item);
                 }
                 payload.push(caddyData)
             } else {
@@ -116,9 +116,9 @@ class CaddyController {
         //Add to caddy file
         try {
             await axios.post(
-                this.caddyRoutesUrl+"/...",
+                caddyRoutesUrl+"/...",
                 payload,
-                this.caddyReqCfg
+                caddyReqCfg
             )
             if (env.debug) console.log('Added to caddy:', payload.length, "deals")
         } catch (e){
@@ -149,12 +149,12 @@ class CaddyController {
             await this.manageDomain(newCaddyData, item)
         }
 
-        let recordId = this.caddyBaseUrl+"id/"+item.deal.id
+        let recordId = caddyBaseUrl+"id/"+item.deal.id
         try {
             await axios.patch(
                 recordId,
                 newCaddyData,
-                this.caddyReqCfg
+                caddyReqCfg
             )
             if (env.debug) console.log('Updated Caddyfile resource:', item.deal.id)
         } catch (e){
@@ -168,8 +168,8 @@ class CaddyController {
     static async getRecords(){
         try {
             let resp = await axios.get(
-                this.caddyRoutesUrl,
-                this.caddyReqCfg
+                caddyRoutesUrl,
+                caddyReqCfg
             )
             return resp.data
         } catch(e){
@@ -180,11 +180,11 @@ class CaddyController {
     }
 
     static async getResource(id){
-        let url = this.caddyBaseUrl + 'id/' + id;
+        let url = caddyBaseUrl + 'id/' + id;
         try {
             let resp = await axios.get(
                 url,
-                this.caddyReqCfg
+                caddyReqCfg
             )
             return resp.data
         } catch(e){
@@ -198,11 +198,11 @@ class CaddyController {
     }
 
     static async getHosts(id){
-        let url = this.caddyBaseUrl + 'id/' + id + '/match/0/host';
+        let url = caddyBaseUrl + 'id/' + id + '/match/0/host';
         try {
             let resp = await axios.get(
                 url,
-                this.caddyReqCfg
+                caddyReqCfg
             )
             return resp.data
         } catch(e){
@@ -222,8 +222,8 @@ class CaddyController {
             await this.deletefromAllQueues(dealId)
 
             await axios.delete(
-                this.caddyBaseUrl +'id/'+ dealId,
-                this.caddyReqCfg
+                caddyBaseUrl +'id/'+ dealId,
+                caddyReqCfg
             )
 
             if (env.debug) console.log('Deleted from caddy:', dealId)
@@ -253,7 +253,7 @@ class CaddyController {
                     deal_id: item.deal.id
                 }
             });
-            obtainAndRenewCertificate({ host: item.resource.domain });
+            await obtainAndRenewCertificate({host: item.resource.domain});
             return true;
         }
         return false;
@@ -266,7 +266,7 @@ class CaddyController {
             if (env.debug) console.log("Added CaddySources for domain:", item.resource.domain, item.resource.id);
         } else {
             if (env.debug) console.log("Adding domain to check queue.", item.resource.domain, item.resource.id);
-            this.addToQueue(this.queues.Minutely, item.deal.id, item);
+            await this.addToQueue(queues.Minutely, item.deal.id, item);
         }
     }
 
@@ -277,10 +277,10 @@ class CaddyController {
             if (hostUpdated) {
                 try {
                     if (env.debug) console.log('Patching caddy domain', host);
-                    axios.patch(
-                        this.caddyBaseUrl + 'id/' + item.deal.id + '/match/0/host',
+                    await axios.patch(
+                        caddyBaseUrl + 'id/' + item.deal.id + '/match/0/host',
                         JSON.stringify(host),
-                        this.caddyReqCfg
+                        caddyReqCfg
                     );
                     return true;
                 } catch(_) {
@@ -299,9 +299,9 @@ class CaddyController {
     static async initApps(){
         try {
             await axios.post(
-                this.caddyBaseUrl+"config/apps",
+                caddyBaseUrl+"config/apps",
                 config.caddyInitialApps,
-                this.caddyReqCfg
+                caddyReqCfg
             )
             await CaddySource.destroy({where: {}})
             console.log("Finished resetting Caddy records.", "\n")
@@ -327,9 +327,9 @@ class CaddyController {
                         queue.splice(i, 1);
                     } else if (item.retry === limit) {
                         if (env.debug) console.log(`Domain exceeded retry limits, sending to next stage: ${item.resource.domain}`);
-                        if (current === "Minutely") this.queues.Hourly.push(item);
-                        else if (current === "Hourly") this.queues.Daily.push(item);
-                        else if (current === "Daily") this.queues.Monthly.push(item);
+                        if (current === "Minutely") queues.Hourly.push(item);
+                        else if (current === "Hourly") queues.Daily.push(item);
+                        else if (current === "Daily") queues.Monthly.push(item);
                         else console.log(`Domain exceeded retry limits, checked for 12 months without restart: ${item.resource.domain}`);
                         queue.splice(i, 1);
                     }
@@ -340,11 +340,11 @@ class CaddyController {
     }
 
     static async isInQueue(id){
-        return Object.values(this.queues).some(queue => queue.some(item => item.id === id));
+        return Object.values(queues).some(queue => queue.some(item => item.id === id));
     }
 
     static async deletefromAllQueues(id){
-        for (const queue of Object.values(this.queues)) {
+        for (const queue of Object.values(queues)) {
             const index = queue.findIndex(item => item.id === id);
             if (index !== -1) queue.splice(index, 1);
         }
@@ -380,7 +380,7 @@ class CaddyController {
 
     static async isCnameAlreadyAdded(cname){
         try {
-            let response = await axios.get(this.caddyRoutesUrl)
+            let response = await axios.get(caddyRoutesUrl)
             for (const resource of response.data) {
                 if (resource.match[0].host.includes(cname)) {
                     if (env.debug) console.log("Cname already added to another deal: "+resource["@id"])
@@ -402,9 +402,9 @@ class CaddyController {
             //remove cname from resource
             hosts.splice(hostToRemove, 1)
             axios.patch(
-                this.caddyBaseUrl + 'id/' + id + '/match/0/host',
+                caddyBaseUrl + 'id/' + id + '/match/0/host',
                 JSON.stringify(hosts),
-                this.caddyReqCfg
+                caddyReqCfg
             )
             //remove cname from CaddySources
             await CaddySource.destroy({ where: { host:cname } })

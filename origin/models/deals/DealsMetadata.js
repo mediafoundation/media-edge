@@ -1,6 +1,7 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../index");
 const { array, boolean, number, object, string, z } = require("zod");
+const {DealsBandwidthLimit} = require("./DealsBandwidthLimit");
 
 const DealsMetadata = sequelize.define("DealsMetadata", {
     id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
@@ -10,7 +11,8 @@ const DealsMetadata = sequelize.define("DealsMetadata", {
         references: {
             model: 'DealsBandwidthLimit',
             key: 'id'
-        }
+        },
+        allowNull: false,
     },
     autoSsl: DataTypes.BOOLEAN,
     burstSpeed: DataTypes.BIGINT,
@@ -19,6 +21,11 @@ const DealsMetadata = sequelize.define("DealsMetadata", {
 }, {
     modelName: 'DealsMetadata',
     freezeTableName: true
+});
+
+DealsMetadata.belongsTo(DealsBandwidthLimit, {
+    foreignKey: 'bandwidthLimitId',
+    as: "BandwidthLimit"
 });
 
 const DealsMetadataType = z.object({

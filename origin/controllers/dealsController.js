@@ -72,7 +72,25 @@ class DealsController {
 
     static async getDeals() {
         try {
-            return await Deal.findAll({attributes: {exclude: ['createdAt', 'updatedAt', 'deletedAt']}});
+            return await Deal.findAll({
+                attributes: {exclude: ['createdAt', 'updatedAt', 'deletedAt']},
+                include: [
+                    {
+                        model: DealsMetadata,
+                        as: "Metadata",
+                        attributes: {exclude: ['createdAt', 'updatedAt', 'deletedAt']},
+                        include: [
+                            {
+                                model: DealsBandwidthLimit,
+                                as: "BandwidthLimit",
+                                attributes: {exclude: ['createdAt', 'updatedAt', 'deletedAt']}
+                            }
+                        ]
+                    }
+                ],
+                raw: true,
+                nest: true
+            });
         } catch (error) {
             throw error;
         }
