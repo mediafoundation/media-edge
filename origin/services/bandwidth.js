@@ -1,4 +1,6 @@
 const models = require("../models");
+const {DealsController} = require("../controllers/dealsController");
+const {BandwidthController} = require("../controllers/bandwidthController");
 
 let checkBandwidth = async () => {
     let dealsUpdated = await models.DealsBandwidth.updateBandwidthUsage()
@@ -15,9 +17,9 @@ let checkBandwidth = async () => {
 }
 
 let initBandwidth = async () => {
-    let dealsFromDb = await models.Deals.getDealsFromDb()
+    let dealsFromDb = await DealsController.getDeals()
     for (const deal of dealsFromDb) {
-        let formattedDeal = await models.DealsBandwidth.formatDataToDb(deal)
+        let formattedDeal = await BandwidthController.formatDataToDb(deal)
         await models.DealsBandwidth.upsertRecord(formattedDeal)
     }
 }

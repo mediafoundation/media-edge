@@ -4,26 +4,15 @@ const { Resource } = require("../models/Resource");
 const { Provider } = require("../models/Provider");
 const { Client } = require("../models/Client");
 const { DealsBandwidthLimit } = require("../models/deals/DealsBandwidthLimit");
-const { DealsNodeLocations } = require("../models/deals/DealsNodeLocations");
-const { DealsMetadataNodeLocations } = require("../models/deals/DealsMetadataNodeLocations");
+const { DealsLocations} = require("../models/deals/DealsLocations");
+const {DealsResources} = require("../models/associations/DealsResources");
+const {DealsNodeLocations} = require("../models/deals/DealsNodeLocations");
 
 class DealsController {
     constructor() {}
 
 
     static async upsertDeal(deal) {
-        const [client] = await Client.findOrCreate({
-            where: {account: deal.client},
-            defaults: {account: deal.client}
-        });
-
-        // Ensure the provider exists
-        const [provider] = await Provider.findOrCreate({
-            where: {account: deal.provider},
-            defaults: {account: deal.provider}
-        });
-
-        // Find the resource or fail
         const resource = await Resource.findOne({
             where: {id: deal.resourceId}
         });
@@ -32,40 +21,57 @@ class DealsController {
             throw new Error('Resource not found');
         }
 
-        // Ensure the metadata exists
-        // Parse the metadata from the deal
+        const [client] = await Client.findOrCreate({
+            where: {account: deal.client},
+            defaults: {account: deal.client}
+        });
+        // Ensure the provider exists
+
+        const [provider] = await Provider.findOrCreate({
+            where: {account: deal.provider},
+            defaults: {account: deal.provider}
+        });
+
+        deal.clientId = client.get('id');
+        deal.providerId = provider.get('id');
+        deal.resourceId = resource.get('id');
+
+        const [instance, created] = await Deal.upsert(deal);
+
         let rawMetadata = JSON.parse(deal.metadata);
+        let rawBandwidthLimit = rawMetadata.bandwidthLimit;
+
+        rawMetadata.dealId = instance.get('id');
+        rawBandwidthLimit.dealId = instance.get('id');
 
         // Ensure the bandwidth limit exists
-        const [bandwidthLimit] = await DealsBandwidthLimit.upsert(rawMetadata.bandwidthLimit);
+        await DealsBandwidthLimit.upsert(rawBandwidthLimit);
 
-        rawMetadata.bandwidthLimitId = bandwidthLimit.get('id');
+
 
         // Create or update the metadata
-        const [metadata] = await DealsMetadata.upsert(rawMetadata);
+        await DealsMetadata.upsert(rawMetadata);
 
-        // Handle the node locations
         for (const location of rawMetadata.nodeLocations) {
             const [nodeLocation] = await DealsNodeLocations.findOrCreate({
                 where: { location },
                 defaults: { location }
             });
 
-            const metadataId = await metadata.get('id');
-            const nodeId = await nodeLocation.get('id');
+            const dealId = instance.get('id');
+            const nodeId = nodeLocation.get('id');
 
-            await DealsMetadataNodeLocations.findOrCreate({
-                where: { metadataId, nodeId },
-                defaults: { metadataId, nodeId }
+            await DealsLocations.findOrCreate({
+                where: { dealId, nodeId },
+                defaults: { dealId, nodeId }
             });
         }
 
-        deal.clientId = client.get('id');
-        deal.providerId = provider.get('id');
-        deal.resourceId = resource.get('id');
-        deal.metadataId = metadata.get('id');
+        await DealsResources.findOrCreate({
+            where: { dealId: deal.id, resourceId: deal.resourceId },
+            defaults: { dealId: deal.id, resourceId: deal.resourceId }
 
-        const [instance, created] = await Deal.upsert(deal);
+        })
         return [instance, created];
 
     };

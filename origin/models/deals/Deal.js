@@ -1,6 +1,5 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../index");
-const {DealsMetadata} = require("./DealsMetadata");
+const {DataTypes} = require("sequelize");
+const {sequelize} = require("../index");
 
 const Deal = sequelize.define("Deals",
     {
@@ -20,13 +19,6 @@ const Deal = sequelize.define("Deals",
                 key: 'id'
             }
         },
-        resourceId: {
-            type: DataTypes.BIGINT,
-            references: {
-                model: 'Resources',
-                key: 'id'
-            }
-        },
         totalPayment: DataTypes.BIGINT,
         blockedBalance: DataTypes.BIGINT,
         pricePerSecond: DataTypes.BIGINT,
@@ -39,14 +31,6 @@ const Deal = sequelize.define("Deals",
         active: DataTypes.BOOLEAN,
         cancelled: DataTypes.BOOLEAN,
         cancelledAt: DataTypes.BIGINT,
-        metadataId: {
-            type: DataTypes.BIGINT,
-            references: {
-                model: 'DealsMetadata',
-                key: 'id'
-            },
-            allowNull: false,
-        },
         network: DataTypes.STRING
     },
     {
@@ -54,10 +38,5 @@ const Deal = sequelize.define("Deals",
         freezeTableName: true
     }
 );
-
-Deal.belongsTo(DealsMetadata, {
-    foreignKey: 'metadataId',
-    as: "Metadata"
-});
 
 module.exports = {Deal};

@@ -5,15 +5,14 @@ const {DealsBandwidthLimit} = require("./DealsBandwidthLimit");
 
 const DealsMetadata = sequelize.define("DealsMetadata", {
     id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
-    label: DataTypes.STRING,
-    bandwidthLimitId: {
+    dealId: {
         type: DataTypes.BIGINT,
         references: {
-            model: 'DealsBandwidthLimit',
+            model: 'Deals',
             key: 'id'
-        },
-        allowNull: false,
+        }
     },
+    label: DataTypes.STRING,
     autoSsl: DataTypes.BOOLEAN,
     burstSpeed: DataTypes.BIGINT,
     apiEndpoint: DataTypes.STRING,
@@ -21,11 +20,6 @@ const DealsMetadata = sequelize.define("DealsMetadata", {
 }, {
     modelName: 'DealsMetadata',
     freezeTableName: true
-});
-
-DealsMetadata.belongsTo(DealsBandwidthLimit, {
-    foreignKey: 'bandwidthLimitId',
-    as: "BandwidthLimit"
 });
 
 const DealsMetadataType = z.object({
