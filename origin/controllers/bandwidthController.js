@@ -3,7 +3,6 @@ const env = require("../config/env");
 const axios = require("axios");
 const {BandwidthsLog} = require("../models/BandwidthsLog");
 const {DealsMetadata} = require("../models/deals/DealsMetadata");
-const {DealsBandwidthLimit} = require("../models/deals/DealsBandwidthLimit");
 
 const caddyApiHeaders = {
     headers: {
@@ -196,6 +195,7 @@ class BandwidthController {
     }
 
     static async upsertRecord (bandwidthsLog) {
+        console.log("Bandwidth log to insert:", bandwidthsLog)
         try {
             // This will either create a new record or update the existing one
             const [record, created] = await BandwidthsLog.upsert(bandwidthsLog, {
@@ -255,20 +255,12 @@ class BandwidthController {
         return elapsedTime >= minimumDurationInMilliseconds;
     }
 
-    static async calculatePeriodEnd(deal){
-        let metadata = await DealsMetadata.findOne({
-            where: {dealId: deal.id},
-            include: [
-                {
-                    model: DealsBandwidthLimit,
-                    as: "BandwidthLimit",
-                    attributes: {exclude: ['createdAt', 'updatedAt', 'deletedAt']}
-                }
-            ],
-        })
+    static calculatePeriodEnd(deal){
+        console.log("Calculating period end", deal)
         let period_end = 0
-        let billingStart = Number(metadata.BandwidthLimit.billingStart)
-        switch (metadata.BandwidthLimit.period) {
+        let billingStart = Number(deal.billingStart)
+        console.log("Billing start:", billingStart)
+        switch (deal.BandwidthLimit.period) {
             case 'hourly':
                 period_end = billingStart + 3600
                 break
@@ -295,6 +287,7 @@ class BandwidthController {
     static async formatDataToDb (deal){
         console.log("DealInBandwidthController", deal)
         return {
+            dealId: deal.id,
             bytes_sent: 0,
             last_read: Number(deal.billingStart),
             period_end: this.calculatePeriodEnd(deal)

@@ -20,7 +20,7 @@ let initBandwidth = async () => {
     let dealsFromDb = await DealsController.getDeals()
     for (const deal of dealsFromDb) {
         let formattedDeal = await BandwidthController.formatDataToDb(deal)
-        await models.DealsBandwidth.upsertRecord(formattedDeal)
+        await BandwidthController.upsertRecord(formattedDeal)
     }
 }
 
