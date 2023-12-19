@@ -1,7 +1,8 @@
 const models = require('../models')
+const {PurgeLogsController} = require("../controllers/purgeLogsController");
 
 const resetPurgeLog = async () => {
-    await models.PurgeLog.deleteAllRecords()
+    await PurgeLogsController.deleteAllRecords()
 }
 
 /*const manageBandwidth = async () => {

@@ -1,17 +1,18 @@
-const models = require("../models");
 const {DealsController} = require("../controllers/dealsController");
 const {BandwidthController} = require("../controllers/bandwidthController");
+const {CaddyController} = require("../controllers/caddyController");
+const {PurgeLogsController} = require("../controllers/purgeLogsController");
 
 let checkBandwidth = async () => {
-    let dealsUpdated = await models.DealsBandwidth.updateBandwidthUsage()
-    let dealsRestored = await models.DealsBandwidth.resetBandwidthLimitPeriods()
+    let dealsUpdated = await BandwidthController.updateBandwidthUsage()
+    let dealsRestored = await BandwidthController.resetBandwidthLimitPeriods()
 
     let dealsToPurge = [...dealsUpdated, ...dealsRestored]
 
     for (const deal of dealsToPurge) {
-        let caddyHosts = await models.Caddy.getHosts(deal.id)
+        let caddyHosts = await CaddyController.getHosts(deal.id)
         for (const host of caddyHosts) {
-            await models.PurgeLog.addRecord(host+'/')
+            await PurgeLogsController.addRecord(host+'/')
         }
     }
 }

@@ -2,7 +2,7 @@ const {Client} = require("@elastic/elasticsearch");
 const env = require("../config/env");
 const axios = require("axios");
 const {BandwidthsLog} = require("../models/BandwidthsLog");
-const {DealsMetadata} = require("../models/deals/DealsMetadata");
+const {DealsController} = require("./dealsController");
 
 const caddyApiHeaders = {
     headers: {
@@ -48,6 +48,7 @@ class BandwidthController {
 
         try {
             const response = await client.search(query);
+            console.log("Response from elastic:", response)
             const totalBytes = parseInt(response.aggregations.total_bytes.value);
             return { totalBytes, range };
         } catch (error) {
@@ -107,10 +108,9 @@ class BandwidthController {
 
 
             // Extract the bandwidthLimit from the deal's metadata
-            const metadata = await DealsMetadata.findOne({
-                where: {dealId: bandwidthsLog.dealId}
-            })
-            const bandwidthLimit = metadata["bandwidthLimit"];
+            let deal = await DealsController.getDealById(bandwidthsLog.dealId)
+
+            const bandwidthLimit = deal.BandwidthLimit;
             if(env.debug) console.log("Bandwidth limit:", bandwidthLimit)
 
             // Calculate the bandwidth limit in bytes
@@ -195,7 +195,6 @@ class BandwidthController {
     }
 
     static async upsertRecord (bandwidthsLog) {
-        console.log("Bandwidth log to insert:", bandwidthsLog)
         try {
             // This will either create a new record or update the existing one
             const [record, created] = await BandwidthsLog.upsert(bandwidthsLog, {
@@ -256,10 +255,8 @@ class BandwidthController {
     }
 
     static calculatePeriodEnd(deal){
-        console.log("Calculating period end", deal)
         let period_end = 0
         let billingStart = Number(deal.billingStart)
-        console.log("Billing start:", billingStart)
         switch (deal.BandwidthLimit.period) {
             case 'hourly':
                 period_end = billingStart + 3600
@@ -285,7 +282,6 @@ class BandwidthController {
 
 
     static async formatDataToDb (deal){
-        console.log("DealInBandwidthController", deal)
         return {
             dealId: deal.id,
             bytes_sent: 0,

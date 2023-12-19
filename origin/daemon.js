@@ -1,8 +1,7 @@
 const networks = require('./config/networks')
-const models = require("./models");
 const {initDatabase} = require("./services/database");
 const {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy} = require("./services/caddy");
-const {checkEvents} = require("./services/events");
+//const {checkEvents} = require("./services/events");
 const {checkBandwidth, initBandwidth} = require("./services/bandwidth");
 const { resetPurgeLog } = require('./services/varnish');
 const {resetDB} = require("./utils/resetDB");
@@ -11,7 +10,7 @@ const {PRIVATE_KEY} = require("./config/env");
 const {CaddyController} = require("./controllers/caddyController");
 
 // Initialize the lastReadBlock variable to 0
-let lastReadBlock = {};
+//let lastReadBlock = {};
 
 /**
  * Initializes the dApp on a specific network
@@ -114,7 +113,7 @@ async function start(){
         }*/
 
         //Check if deals has balance to remain
-        /*setInterval(async () => {
+        setInterval(async () => {
             await checkDealsShouldBeActive()
         }, 10000)
 
@@ -127,13 +126,12 @@ async function start(){
         setInterval(async () => {
             console.log("Start checking bandwidth")
             await checkBandwidth()
-            //await manageBandwidth()
         }, 60000)
 
         //reset varnish every 1 week
         setInterval(async() => {
             await resetPurgeLog()
-        }, 24 * 7 * 60 * 60 * 1000)*/
+        }, 24 * 7 * 60 * 60 * 1000)
     }
 }
 

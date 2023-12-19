@@ -22,7 +22,6 @@ let initCaddy = async function(network){
         let matchDealResource = {}
         matchDealResource.deal = deal
         let dealsResource = await DealsController.getDealResource(deal.id)
-        console.log("Res", dealsResource)
         matchDealResource.resource = resourcesFromDB.find(resource => resource.id === dealsResource.resourceId)
         matchDealResources.push(matchDealResource)
     }
