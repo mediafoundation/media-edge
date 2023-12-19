@@ -85,17 +85,15 @@ class DealsController {
                         model: DealsMetadata,
                         as: "Metadata",
                         attributes: {exclude: ['createdAt', 'updatedAt', 'deletedAt']},
-                        include: [
-                            {
-                                model: DealsBandwidthLimit,
-                                as: "BandwidthLimit",
-                                attributes: {exclude: ['createdAt', 'updatedAt', 'deletedAt']}
-                            }
-                        ]
+                    },
+                    {
+                        model: DealsBandwidthLimit,
+                        as: "BandwidthLimit",
+                        attributes: {exclude: ['createdAt', 'updatedAt', 'deletedAt']},
                     }
                 ],
                 raw: true,
-                nest: true
+                nest: true,
             });
         } catch (error) {
             throw error;
@@ -109,6 +107,18 @@ class DealsController {
             throw error;
         }
     };
+
+    static async getDealResource(dealId){
+        try {
+            return await DealsResources.findOne({
+                where: {dealId: dealId},
+                attributes: {exclude: ['createdAt', 'updatedAt', 'deletedAt']},
+                raw: true
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
 
     static async deleteDealById(id) {
         try {

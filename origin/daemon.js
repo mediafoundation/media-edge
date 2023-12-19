@@ -40,12 +40,12 @@ const init = async (network) => {
             databaseInitStatus = false
         }
 
-        /*try{
+        try{
             await CaddyController.initApps()
         }catch (e){
             console.log("Error syncing caddy", e)
             caddyInitStatus = false
-        }*/
+        }
     }
 
     //Init database (get data from blockchain)
@@ -58,7 +58,7 @@ const init = async (network) => {
     }
 
     //Init caddy (get data from db)
-    /*try{
+    try{
         await initCaddy(network)
     }catch (e) {
         console.log("Error when init caddy", e)
@@ -71,7 +71,7 @@ const init = async (network) => {
     }catch(e) {
         console.log("Error when init bandwidth", e)
         bandwidthInitStatus = false
-    }*/
+    }
 
     //Read block to use in events
     /*try {

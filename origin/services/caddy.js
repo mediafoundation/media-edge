@@ -18,12 +18,14 @@ let initCaddy = async function(network){
 
     let matchDealResources = []
 
-    dealsFromDB.forEach(deal => {
+    for (const deal of dealsFromDB) {
         let matchDealResource = {}
         matchDealResource.deal = deal
-        matchDealResource.resource = resourcesFromDB.find(resource => resource.id === deal.resourceId)
+        let dealsResource = await DealsController.getDealResource(deal.id)
+        console.log("Res", dealsResource)
+        matchDealResource.resource = resourcesFromDB.find(resource => resource.id === dealsResource.resourceId)
         matchDealResources.push(matchDealResource)
-    })
+    }
 
     await CaddyController.addRecords(matchDealResources, caddyRecords, network)
 

@@ -25,7 +25,7 @@ const resetDB = async () => {
 
     // Recreate tables
 
-    //await CaddySource.sync({force: true})
+    await CaddySource.sync({force: true})
 
     // Recreate tables
     await Resource.sync({force: true});

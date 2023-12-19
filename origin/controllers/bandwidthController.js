@@ -125,11 +125,6 @@ class BandwidthController {
                     is_limited: true
                 })
                 dealsToBeUpdated.push(bandwidthsLog)
-            } else {
-                // todo: check why would we want to remove it if its already applied
-                // in any case it would be removed if the next period starts.
-                // Remove the bandwidth limiter if it's already applied
-                //await DealsBandwidth.applyBandwidthLimiter(deal, false);
             }
         }
 
