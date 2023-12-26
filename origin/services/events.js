@@ -7,7 +7,7 @@ const {z} = require("zod");
 const {DealsMetadataType} = require("../models/deals/DealsMetadata");
 const {BandwidthController} = require("../controllers/bandwidthController");
 
-let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK, web3) => {
+let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK) => {
     let blockNumber = lastReadBlock + 1
     let updatedResources = undefined
     let removedResources = undefined
