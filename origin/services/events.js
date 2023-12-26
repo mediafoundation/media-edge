@@ -1,5 +1,5 @@
 const env = require("../config/env")
-const {Blockchain, EventHandler, Resources, Encryption, Marketplace} = require("media-sdk");
+const { EventHandler, Resources, Encryption, Marketplace} = require("media-sdk");
 const {DealsController} = require("../controllers/dealsController");
 const {ResourcesController} = require("../controllers/resourcesController");
 const {CaddyController} = require("../controllers/caddyController");
@@ -16,7 +16,6 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     let acceptedDeals = undefined
 
     try {
-        let blockchain = new Blockchain()
         let eventsHandler = new EventHandler()
         //blockNumber = await blockchain.getBlockNumber()
 
@@ -71,7 +70,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                     )*/
 
                     let resources = new Resources()
-                    let resourceFromEvm = resources.getResourceById({id: event.args._id, address: env.WALLET})
+                    let resourceFromEvm = resources.getResource({id: event.args._id, address: env.WALLET})
 
                     let attr = JSON.parse(resourceFromEvm.encryptedData)
                     let decryptedSharedKey = await Encryption.ethSigDecrypt(
@@ -179,7 +178,7 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
         let marketplace = new Marketplace()
         let resourceInstance = new Resources()
         let deal = await marketplace.getDealById({marketplaceId: env.MARKETPLACE_ID, dealId: event.args._id})
-        let resource = resourceInstance.getResourceById({id: deal.resourceId, address: env.WALLET})
+        let resource = resourceInstance.getResource({id: deal.resourceId, address: env.WALLET})
         if(resource !== false){
             if (DealsController.dealIsActive(deal) !== false && deal.active !== false) {
                 try{
