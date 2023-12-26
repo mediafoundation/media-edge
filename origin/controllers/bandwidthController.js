@@ -61,7 +61,7 @@ class BandwidthController {
         const { amount, unit } = bandwidthLimit;
         let bytes;
 
-        switch (unit) {
+        switch (unit.toLowerCase()) {
             case 'pb':
                 bytes = amount * Math.pow(1024, 5);
                 break;

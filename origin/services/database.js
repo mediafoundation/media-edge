@@ -13,7 +13,7 @@ const initDatabase = async function (network) {
 
     let resources = await resourcesInstance.getPaginatedResources({address: env.WALLET, start: 0, steps: 10})
     let deals = await marketplaceViewer.getPaginatedDeals({
-        marketPlaceId: 1,
+        marketplaceId: 1,
         address: env.WALLET,
         isProvider: true,
         start: 0,
@@ -52,12 +52,12 @@ const initDatabase = async function (network) {
 
     for (const deal of deals[0]) {
         try{
-            DealsController.parseDealMetadata(deal.metadata)
+            DealsController.parseDealMetadata(deal.terms.metadata)
             await DealsController.upsertDeal(DealsController.formatDeal(deal))
         } catch (e) {
             if (e instanceof z.ZodError) {
                 console.log("Deal Id: ", deal.id)
-                console.error("Metadata Validation failed!\n", "Expected: ", DealsMetadataType.keyof()._def.values, " Got: ", deal.metadata);
+                console.error("Metadata Validation failed!\n", "Expected: ", DealsMetadataType.keyof()._def.values, " Got: ", deal.terms.metadata);
             } else {
                 console.log("Deal Id: ", deal.id)
                 console.error("Unknown error", e);

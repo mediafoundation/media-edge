@@ -5,12 +5,13 @@ const {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy} = require(".
 const {checkBandwidth, initBandwidth} = require("./services/bandwidth");
 const { resetPurgeLog } = require('./services/varnish');
 const {resetDB} = require("./utils/resetDB");
-const {initSdk} = require("media-sdk");
+const {initSdk, Blockchain} = require("media-sdk");
 const {PRIVATE_KEY} = require("./config/env");
 const {CaddyController} = require("./controllers/caddyController");
+const {checkEvents} = require("./services/events");
 
 // Initialize the lastReadBlock variable to 0
-//let lastReadBlock = {};
+let lastReadBlock = {};
 
 /**
  * Initializes the dApp on a specific network
@@ -28,7 +29,7 @@ const init = async (network) => {
     //Check if daemon needs to run a full reset
     const resetIndex = process.argv.indexOf('--reset');
 
-    initSdk({privateKey: PRIVATE_KEY})
+    initSdk({privateKey: PRIVATE_KEY, transport: network.transport !== "undefined" ? network.transport : undefined})
 
     if(resetIndex !== -1){
         try{
@@ -73,13 +74,15 @@ const init = async (network) => {
     }
 
     //Read block to use in events
-    /*try {
-        lastReadBlock[network.chain_id] = await web3Instance.eth.getBlockNumber()
+    try {
+        let blockchain = new Blockchain()
+        let blockNumber = await blockchain.getBlockNumber()
+        lastReadBlock[network.id] = Number(blockNumber)
     }catch (e){
-        lastReadBlock[network.chain_id] = 0
+        lastReadBlock[network.id] = 0
         console.log("Error when getting last block", e)
         blockReadStatus = false
-    }*/
+    }
 
     return databaseInitStatus && caddyInitStatus && bandwidthInitStatus && blockReadStatus
 /*
@@ -100,17 +103,17 @@ async function start(){
             console.log("Edge started correctly")
         }
 
-        /*if(lastReadBlock[CURRENT_NETWORK.chain_id] !== 0){
+        if(lastReadBlock[CURRENT_NETWORK.chain_id] !== 0){
             console.log("Start to check events")
             setInterval(async () => {
                 try { 
-                    let getLastBlock = await checkEvents("MarketplaceInstance", "ResourcesInstance", lastReadBlock[CURRENT_NETWORK.chain_id], CURRENT_NETWORK, web3)
-                    lastReadBlock[CURRENT_NETWORK.chain_id] = getLastBlock ? getLastBlock : lastReadBlock[CURRENT_NETWORK.chain_id];
+                    let getLastBlock = await checkEvents(lastReadBlock[CURRENT_NETWORK.id], CURRENT_NETWORK)
+                    lastReadBlock[CURRENT_NETWORK.id] = getLastBlock ? getLastBlock : lastReadBlock[CURRENT_NETWORK.id];
                 } catch(e){
                     console.log("Something failed while checking events", e)
                 }
             }, 10000)
-        }*/
+        }
 
         //Check if deals has balance to remain
         setInterval(async () => {

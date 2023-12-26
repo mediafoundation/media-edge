@@ -7,7 +7,7 @@ const {z} = require("zod");
 const {DealsMetadataType} = require("../models/deals/DealsMetadata");
 const {BandwidthController} = require("../controllers/bandwidthController");
 
-let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK) => {
+let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     let blockNumber = lastReadBlock + 1
     let updatedResources = undefined
     let removedResources = undefined
@@ -18,7 +18,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
     try {
         let blockchain = new Blockchain()
         let eventsHandler = new EventHandler()
-        blockNumber = await blockchain.getBlockNumber()
+        //blockNumber = await blockchain.getBlockNumber()
 
         if(env.debug && blockNumber !== lastReadBlock) {
             console.log("Last readed block", lastReadBlock)
@@ -142,7 +142,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
     }
 
     if (typeof createdDeals !== "undefined" && createdDeals.length > 0) {
-        await manageDealCreatedOrAccepted(MarketplaceInstance, ResourcesInstance, createdDeals, CURRENT_NETWORK)
+        await manageDealCreatedOrAccepted(createdDeals, CURRENT_NETWORK)
     }
 
     if(typeof cancelledDeals !== "undefined" && cancelledDeals.length > 0){
@@ -168,7 +168,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
     }
 
     if (typeof acceptedDeals !== "undefined" && acceptedDeals.length > 0) {
-        await manageDealCreatedOrAccepted(MarketplaceInstance, ResourcesInstance, acceptedDeals, CURRENT_NETWORK)
+        await manageDealCreatedOrAccepted(acceptedDeals, CURRENT_NETWORK)
     }
     
     return blockNumber
