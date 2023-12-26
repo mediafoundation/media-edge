@@ -55,6 +55,7 @@ let checkDealsShouldBeActive = async function(){
             //Check if deleted deal's resource has another deals or need to be removed
             let dealsOfResource = await ResourcesController.getNumberOfMatchingDeals(deal.resourceId)
             if(dealsOfResource.length === 1){
+                if(env.debug) console.log("deals of resource", dealsOfResource)
                 //remove resource too
                 //await models.Resources.deleteRecords(deal.resourceId)
                 resourcesToDelete.push(deal.resourceId)

@@ -1,5 +1,11 @@
-const models = require("../models")
 const env = require("../config/env")
+const {Blockchain, EventHandler, Resources, Encryption, Marketplace} = require("media-sdk");
+const {DealsController} = require("../controllers/dealsController");
+const {ResourcesController} = require("../controllers/resourcesController");
+const {CaddyController} = require("../controllers/caddyController");
+const {z} = require("zod");
+const {DealsMetadataType} = require("../models/deals/DealsMetadata");
+const {BandwidthController} = require("../controllers/bandwidthController");
 
 let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, CURRENT_NETWORK, web3) => {
     let blockNumber = lastReadBlock + 1
@@ -10,34 +16,35 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
     let acceptedDeals = undefined
 
     try {
-
-        blockNumber = await web3.eth.getBlockNumber()
+        let blockchain = new Blockchain()
+        let eventsHandler = new EventHandler()
+        blockNumber = await blockchain.getBlockNumber()
 
         if(env.debug && blockNumber !== lastReadBlock) {
             console.log("Last readed block", lastReadBlock)
             console.log("Current block", blockNumber)
         }
-        updatedResources = await ResourcesInstance.getPastEvents('UpdatedResource', {
+        updatedResources = await eventsHandler.getResourcesPastEvents({eventName: 'UpdatedResource',
             fromBlock: lastReadBlock + 1,
             toBlock: blockNumber
         })
 
-        removedResources = await ResourcesInstance.getPastEvents('RemovedResource', {
+        removedResources = await eventsHandler.getResourcesPastEvents({eventName: 'RemovedResource',
             fromBlock: lastReadBlock + 1,
             toBlock: blockNumber
         })
 
-        createdDeals = await MarketplaceInstance.getPastEvents('DealCreated', {
+        createdDeals = await eventsHandler.getMarketplacePastEvents({eventName: 'DealCreated',
             fromBlock: lastReadBlock + 1,
             toBlock: blockNumber
         })
 
-        cancelledDeals = await MarketplaceInstance.getPastEvents('DealCancelled', {
+        cancelledDeals = await eventsHandler.getMarketplacePastEvents({eventName: 'DealCancelled',
             fromBlock: lastReadBlock + 1,
             toBlock: blockNumber
         })
 
-        acceptedDeals = await MarketplaceInstance.getPastEvents('DealAccepted', {
+        acceptedDeals = await eventsHandler.getMarketplacePastEvents({eventName: 'DealAccepted',
             fromBlock: lastReadBlock + 1,
             toBlock: blockNumber
         })
@@ -50,25 +57,45 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
     if (typeof updatedResources !== "undefined" && updatedResources.length > 0) {
         console.log("Update resource");
         for (const event of updatedResources) {
-            let deals = await models.Deals.dealsThatHasResource(
-                getId(event.returnValues._id, CURRENT_NETWORK)
+            let dealIds = await ResourcesController.getNumberOfMatchingDeals(
+                event.args._id,
             )
-            if(deals.length > 0){
-                let resource = await models.Resources.getResource(ResourcesInstance, event.returnValues._id)
+            if(dealIds.length > 0){
+                let resource = await ResourcesController.getResourceById(event.args._id)
                 if(resource !== false){
-                    let formattedResource = await models.Resources.formatDataToDb(
+                    /*let formattedResource = await ResourcesController.(
                         resource.resource_id, 
                         resource.owner, 
                         resource.data, 
                         CURRENT_NETWORK
-                    )
-                    let evmRecord = await models.Resources.addRecord(formattedResource)
+                    )*/
 
-                    for (const deal of deals) {
-                        await models.Caddy.upsertRecord(
+                    let resources = new Resources()
+                    let resourceFromEvm = resources.getResourceById({id: event.args._id, address: env.WALLET})
+
+                    let attr = JSON.parse(resourceFromEvm.encryptedData)
+                    let decryptedSharedKey = await Encryption.ethSigDecrypt(
+                        resourceFromEvm.encryptedSharedKey,
+                        env.PRIVATE_KEY
+                    );
+
+                    let decrypted = Encryption.decrypt(
+                        decryptedSharedKey,
+                        attr.iv,
+                        attr.tag,
+                        attr.encryptedData
+                    );
+
+                    let data = JSON.parse(decrypted)
+
+                    let upsertResourceResult = await ResourcesController.upsertResource({id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data})
+
+                    for (const id of dealIds) {
+                        let deal = await DealsController.getDealById(id)
+                        await CaddyController.upsertRecord(
                         {
-                            resource: formattedResource, 
-                            deal: deal.dataValues
+                            resource: upsertResourceResult.instance,
+                            deal: deal
                         }, 
                         CURRENT_NETWORK
                         )
@@ -110,7 +137,7 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
 
     if (typeof removedResources !== "undefined" && removedResources.length > 0) {
         for (const event of removedResources) {
-            await models.Resources.deleteRecords([getId(event.returnValues._id, CURRENT_NETWORK)])
+            await ResourcesController.deleteResourceById(event.args._id)
         }
     }
 
@@ -124,17 +151,18 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
         for (const event of cancelledDeals) {
             //delete deal from caddy and db
 
-            await models.Caddy.deleteRecord(getId(event.returnValues._dealId, CURRENT_NETWORK))
-            await models.Deals.deleteRecords([getId(event.returnValues._dealId, CURRENT_NETWORK)])
-            await models.DealsBandwidth.deleteRecords([getId(event.returnValues._dealId, CURRENT_NETWORK)])
+            await CaddyController.deleteRecord(getId(event.args._dealId, CURRENT_NETWORK))
+            await DealsController.deleteDealById([getId(event.args._dealId, CURRENT_NETWORK)])
+            await BandwidthController.deleteRecords([getId(event.args._dealId, CURRENT_NETWORK)])
 
             //Check if the resource associated to that deal has any other deals or need to be removed
-            let deal = await models.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
-            let dealsOfResource = await models.Deals.dealsThatHasResource(getId(deal.resourceId, CURRENT_NETWORK))
+            let marketplace = new Marketplace()
+            let deal = await marketplace.getDealById({marketplaceId: env.MARKETPLACE_ID, dealId: event.args._dealId})
+            let dealsOfResource = await ResourcesController.getNumberOfMatchingDeals(deal.resourceId)
 
             if(dealsOfResource.length === 0){
                 console.log("Resource Id", deal.resourceId)
-                await models.Resources.deleteRecords([getId(deal.resourceId, CURRENT_NETWORK)])
+                await ResourcesController.deleteResourceById(deal.resourceId)
             }
         }
     }
@@ -146,24 +174,51 @@ let checkEvents = async (MarketplaceInstance, ResourcesInstance, lastReadBlock, 
     return blockNumber
 }
 
-let manageDealCreatedOrAccepted = async (MarketplaceInstance, ResourcesInstance, events, CURRENT_NETWORK) => {
+let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
     for (const event of events) {
-        let deal = await models.Deals.getDeal(MarketplaceInstance, event.returnValues._dealId)
-        let resource = await models.Resources.getResource(ResourcesInstance, deal.resourceId)
+        let marketplace = new Marketplace()
+        let resourceInstance = new Resources()
+        let deal = await marketplace.getDealById({marketplaceId: env.MARKETPLACE_ID, dealId: event.args._id})
+        let resource = resourceInstance.getResourceById({id: deal.resourceId, address: env.WALLET})
         if(resource !== false){
-            let dealFormatted = models.Deals.formatDataToDb(deal, CURRENT_NETWORK)
-            if (await models.Deals.dealIsActive(dealFormatted) !== false && dealFormatted.active !== false) {
-                let resourceFormatted = models.Resources.formatDataToDb(resource.resource_id, resource.owner, resource.data, CURRENT_NETWORK)
-                //console.log(dealFormatted, resourceFormatted)
-                await models.Deals.addRecord(dealFormatted)
-                await models.Resources.addRecord(resourceFormatted)
-                let caddyFile = await models.Caddy.getRecords()
-                await models.Caddy.addRecords([{
-                    resource: resourceFormatted, 
-                    deal: dealFormatted
+            if (DealsController.dealIsActive(deal) !== false && deal.active !== false) {
+                try{
+                    DealsController.parseDealMetadata(deal.metadata)
+                    await DealsController.upsertDeal(DealsController.formatDeal(deal))
+                } catch (e) {
+                    if (e instanceof z.ZodError) {
+                        console.log("Deal Id: ", deal.id)
+                        console.error("Metadata Validation failed!\n", "Expected: ", DealsMetadataType.keyof()._def.values, " Got: ", deal.metadata);
+                    } else {
+                        console.log("Deal Id: ", deal.id)
+                        console.error("Unknown error", e);
+                    }
+                }
+
+                let attr = JSON.parse(resource.encryptedData)
+                let decryptedSharedKey = await Encryption.ethSigDecrypt(
+                    resource.encryptedSharedKey,
+                    env.PRIVATE_KEY
+                );
+
+                let decrypted = Encryption.decrypt(
+                    decryptedSharedKey,
+                    attr.iv,
+                    attr.tag,
+                    attr.encryptedData
+                );
+
+                let data = JSON.parse(decrypted)
+
+                await ResourcesController.upsertResource({id: resource.id, owner: resource.owner, ...data})
+
+                let caddyFile = await CaddyController.getRecords()
+                await CaddyController.addRecords([{
+                    resource: ResourcesController.getResourceById(deal.resourceId),
+                    deal: await DealsController.getDealById(event.args._id)
                 }], caddyFile, CURRENT_NETWORK)
-                let dealForBandwidth = await models.DealsBandwidth.formatDataToDb(dealFormatted)
-                await models.DealsBandwidth.upsertRecord(dealForBandwidth)
+                let dealForBandwidth = await BandwidthController.formatDataToDb(deal)
+                await BandwidthController.upsertRecord(dealForBandwidth)
             }
         }
     }

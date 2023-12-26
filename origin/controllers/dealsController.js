@@ -7,6 +7,7 @@ const { DealsBandwidthLimit } = require("../models/deals/DealsBandwidthLimit");
 const { DealsLocations} = require("../models/deals/DealsLocations");
 const {DealsResources} = require("../models/associations/DealsResources");
 const {DealsNodeLocations} = require("../models/deals/DealsNodeLocations");
+const BigNumber = require("bignumber.js");
 
 class DealsController {
     constructor() {}
@@ -167,6 +168,21 @@ class DealsController {
 
     static parseDealMetadata(metadata){
         DealsMetadataType.parse(JSON.parse(metadata));
+    }
+
+    static dealIsActive(deal) {
+        let unixTime = BigNumber.from(Math.floor(Date.now() / 1000));
+
+        let billingStart = deal.status ? deal.status['billingStart'] : deal.billingStart
+        let elapsedTime = unixTime.sub(billingStart);
+        let totalTime = BigNumber.from(deal.blockedBalance).div(deal.pricePerSecond);
+        totalTime.sub(elapsedTime);
+        let calculatedEnd = BigNumber.from(billingStart).add(totalTime);
+        let d = new Date(calculatedEnd * 1000);
+        const pad2 = (n) => { return (n < 10 ? '0' : '') + n }
+        let formattedCalculatedEnd = pad2(d.getFullYear()) + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) + "T" + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+
+        return Date.parse(formattedCalculatedEnd) > Date.now()
     }
 }
 
