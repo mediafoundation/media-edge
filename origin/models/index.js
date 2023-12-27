@@ -18,7 +18,7 @@ if (process.env.NODE_ENV === "testing") {
 
 sequelize.authenticate().then(() => {
     console.log('[+] Database connection has been established successfully.')
-}).catch(err => {
+}).catch( _ => {
     console.error('[-] Unable to connect to the database.')
 });
 

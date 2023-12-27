@@ -1,6 +1,4 @@
 const {ResourcesController} = require('../../controllers/resourcesController');
-const {Resource} = require('../../models/resources/Resource');
-const {Domains} = require('../../models/resources/Domains');
 const {resetDB} = require("../../utils/resetDB");
 const {DealsController} = require("../../controllers/dealsController");
 
