@@ -1,6 +1,6 @@
 const {Client} = require("../models/Client");
 const {Provider} = require("../models/Provider");
-const {Resource} = require("../models/Resource");
+const {Resource} = require("../models/resources/Resource");
 const {Deal} = require("../models/deals/Deal");
 const {DealsMetadata} = require("../models/deals/DealsMetadata");
 const {DealsBandwidthLimit} = require("../models/deals/DealsBandwidthLimit");
@@ -9,6 +9,7 @@ const {CaddySource} = require("../models/caddy");
 const {BandwidthsLog} = require("../models/BandwidthsLog");
 const {DealsResources} = require("../models/associations/DealsResources");
 const {DealsNodeLocations} = require("../models/deals/DealsNodeLocations");
+const {Domains} = require("../models/resources/Domains");
 const resetDB = async () => {
 
     // Drop tables
@@ -18,6 +19,8 @@ const resetDB = async () => {
     await BandwidthsLog.drop();
     await DealsNodeLocations.drop();
     await DealsBandwidthLimit.drop();
+
+    await Domains.drop()
 
     await Deal.drop();
     await Client.drop();
@@ -43,6 +46,8 @@ const resetDB = async () => {
     await DealsLocations.sync({force: true});
     await DealsResources.sync({force: true});
 
+    await Domains.sync({force: true})
+
     Deal.hasOne(DealsMetadata, {
         foreignKey: 'dealId',
         as: 'Metadata', // This alias should match the one used in your query
@@ -52,6 +57,16 @@ const resetDB = async () => {
         foreignKey: 'dealId',
         as: 'BandwidthLimit', // This alias should match the one used in your query
     });
+
+    Resource.hasMany(Domains, {
+        foreignKey: 'resourceId',
+        as: 'Domains', // This alias should match the one used in your query
+    });
+
+    Deal.hasOne(Domains, {
+        foreignKey: "dealId",
+        as: "Deals"
+    })
 
 }
 

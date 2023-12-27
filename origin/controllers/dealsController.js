@@ -1,6 +1,6 @@
 const { Deal } = require("../models/deals/Deal");
 const { DealsMetadata, DealsMetadataType } = require("../models/deals/DealsMetadata");
-const { Resource } = require("../models/Resource");
+const { Resource } = require("../models/resources/Resource");
 const { Provider } = require("../models/Provider");
 const { Client } = require("../models/Client");
 const { DealsBandwidthLimit } = require("../models/deals/DealsBandwidthLimit");

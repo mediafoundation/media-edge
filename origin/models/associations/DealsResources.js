@@ -1,5 +1,5 @@
 const {sequelize} = require("../index");
-const {Resource} = require("../Resource");
+const {Resource} = require("../resources/Resource");
 const {Deal} = require("../deals/Deal");
 const { DataTypes } = require("sequelize");
 

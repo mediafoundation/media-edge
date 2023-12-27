@@ -1,18 +1,84 @@
-const { Resource } = require("../models/Resource");
+const {Resource} = require("../models/resources/Resource");
+const {Domains} = require("../models/resources/Domains");
+
 class ResourcesController {
     static upsertResource = async (resource) => {
         try {
-            const originalResource = await Resource.findByPk(resource.id);
-            const [instance, created] = await Resource.upsert(resource);
+            const originalResource = await Resource.findByPk(resource.id, {
+                raw: true,
+                attributes: {
+                    exclude: ['createdAt', 'updatedAt', 'deletedAt']
+                }
+            });
+
+            const [instance, created] = await Resource.upsert(resource, {
+                returning: true
+            });
+
             return {
-                instance: instance,
-                created: created,
-                originalResource: originalResource
+                originalResource,
+                instance,
+                created
             };
         } catch (error) {
             throw error;
         }
     };
+
+    static async upsertResourceDomain(resourceDomain) {
+        try {
+            let [domain, created] = await Domains.findOrCreate({
+                where: {
+                    resourceId: resourceDomain.resourceId,
+                    dealId: resourceDomain.dealId
+                },
+                defaults: resourceDomain
+            });
+
+            let originalDomain = null;
+
+            if (!created) {
+                // If the record already existed, update it
+                originalDomain = {...domain.get({plain: true})};
+                await domain.update(resourceDomain);
+                domain = await Domains.findOne({
+                    where: {
+                        resourceId: resourceDomain.resourceId,
+                        dealId: resourceDomain.dealId
+                    },
+                    attributes: {
+                        exclude: ['createdAt', 'updatedAt', 'deletedAt']
+                    },
+                    raw: true
+                });
+            }
+
+            return {
+                created,
+                originalDomain,
+                domain
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async getResourceDomain(resourceId, dealId) {
+        try {
+            return await Domains.findOne({
+                where: {
+                    resourceId: resourceId,
+                    dealId: dealId
+                },
+                attributes: {
+                    exclude: ['createdAt', 'updatedAt', 'deletedAt']
+                },
+                raw: true
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
 
     static getResources = async () => {
         try {
@@ -37,19 +103,36 @@ class ResourcesController {
                 return null;
             }
             await resource.destroy();
-            return resource;
+            return resource.get({plain: true});
         } catch (error) {
             throw error;
         }
     };
 
+    static deleteResourceDomain = async (resourceId, dealId) => {
+        try {
+            const domain = await Domains.findOne({
+                where: {
+                    resourceId: resourceId,
+                    dealId: dealId
+                }
+            });
+            if (!domain) {
+                return null;
+            }
+            await domain.destroy();
+            return domain.get({plain: true});
+        } catch (error) {
+            throw error;
+        }
+    }
+
     static getNumberOfMatchingDeals = async (resourceId) => {
         const resource = await Resource.findByPk(resourceId);
 
-        if(resource){
+        if (resource) {
             return await resource.getDeals()
-        }
-        else{
+        } else {
             throw new Error("Resource not found")
         }
     }

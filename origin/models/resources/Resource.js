@@ -1,4 +1,4 @@
-const {sequelize} = require("./index");
+const {sequelize} = require("../index");
 const { DataTypes} = require("sequelize");
 const Resource= sequelize.define("Resources",
     {
@@ -8,7 +8,6 @@ const Resource= sequelize.define("Resources",
         protocol: DataTypes.STRING,
         origin: DataTypes.STRING,
         path: DataTypes.STRING,
-        domain: DataTypes.STRING,
         network: DataTypes.STRING,
     },
     {
