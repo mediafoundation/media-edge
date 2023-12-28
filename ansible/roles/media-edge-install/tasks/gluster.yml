@@ -1,12 +1,32 @@
+# Add GlusterFS repository key
 - name: Add GlusterFS repository key
   apt_key:
     url: "https://download.gluster.org/pub/gluster/glusterfs/9/rsa.pub"
     state: present
 
+# Add GlusterFS repository
 - name: Add GlusterFS repository
   apt_repository:
     repo: "deb https://download.gluster.org/pub/gluster/glusterfs/LATEST/Debian/{{ ansible_distribution_major_version }}/amd64/apt {{ ansible_distribution_release }} main"
     state: present
+
+# Install GlusterFS client on edge nodes
+- name: Install GlusterFS client on edges
+  apt:
+    name: glusterfs-client
+    state: present
+    update_cache: yes
+  when: inventory_hostname in groups["edge"]
+
+# Install GlusterFS server on origin nodes
+- name: Configure GlusterFS for origin nodes
+  block:
+    - name: Install GlusterFS server on origins
+      apt:
+        name: glusterfs-server
+        state: present
+        update_cache: yes
+  when: inventory_hostname in groups["origin"]
 
 - name: Set default value for current_auth_allow_ips
   set_fact:
@@ -239,13 +259,26 @@
   
 
 - name: Mount GlusterFS volume using primary server
+  async: 120
+  poll: 0
   command:
-    cmd: "mount -t glusterfs {{ item }}:/cert_vol /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/"
-  loop: "{{ groups['origin'] | map('extract', hostvars, 'ansible_host') | list }}"
+    cmd: "mount -t glusterfs {{ primary_origin_server }}:/cert_vol {{ mount_point }}"
   when: 
     - inventory_hostname in groups['edge']
     - is_mounted.rc != 0
+  retries: 5
+  delay: 10
+  register: mount_result
+  until: mount_result.finished
 
+- name: Wait for GlusterFS volume to be mounted
+  async_status:
+    jid: "{{ mount_result.ansible_job_id }}"
+  register: job_result
+  until: job_result.finished
+  retries: 30
+  delay: 10
+  when: inventory_hostname in groups['edge'] and not job_result.failed
 
 - name: Add GlusterFS volume to /etc/fstab
   ansible.builtin.lineinfile:
