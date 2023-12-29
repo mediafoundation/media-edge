@@ -105,8 +105,8 @@ class CaddyController {
             let dealInFile = caddyFile.find(o => o["@id"] === item.deal.id);
             //if resource is not on caddyfile already, add to payload
             if(!dealInFile) {
-                if(item.resource.domain) {
-                    await this.addToQueue(queues.Minutely, item.deal.id, item);
+                if(item.domains) {
+                    await this.addToQueue(queues.Minutely, item.deal.id, item)
                 }
                 payload.push(caddyData)
             } else {
@@ -243,17 +243,17 @@ class CaddyController {
 
 
     static async updateCaddyHost(host, item){
-        let cname_is_valid = await this.checkCname(item.resource.domain, host[0]);
+        let cname_is_valid = await this.checkCname(item.domains.domain, host[0]);
         if (cname_is_valid) {
-            await this.cleanUpCname(item.deal.id, item.resource.domain);
-            host.push(item.resource.domain);
+            await this.cleanUpCname(item.deal.id, item.domains.domain);
+            host.push(item.domains.domain);
             await CaddySource.findOrCreate({
                 where: {
-                    host: item.resource.domain,
+                    host: item.domains.domain,
                     deal_id: item.deal.id
                 }
             });
-            await obtainAndRenewCertificate({host: item.resource.domain});
+            await obtainAndRenewCertificate({host: item.domains.domain});
             return true;
         }
         return false;
@@ -263,15 +263,15 @@ class CaddyController {
         let host = caddyData.match[0].host;
         let hostUpdated = await this.updateCaddyHost(host, item);
         if (hostUpdated) {
-            if (env.debug) console.log("Added CaddySources for domain:", item.resource.domain, item.resource.id);
+            if (env.debug) console.log("Added CaddySources for domain:", item.domains.domain, item.resource.id);
         } else {
-            if (env.debug) console.log("Adding domain to check queue.", item.resource.domain, item.resource.id);
+            if (env.debug) console.log("Adding domain to check queue.", item.domains.domain, item.resource.id);
             await this.addToQueue(queues.Minutely, item.deal.id, item);
         }
     }
 
     static async patchRecord(item){
-        if (item.resource.domain) {
+        if (item.domains.length !== 0) {
             let host = await this.getHosts(item.deal.id);
             let hostUpdated = await this.updateCaddyHost(host, item);
             if (hostUpdated) {
@@ -320,17 +320,17 @@ class CaddyController {
                 if (!item.retry) item.retry = 0;
                 if (item.retry <= limit) {
                     item.retry++;
-                    if (env.debug) console.log(`Retrying to apply custom domain ${item.resource.domain} (${item.retry})`);
+                    if (env.debug) console.log(`Retrying to apply custom domain ${item.domains.domain} (${item.retry})`);
                     const patched = await this.patchRecord(item);
                     if (patched) {
-                        if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.resource.domain}`);
+                        if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.domains.domain}`);
                         queue.splice(i, 1);
                     } else if (item.retry === limit) {
-                        if (env.debug) console.log(`Domain exceeded retry limits, sending to next stage: ${item.resource.domain}`);
+                        if (env.debug) console.log(`Domain exceeded retry limits, sending to next stage: ${item.domains.domain}`);
                         if (current === "Minutely") queues.Hourly.push(item);
                         else if (current === "Hourly") queues.Daily.push(item);
                         else if (current === "Daily") queues.Monthly.push(item);
-                        else console.log(`Domain exceeded retry limits, checked for 12 months without restart: ${item.resource.domain}`);
+                        else console.log(`Domain exceeded retry limits, checked for 12 months without restart: ${item.domains.domain}`);
                         queue.splice(i, 1);
                     }
                 }
@@ -351,7 +351,7 @@ class CaddyController {
     }
 
     static async addToQueue(queue, id, item){
-        if (!this.isInQueue(id)) {
+        if (!await this.isInQueue(id)) {
             queue.push({...item, id});
         }
     }

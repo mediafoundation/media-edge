@@ -23,8 +23,7 @@ let initCaddy = async function(network){
         matchDealResource.deal = deal
         let dealsResource = await DealsController.getDealResource(deal.id)
         matchDealResource.resource = resourcesFromDB.find(resource => resource.id === dealsResource.resourceId)
-        console.log("MatchDealResource", matchDealResource)
-        console.log("domains of mathcing", await ResourcesController.getResourceDomain(matchDealResource.resource.id, deal.id))
+        matchDealResource.domains = await ResourcesController.getResourceDomain(matchDealResource.resource.id, deal.id)
         matchDealResources.push(matchDealResource)
     }
 

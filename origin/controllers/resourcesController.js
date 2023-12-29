@@ -66,6 +66,7 @@ class ResourcesController {
 
     static async getResourceDomain(resourceId, dealId) {
         try {
+            //todo: should be a find All
             return await Domains.findOne({
                 where: {
                     resourceId: resourceId,

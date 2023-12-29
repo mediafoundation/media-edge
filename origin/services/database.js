@@ -49,7 +49,7 @@ const initDatabase = async function (network) {
 
         //console.log("Domains", )
 
-        filteredDomains = filterDomainsMatchingDeals(data.domains, deals[0].map((deal) => Number(deal.id)))
+        if(data.domains) filteredDomains = filterDomainsMatchingDeals(data.domains, deals[0].map((deal) => Number(deal.id)))
 
         const upsertResult = await ResourcesController.upsertResource({id: resource.id, owner: resource.owner, ...data})
         if (upsertResult.originalResource) {
@@ -73,13 +73,9 @@ const initDatabase = async function (network) {
         }
     }
 
-    console.log("Filtered domains", filteredDomains)
-
     for(const key of Object.keys(filteredDomains)){
-        console.log("Key", key, filteredDomains[key])
         for (const domain of filteredDomains[key]) {
             let dealsForDomains = deals[0].filter((deal) => Number(deal.id).toString() === key)
-            console.log("Some", dealsForDomains[0].resourceId)
             await ResourcesController.upsertResourceDomain({resourceId: dealsForDomains[0].resourceId, domain: domain, dealId: parseInt(key)})
         }
     }
@@ -95,10 +91,7 @@ const initDatabase = async function (network) {
 function filterDomainsMatchingDeals(domainsKeys, dealIds) {
     const newObj = {};
 
-    console.log("Keys", Object.keys(domainsKeys))
-
     for (const key of Object.keys(domainsKeys)) {
-        console.log("Key", key, dealIds, domainsKeys)
         if (dealIds.includes(parseInt(key))) {
             newObj[key] = domainsKeys[key];
         } else {
