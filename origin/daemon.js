@@ -5,7 +5,7 @@ const {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy} = require(".
 const {checkBandwidth, initBandwidth} = require("./services/bandwidth");
 const { resetPurgeLog } = require('./services/varnish');
 const {resetDB} = require("./utils/resetDB");
-const {initSdk, Blockchain} = require("media-sdk");
+const {initSdk, Blockchain, validChains} = require("media-sdk");
 const {PRIVATE_KEY} = require("./config/env");
 const {CaddyController} = require("./controllers/caddyController");
 const {checkEvents} = require("./services/events");
@@ -29,7 +29,7 @@ const init = async (network) => {
     //Check if daemon needs to run a full reset
     const resetIndex = process.argv.indexOf('--reset');
 
-    initSdk({privateKey: PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined})
+    initSdk({privateKey: PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
 
     if(resetIndex !== -1){
         try{

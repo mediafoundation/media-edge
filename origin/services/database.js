@@ -13,13 +13,15 @@ const initDatabase = async function (network) {
 
     let resources = await resourcesInstance.getPaginatedResources({address: env.WALLET, start: 0, steps: 10})
     let deals = await marketplaceViewer.getPaginatedDeals({
-        marketplaceId: 1,
+        marketplaceId: env.MARKETPLACE_ID,
         address: env.WALLET,
         isProvider: true,
         start: 0,
         steps: 10
     })
     let resourcesToBeUpdatedInCaddy = []
+
+    if(deals[0].length === 0 || resources[0].length === 0) return
 
     deals[0] = deals[0].filter((deal) => deal.status.active === true)
 
