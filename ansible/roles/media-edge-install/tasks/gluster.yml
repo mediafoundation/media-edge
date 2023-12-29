@@ -258,27 +258,18 @@
   delay: 10  # This will introduce a 10-second delay between retries
   
 
-- name: Mount GlusterFS volume using primary server
-  async: 120
-  poll: 0
-  command:
-    cmd: "mount -t glusterfs {{ primary_origin_server }}:/cert_vol {{ mount_point }}"
+- name: Mount GlusterFS volume using primary server with unlimited retries
+  command: >
+    mount -t glusterfs {{ item }}:/cert_vol /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
+  loop: "{{ groups['origin'] | map('extract', hostvars, 'ansible_host') | list }}"
   when: 
     - inventory_hostname in groups['edge']
     - is_mounted.rc != 0
-  retries: 5
-  delay: 10
+  retries: 99999999  # Set retries to a very high number
+  delay: 5   # Adjust the delay between retries as needed
+  until: mount_result is succeeded
   register: mount_result
-  until: mount_result.finished
 
-- name: Wait for GlusterFS volume to be mounted
-  async_status:
-    jid: "{{ mount_result.ansible_job_id }}"
-  register: job_result
-  until: job_result.finished
-  retries: 30
-  delay: 10
-  when: inventory_hostname in groups['edge'] and not job_result.failed
 
 - name: Add GlusterFS volume to /etc/fstab
   ansible.builtin.lineinfile:
@@ -290,5 +281,3 @@
     - volume_info is defined
     - "'stdout' in volume_info"
     - "'Volume Name: cert_vol' in volume_info.stdout"
-
-

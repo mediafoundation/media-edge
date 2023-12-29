@@ -54,6 +54,7 @@ Follow these simple example steps to get your Media Edge setup and running in no
 
 ### 📋 Software Prerequisites
 - [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-ansible-on-specific-operating-systems) @ local computer
+- [rsync](https://rsync.samba.org/) @ local computer
 - [Debian 10 x64](https://www.debian.org/releases/buster/debian-installer/) @ target server(s)
 
 ### 🛠️ Installation
