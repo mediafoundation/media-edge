@@ -27,6 +27,8 @@ const initDatabase = async function (network) {
 
     resources[0] = resources[0].filter((resource) => !resourcesWithoutDeal.includes(resource.id))
 
+    let filteredDomains = []
+
     for (const resource of resources[0]) {
         let attr = JSON.parse(resource.encryptedData)
         let decryptedSharedKey = await Encryption.ethSigDecrypt(
@@ -43,15 +45,19 @@ const initDatabase = async function (network) {
 
         let data = JSON.parse(decrypted)
 
+        //console.log("Domains", )
+
+        filteredDomains = filterDomainsMatchingDeals(data.domains, deals[0].map((deal) => Number(deal.id)))
+
         const upsertResult = await ResourcesController.upsertResource({id: resource.id, owner: resource.owner, ...data})
-        if(upsertResult.originalResource){
+        if (upsertResult.originalResource) {
             let resourceNeedsToBeUpdated = compareOldAndNewResourceOnDB(upsertResult.instance.dataValues, upsertResult.originalResource.dataValues)
-            if(resourceNeedsToBeUpdated) resourcesToBeUpdatedInCaddy.push(upsertResult.instance.dataValues)
+            if (resourceNeedsToBeUpdated) resourcesToBeUpdatedInCaddy.push(upsertResult.instance.dataValues)
         }
     }
 
     for (const deal of deals[0]) {
-        try{
+        try {
             DealsController.parseDealMetadata(deal.terms.metadata)
             await DealsController.upsertDeal(DealsController.formatDeal(deal))
         } catch (e) {
@@ -65,12 +71,40 @@ const initDatabase = async function (network) {
         }
     }
 
+    console.log("Filtered domains", filteredDomains)
+
+    for(const key of Object.keys(filteredDomains)){
+        console.log("Key", key, filteredDomains[key])
+        for (const domain of filteredDomains[key]) {
+            let dealsForDomains = deals[0].filter((deal) => Number(deal.id).toString() === key)
+            console.log("Some", dealsForDomains[0].resourceId)
+            await ResourcesController.upsertResourceDomain({resourceId: dealsForDomains[0].resourceId, domain: domain, dealId: parseInt(key)})
+        }
+    }
+
     //Update records in caddy if needed
     for (const resource of resourcesToBeUpdatedInCaddy) {
         for (const deal of deals) {
             await CaddyController.upsertRecord({resource: resource, deal: deal}, network)
         }
     }
+}
+
+function filterDomainsMatchingDeals(domainsKeys, dealIds) {
+    const newObj = {};
+
+    console.log("Keys", Object.keys(domainsKeys))
+
+    for (const key of Object.keys(domainsKeys)) {
+        console.log("Key", key, dealIds, domainsKeys)
+        if (dealIds.includes(parseInt(key))) {
+            newObj[key] = domainsKeys[key];
+        } else {
+            delete domainsKeys[key];
+        }
+    }
+
+    return newObj;
 }
 
 function compareOldAndNewResourceOnDB(obj1, obj2) {

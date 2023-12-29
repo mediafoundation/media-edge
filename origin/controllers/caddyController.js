@@ -98,11 +98,11 @@ class CaddyController {
         }
     }
 
-    static async addRecords (dealsResources, Caddyfile, network){
+    static async addRecords (dealsResources, caddyFile, network){
         let payload = []
         for(const item of dealsResources) {
             let caddyData = await this.newObject(item.resource, item.deal, network)
-            let dealInFile = Caddyfile.find(o => o["@id"] === item.deal.id);
+            let dealInFile = caddyFile.find(o => o["@id"] === item.deal.id);
             //if resource is not on caddyfile already, add to payload
             if(!dealInFile) {
                 if(item.resource.domain) {

@@ -30,7 +30,8 @@ class ResourcesController {
             let [domain, created] = await Domains.findOrCreate({
                 where: {
                     resourceId: resourceDomain.resourceId,
-                    dealId: resourceDomain.dealId
+                    dealId: resourceDomain.dealId,
+                    domain: resourceDomain.domain
                 },
                 defaults: resourceDomain
             });
@@ -82,7 +83,7 @@ class ResourcesController {
 
     static getResources = async () => {
         try {
-            return await Resource.findAll({attributes: {exclude: ['createdAt', 'updatedAt', 'deletedAt']}});
+            return await Resource.findAll({attributes: {exclude: ['createdAt', 'updatedAt', 'deletedAt']}, raw: true});
         } catch (error) {
             throw error;
         }

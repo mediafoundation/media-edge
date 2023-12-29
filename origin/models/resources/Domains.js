@@ -23,12 +23,6 @@ const Domains = sequelize.define("Domains",
     {
         modelName: 'Domains',
         freezeTableName: true,
-        uniqueKeys: {
-            unique_tag: {
-                fields: ['resourceId', 'dealId'],
-                customIndex: true
-            }
-        }
     }
 );
 
