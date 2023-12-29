@@ -1,14 +1,17 @@
 const express = require('express')
 const { purgeRecord } = require('./varnish')
-const { verifySignature } = require('../utils/signatures')
 const cors = require('cors')
 const app = express()
 app.use(cors())
 const port = 8080; // Change this to your desired port number
-const models = require("../models")
 const networks = require("./../config/networks")
 const env = require("./../config/env")
-const Marketplace = require("./../../media-evm-abis/Marketplace.json")
+const {Signer} = require("media-sdk");
+const {DealsController} = require("../controllers/dealsController");
+const {PurgeLogsController} = require("../controllers/purgeLogsController");
+const {CaddyController} = require("../controllers/caddyController");
+
+const signer = new Signer()
 
 app.use(express.json())
 
@@ -16,7 +19,7 @@ app.use(express.json())
 app.post('/', async (req, res) => {
   const payload = req.body
 
-  if (!verifySignature(payload, Marketplace.networks[payload.chainId].address)) {
+  if (!await signer.checkSignature({address: payload.address, domain: payload.domain, types: payload.types, primaryType: payload.primaryType, message: payload.message, signature: payload.signature})) {
     return res.status(403).send(`Bad Signature`)
   }
 
@@ -26,7 +29,7 @@ app.post('/', async (req, res) => {
   for (const dealId of payload.deals) {
     try {
       let network = networks.find((network) => network.chain_id === payload.chainId)
-      const deal = await models.Deals.getDealById(`${dealId}_${network.network_id}_${network.chain_id}_${env.MARKETPLACE_ID}`)
+      const deal = await DealsController.getDealById(payload.dealId)
 
       //check if address is owner of deal
       if (deal.client === payload.address) {
@@ -34,7 +37,7 @@ app.post('/', async (req, res) => {
 
         switch (payload.action) {
           case 'PURGE':
-            payload.params.paths.forEach(async path => {
+            payload.params.paths.forEach(async (path) => {
               await purgeRecord(deal, path)
             });
 
@@ -65,7 +68,7 @@ app.get('/purge', async (req, res) => {
   const path = req.query.path ? req.query.path : '/*'
   if (password === env.PURGE_PASSWORD) {
     try {
-      await models.PurgeLog.addRecord("http://"+host + path)
+      await PurgeLogsController.addRecord("http://"+host + path)
       res.send('Purge executed successfully!')
     } catch (e) {
       console.log(e)
@@ -82,7 +85,7 @@ app.get('/getAllDealsEndpoints', async (req, res) => {
   try{
     const endpoints = {}
     for (const dealId of payload.dealIds) {
-        endpoints[dealId] = await models.Caddy.getHosts(dealId)
+        endpoints[dealId] = await CaddyController.getHosts(dealId)
     }
     res.send(endpoints)
   } catch (e){
@@ -94,7 +97,7 @@ app.post('/getDealsEndpoints', async (req, res) => {
   let payload = req.body
   try{
     const endpoints = {}
-    endpoints[payload.dealId] = await models.Caddy.getHosts(payload.dealId)
+    endpoints[payload.dealId] = await CaddyController.getHosts(payload.dealId)
     res.send(endpoints)
   } catch (e){
     res.send(e)
