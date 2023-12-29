@@ -265,11 +265,10 @@
   when: 
     - inventory_hostname in groups['edge']
     - is_mounted.rc != 0
-  retries: 5  # Set retries to a very high number
+  retries: 99999999  # Set retries to a very high number
   delay: 5   # Adjust the delay between retries as needed
   until: mount_result is succeeded
   register: mount_result
-  ignore_errors: yes
 
 
 - name: Add GlusterFS volume to /etc/fstab
