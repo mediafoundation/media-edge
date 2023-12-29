@@ -29,7 +29,7 @@ const init = async (network) => {
     //Check if daemon needs to run a full reset
     const resetIndex = process.argv.indexOf('--reset');
 
-    initSdk({privateKey: PRIVATE_KEY, transport: network.transport !== "undefined" ? network.transport : undefined})
+    initSdk({privateKey: PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined})
 
     if(resetIndex !== -1){
         try{
