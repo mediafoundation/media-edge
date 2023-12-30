@@ -21,7 +21,7 @@ const initDatabase = async function (network) {
     })
     let resourcesToBeUpdatedInCaddy = []
 
-    if(deals[0].length === 0 || resources[0].length === 0) return
+    if(deals[0] === undefined || resources[0] === undefined) return
 
     deals[0] = deals[0].filter((deal) => deal.status.active === true)
 
@@ -47,7 +47,7 @@ const initDatabase = async function (network) {
 
         let data = JSON.parse(decrypted)
 
-        //console.log("Domains", )
+        console.log("Domains", filterDomainsMatchingDeals(data.domains, deals[0].map((deal) => Number(deal.id))))
 
         if(data.domains) filteredDomains = filterDomainsMatchingDeals(data.domains, deals[0].map((deal) => Number(deal.id)))
 
@@ -59,16 +59,25 @@ const initDatabase = async function (network) {
     }
 
     for (const deal of deals[0]) {
-        try {
+        //Parse deal metadata
+        try{
             DealsController.parseDealMetadata(deal.terms.metadata)
-            await DealsController.upsertDeal(DealsController.formatDeal(deal))
-        } catch (e) {
+        }catch (e) {
             if (e instanceof z.ZodError) {
                 console.log("Deal Id: ", deal.id)
                 console.error("Metadata Validation failed!\n", "Expected: ", DealsMetadataType.keyof()._def.values, " Got: ", deal.terms.metadata);
             } else {
                 console.log("Deal Id: ", deal.id)
                 console.error("Unknown error", e);
+            }
+        }
+        let formattedDeal = DealsController.formatDeal(deal)
+        if(DealsController.dealIsActive(formattedDeal)){
+            try {
+                await DealsController.upsertDeal(formattedDeal)
+            } catch (e) {
+                console.log("Deal Id: ", deal.id)
+                console.error("Error when upsert to db:", e);
             }
         }
     }

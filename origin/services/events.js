@@ -251,7 +251,8 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
             }*/
             //Upsert deal
             let formattedDeal = DealsController.formatDeal(deal)
-            if (DealsController.dealIsActive(formattedDeal) !== false && deal.active !== false) {
+            console.log("Deal", formattedDeal)
+            if (DealsController.dealIsActive(formattedDeal) !== false && formattedDeal.active !== false) {
                 try {
                     //DealsController.parseDealMetadata(deal.metadata)
                     await DealsController.upsertDeal(formattedDeal)
@@ -262,11 +263,13 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
                     continue
                 }
 
-                let domains = filteredDomains[Number(deal.id)]
+                let domains = filteredDomains[Number(formattedDeal.id)]
 
                 try{
-                    for (const domain of domains) {
-                        await ResourcesController.upsertResourceDomain({resourceId: resource.id, domain: domain, dealId: Number(deal.id)})
+                    if(domains && Object.keys(domains).length > 0){
+                        for (const domain of domains) {
+                            await ResourcesController.upsertResourceDomain({resourceId: resource.id, domain: domain, dealId: Number(deal.id)})
+                        }
                     }
                 }catch (e) {
                     console.log("Error upserting domains", e)
@@ -278,9 +281,15 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
                 //Upsert caddy
 
                 let caddyFile = await CaddyController.getRecords()
+                let deal = await DealsController.getDealById(Number(event.args._dealId))
+                let resource = await DealsController.getDealResource(Number(event.args._dealId))
+                console.log("Resource", resource)
+                console.log("Deal", deal)
+                let domainsForCaddy = domains = await ResourcesController.getResourceDomain(resource.id, deal.id)
                 await CaddyController.addRecords([{
-                    resource: ResourcesController.getResourceById(deal.resourceId),
-                    deal: await DealsController.getDealById(event.args._id)
+                    resource: resource,
+                    deal: deal,
+                    domains: domainsForCaddy
                 }], caddyFile, CURRENT_NETWORK)
                 let dealForBandwidth = await BandwidthController.formatDataToDb(deal)
                 await BandwidthController.upsertRecord(dealForBandwidth)
