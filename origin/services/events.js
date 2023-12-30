@@ -1,23 +1,25 @@
 const env = require("../config/env")
-const { EventHandler, Resources, Encryption, Marketplace } = require("media-sdk");
+const { EventHandler, Resources, Encryption, Marketplace, Blockchain} = require("media-sdk");
 const { DealsController } = require("../controllers/dealsController");
 const { ResourcesController } = require("../controllers/resourcesController");
 const { CaddyController } = require("../controllers/caddyController");
 const { z } = require("zod");
 const { DealsMetadataType } = require("../models/deals/DealsMetadata");
 const { BandwidthController } = require("../controllers/bandwidthController");
+const {filterDomainsMatchingDeals} = require("../utils/resources");
 
 let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
-    let blockNumber = lastReadBlock + 1
+    //let blockNumber = lastReadBlock + 1
     let updatedResources = undefined
     let removedResources = undefined
     let createdDeals = undefined
     let cancelledDeals = undefined
     let acceptedDeals = undefined
+    let blockchain = new Blockchain()
+    let blockNumber = await blockchain.getBlockNumber()
 
     try {
         let eventsHandler = new EventHandler()
-        //blockNumber = await blockchain.getBlockNumber()
 
         if (env.debug && blockNumber !== lastReadBlock) {
             console.log("Last read block", lastReadBlock)
@@ -52,6 +54,12 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
             fromBlock: lastReadBlock + 1,
             toBlock: blockNumber
         })
+
+        console.log("Updated resources", updatedResources.length)
+        console.log("Removed resources", removedResources.length)
+        console.log("Created deals", createdDeals.length)
+        console.log("Cancelled deals", cancelledDeals.length)
+        console.log("Accepted deals", acceptedDeals.length)
 
     } catch (e) {
         console.log(e)
@@ -180,25 +188,31 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
 
 let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
     for (const event of events) {
+        if(Number(event.args._marketplaceId) !== env.MARKETPLACE_ID) continue
         let marketplace = new Marketplace()
         let resourceInstance = new Resources()
-        let deal = await marketplace.getDealById({ marketplaceId: env.MARKETPLACE_ID, dealId: event.args._id })
-        let resource = resourceInstance.getResource({ id: deal.resourceId, address: env.WALLET })
-        if (resource !== false) {
-            if (DealsController.dealIsActive(deal) !== false && deal.active !== false) {
-                try {
-                    DealsController.parseDealMetadata(deal.metadata)
-                    await DealsController.upsertDeal(DealsController.formatDeal(deal))
-                } catch (e) {
-                    if (e instanceof z.ZodError) {
-                        console.log("Deal Id: ", deal.id)
-                        console.error("Metadata Validation failed!\n", "Expected: ", DealsMetadataType.keyof()._def.values, " Got: ", deal.metadata);
-                    } else {
-                        console.log("Deal Id: ", deal.id)
-                        console.error("Unknown error", e);
-                    }
-                }
+        let deal = await marketplace.getDealById({ marketplaceId: env.MARKETPLACE_ID, dealId: Number(event.args._dealId) })
+        let resource = await resourceInstance.getResource({ id: deal.resourceId, address: env.WALLET })
 
+        //parse deal metadata
+        try{
+            DealsController.parseDealMetadata(deal.terms.metadata)
+        } catch (e) {
+            if (e instanceof z.ZodError) {
+                console.log("Deal Id: ", deal.id)
+                console.error("Metadata Validation failed!\n", "Expected: ", DealsMetadataType.keyof()._def.values, " Got: ", deal.metadata);
+            }
+
+            else {
+                console.log("Deal Id: ", deal.id)
+                console.error("Error", e);
+                continue
+            }
+        }
+        if (resource) {
+            //Upsert resource
+
+            try{
                 let attr = JSON.parse(resource.encryptedData)
                 let decryptedSharedKey = await Encryption.ethSigDecrypt(
                     resource.encryptedSharedKey,
@@ -213,8 +227,48 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
                 );
 
                 let data = JSON.parse(decrypted)
-
                 await ResourcesController.upsertResource({ id: resource.id, owner: resource.owner, ...data })
+
+                let filteredDomains = []
+
+                if(data.domains) filteredDomains = filterDomainsMatchingDeals(data.domains, [Number(deal.id)])
+
+                console.log("Filtered domains", filteredDomains)
+
+                let domains = filteredDomains[Number(deal.id)]
+
+                for (const domain of domains) {
+                    await ResourcesController.upsertResourceDomain({resourceId: resource.id, domain: domain, dealId: Number(deal.id)})
+                }
+            }catch (e) {
+                console.log("Error when upsertResource resource and its domains", e)
+                continue
+            }
+
+
+
+
+
+            /*for(const key of Object.keys(filteredDomains)){
+                for (const domain of filteredDomains[key]) {
+                    let dealsForDomains = deals[0].filter((deal) => Number(deal.id).toString() === key)
+                    await ResourcesController.upsertResourceDomain({resourceId: dealsForDomains[0].resourceId, domain: domain, dealId: parseInt(key)})
+                }
+            }*/
+            //Upsert deal
+            let formattedDeal = DealsController.formatDeal(deal)
+            if (DealsController.dealIsActive(formattedDeal) !== false && deal.active !== false) {
+                try {
+                    //DealsController.parseDealMetadata(deal.metadata)
+                    await DealsController.upsertDeal(formattedDeal)
+                } catch (e) {
+                    console.log("Deal Id: ", deal.id)
+                    console.error("Error", e);
+                    await ResourcesController.deleteResourceById(Number(resource.id))
+                    continue
+                }
+
+                //Upsert caddy
 
                 let caddyFile = await CaddyController.getRecords()
                 await CaddyController.addRecords([{

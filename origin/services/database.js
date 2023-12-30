@@ -1,6 +1,6 @@
 const env = require("../config/env")
 const {Resources, MarketplaceViewer, Encryption} = require("media-sdk");
-const {resourcesNotMatchingDeal} = require("../utils/resources");
+const {resourcesNotMatchingDeal, filterDomainsMatchingDeals} = require("../utils/resources");
 const {DealsController} = require("../controllers/dealsController");
 const {z} = require("zod");
 const {DealsMetadataType} = require("../models/deals/DealsMetadata");
@@ -86,20 +86,6 @@ const initDatabase = async function (network) {
             await CaddyController.upsertRecord({resource: resource, deal: deal}, network)
         }
     }
-}
-
-function filterDomainsMatchingDeals(domainsKeys, dealIds) {
-    const newObj = {};
-
-    for (const key of Object.keys(domainsKeys)) {
-        if (dealIds.includes(parseInt(key))) {
-            newObj[key] = domainsKeys[key];
-        } else {
-            delete domainsKeys[key];
-        }
-    }
-
-    return newObj;
 }
 
 function compareOldAndNewResourceOnDB(obj1, obj2) {

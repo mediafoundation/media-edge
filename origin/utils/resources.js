@@ -9,4 +9,18 @@ const resourcesNotMatchingDeal = (resourcesIds, dealsIds) => {
     return difference;
 }
 
-module.exports = {resourcesNotMatchingDeal}
+function filterDomainsMatchingDeals(domainsKeys, dealIds) {
+    const newObj = {};
+
+    for (const key of Object.keys(domainsKeys)) {
+        if (dealIds.includes(parseInt(key))) {
+            newObj[key] = domainsKeys[key];
+        } else {
+            delete domainsKeys[key];
+        }
+    }
+
+    return newObj;
+}
+
+module.exports = {resourcesNotMatchingDeal, filterDomainsMatchingDeals}
