@@ -17,6 +17,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     let acceptedDeals = undefined
     let blockchain = new Blockchain()
     let blockNumber = await blockchain.getBlockNumber()
+    let toNumber = Number(blockNumber)
 
     try {
         let eventsHandler = new EventHandler()
@@ -27,32 +28,32 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
         }
         updatedResources = await eventsHandler.getResourcesPastEvents({
             eventName: 'UpdatedResource',
-            fromBlock: lastReadBlock + 1,
-            toBlock: blockNumber
+            fromBlock: lastReadBlock,
+            toBlock: toNumber
         })
 
         removedResources = await eventsHandler.getResourcesPastEvents({
             eventName: 'RemovedResource',
-            fromBlock: lastReadBlock + 1,
-            toBlock: blockNumber
+            fromBlock: lastReadBlock,
+            toBlock: toNumber
         })
 
         createdDeals = await eventsHandler.getMarketplacePastEvents({
             eventName: 'DealCreated',
-            fromBlock: lastReadBlock + 1,
-            toBlock: blockNumber
+            fromBlock: lastReadBlock,
+            toBlock: toNumber
         })
 
         cancelledDeals = await eventsHandler.getMarketplacePastEvents({
             eventName: 'DealCancelled',
-            fromBlock: lastReadBlock + 1,
-            toBlock: blockNumber
+            fromBlock: lastReadBlock,
+            toBlock: toNumber
         })
 
         acceptedDeals = await eventsHandler.getMarketplacePastEvents({
             eventName: 'DealAccepted',
-            fromBlock: lastReadBlock + 1,
-            toBlock: blockNumber
+            fromBlock: lastReadBlock,
+            toBlock: toNumber
         })
 
         console.log("Updated resources", updatedResources.length)
@@ -183,7 +184,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
         await manageDealCreatedOrAccepted(acceptedDeals, CURRENT_NETWORK)
     }
 
-    return Number(blockNumber)
+    return blockNumber
 }
 
 let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
