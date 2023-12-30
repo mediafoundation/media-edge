@@ -183,7 +183,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
         await manageDealCreatedOrAccepted(acceptedDeals, CURRENT_NETWORK)
     }
 
-    return blockNumber
+    return Number(blockNumber)
 }
 
 let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {

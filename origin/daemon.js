@@ -103,7 +103,7 @@ async function start(){
             console.log("Edge started correctly")
         }
 
-        if(lastReadBlock[CURRENT_NETWORK.chain_id] !== 0){
+        if(lastReadBlock[CURRENT_NETWORK.id] !== 0){
             console.log("Start to check events")
             setInterval(async () => {
                 try { 
