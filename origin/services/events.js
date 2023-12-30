@@ -194,6 +194,7 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
         let resourceInstance = new Resources()
         let deal = await marketplace.getDealById({ marketplaceId: env.MARKETPLACE_ID, dealId: Number(event.args._dealId) })
         let resource = await resourceInstance.getResource({ id: deal.resourceId, address: env.WALLET })
+        let filteredDomains = []
 
         //parse deal metadata
         try{
@@ -230,17 +231,9 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
                 let data = JSON.parse(decrypted)
                 await ResourcesController.upsertResource({ id: resource.id, owner: resource.owner, ...data })
 
-                let filteredDomains = []
-
                 if(data.domains) filteredDomains = filterDomainsMatchingDeals(data.domains, [Number(deal.id)])
 
                 console.log("Filtered domains", filteredDomains)
-
-                let domains = filteredDomains[Number(deal.id)]
-
-                for (const domain of domains) {
-                    await ResourcesController.upsertResourceDomain({resourceId: resource.id, domain: domain, dealId: Number(deal.id)})
-                }
             }catch (e) {
                 console.log("Error when upsertResource resource and its domains", e)
                 continue
@@ -268,6 +261,19 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
                     await ResourcesController.deleteResourceById(Number(resource.id))
                     continue
                 }
+
+                let domains = filteredDomains[Number(deal.id)]
+
+                try{
+                    for (const domain of domains) {
+                        await ResourcesController.upsertResourceDomain({resourceId: resource.id, domain: domain, dealId: Number(deal.id)})
+                    }
+                }catch (e) {
+                    console.log("Error upserting domains", e)
+                    continue
+                }
+
+
 
                 //Upsert caddy
 
