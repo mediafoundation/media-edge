@@ -70,11 +70,3 @@
     owner: "root"
     group: "root"
     mode: 0755
-
-- name: Create /etc/ssl/caddy directory
-  file:
-    path: /etc/ssl/caddy
-    state: directory
-    owner: "root"
-    group: "root"
-    mode: 0700

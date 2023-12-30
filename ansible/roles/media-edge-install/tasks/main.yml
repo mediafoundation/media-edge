@@ -9,7 +9,6 @@
 - include_tasks: optimize.yml
 - include_tasks: nodejs.yml
 - include_tasks: origin.yml
-- include_tasks: gluster2.yml
   when: inventory_hostname in groups["origin"]
 - include_tasks: edge.yml
   when: inventory_hostname in groups["edge"]

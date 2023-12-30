@@ -256,9 +256,13 @@
   until: result is succeeded
   retries: 5
   delay: 10  # This will introduce a 10-second delay between retries
-  
 
-- name: Mount GlusterFS volume using primary server with unlimited retries
+- name: Start GlusterFS volume
+  command: gluster volume start cert_vol
+  when: 
+    - inventory_hostname in groups["origin"]
+
+- name: Mount GlusterFS origin volume on edges
   command: >
     mount -t glusterfs {{ item }}:/cert_vol /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
   loop: "{{ groups['origin'] | map('extract', hostvars, 'ansible_host') | list }}"
@@ -269,7 +273,6 @@
   delay: 5   # Adjust the delay between retries as needed
   until: mount_result is succeeded
   register: mount_result
-  ignore_errors: yes
 
 
 - name: Add GlusterFS volume to /etc/fstab

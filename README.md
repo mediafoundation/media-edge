@@ -2,35 +2,23 @@
 
 ![Logo](media-edge.png)
 
-**Media Edge** is your one-stop solution for creating and monetizing Content Delivery Networks in the decentralized Media Network marketplace. 🚀
+**Media Edge** is the ultimate software for creating and monetizing Content Delivery Networks in the decentralized Media Network marketplace. 🚀
 
 [![Version Badge](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/mediafoundation/media-edge/releases)
 
-- [📖 Explore the docs »](https://docs.media.network)
-- [🛍️ Use the Marketplace](https://app.media.network)
-- [🐞 Report Bug](https://github.com/mediafoundation/media-edge/issues)
-- [💡 Request Feature](https://github.com/mediafoundation/media-edge/issues)
-
-## 📌 Table of Contents
-- [About Media Edge](#about-media-edge)
-- [Built With 💼](#built-with)
-- [Getting Started 🚀](#getting-started)
-  - [Software Prerequisites 📋](#software-prerequisites)
-  - [Installation 🛠️](#installation)
-- [Testing with Vagrant 📦](#testing-with-vagrant)
-  - [Using dnsmasq with systemd-resolved 🔄](#using-dnsmasq-with-systemd-resolved)
-- [Usage & Troubleshooting 🛠️](#usage--troubleshooting)
-  - [GlusterFS Authentication Issue 🚫](#glusterfs-authentication-issue)
-- [Roadmap 🗺️](#roadmap)
-- [Contributing 🤝](#contributing)
-- [License 📜](#license)
-- [Contact 📞](#contact)
+- [📖 Explore the Documentation](https://docs.media.network)
+- [🛍️ Visit the Marketplace](https://app.media.network)
+- [🐞 Report a Bug](https://github.com/mediafoundation/media-edge/issues)
+- [💡 Request a Feature](https://github.com/mediafoundation/media-edge/issues)
 
 ## 📢 About Media Edge
 
-Media Edge is a software that allows CDN providers to create their content delivery network and sell their services in the decentralized Media Network marketplace. With Media Edge, providers can easily set up their CDN networks, offer them within the Media Network marketplace, and get MEDIA rewards in exchange for the services provided.
+Media Edge is an innovative software solution designed for CDN providers. It enables them to establish and market their content delivery networks within the decentralized Media Network marketplace. This tool simplifies the process of setting up and offering CDN services, allowing providers to earn MEDIA rewards for their contributions.
 
 ## Built With 💼
+
+Media Edge integrates a wide range of technologies:
+
 - [Ansible](https://www.ansible.com/)
 - [Caddy](https://caddyserver.com/)
 - [Elasticsearch](https://www.elastic.co/elasticsearch/)
@@ -50,137 +38,85 @@ Media Edge is a software that allows CDN providers to create their content deliv
 
 ## 🚀 Getting Started
 
-Follow these simple example steps to get your Media Edge setup and running in no time.
+Get your Media Edge setup up and running in no time with these straightforward steps.
 
 ### 📋 Software Prerequisites
-- [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-ansible-on-specific-operating-systems) @ local computer
-- [rsync](https://rsync.samba.org/) @ local computer
-- [Debian 10 x64](https://www.debian.org/releases/buster/debian-installer/) @ target server(s)
+
+Ensure these are installed on your local computer and target server(s):
+
+- [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-ansible-on-specific-operating-systems)
+- [rsync](https://rsync.samba.org/)
+- [Debian 10 x64](https://www.debian.org/releases/buster/debian-installer/)
 
 ### 🛠️ Installation
 
-1. Clone the repo and submodule (abis)
+1. Clone the repository and its submodules:
    ```sh
    git clone https://github.com/mediafoundation/media-edge.git
    cd media-edge
    git submodule init
    git submodule update
    ```
-
-2. Navigate to `ansible` folder
+2. Navigate to the `ansible` folder:
    ```sh
    cd ansible
    ```
-
-3. Copy `hosts.example` to `hosts` and edit the file: replace with your servers IP addresses.
+3. Prepare the hosts file:
    ```sh
    cp hosts.example hosts
+   # Edit hosts with your server's IP addresses
    ```
-
-4. Copy `user_config.yml.example` to `user_config.yml` and edit with up your wallet and other settings.
+4. Set up your configuration:
    ```sh
    cp user_config.yml.example user_config.yml
+   # Edit user_config.yml with your wallet and other settings
    ```
-
-5. Deploy Media Edges
+5. Deploy Media Edge:
    ```sh
    ansible-playbook deploy.yml -i hosts
    ```
 
 ## 📦 Testing with Vagrant
 
-Vagrant config files are included to help you deploy testing instances. This allows you to create virtual machines and test Media Edge in a controlled environment. To install the necessary dependencies, use:
+Vagrant is used for deploying test instances in a controlled environment. Install the dependencies and initiate virtual machines in the `ansible` folder:
 
 ```sh
 apt install vagrant virtualbox
-```
-
-Then, within the `ansible` folder, initiate the virtual machines:
-
-```sh
 vagrant up --provider virtualbox
 ```
 
 ### 🔄 Using dnsmasq with systemd-resolved
 
-When testing with Vagrant, you might want to use `dnsmasq` alongside `systemd-resolved` for DNS configurations. Here's how:
+For DNS configurations during Vagrant testing, follow these steps:
 
-1. Add the following lines to `/etc/dnsmasq.conf`:
-
-```sh
-listen-address=127.0.55.1
-bind-interfaces
-address=/medianetwork.test/192.168.0.171
-```
-
+1. Configure `/etc/dnsmasq.conf`:
+   ```sh
+   # Add the following lines to the file
+   listen-address=127.0.55.1
+   bind-interfaces
+   ```
 2. Restart dnsmasq:
-
-```sh
-systemctl restart dnsmasq
-```
-
-3. Let `systemd-resolved` listen to `dnsmasq` for any queries. Safely create a file under `/etc/systemd/resolved.conf.d/dnsmasq.conf` with the following content:
-
-```sh
-[Resolve]
-DNS=127.0.55.1
-```
-
-4. Lastly, restart `systemd-resolved`:
-
-```sh
-systemctl restart systemd-resolved
-```
+   ```sh
+   systemctl restart dnsmasq
+   ```
+3. Configure `systemd-resolved`:
+   ```sh
+   # Create /etc/systemd/resolved.conf.d/dnsmasq.conf with the content:
+   [Resolve]
+   DNS=127.0.55.1
+   ```
+4. Restart `systemd-resolved`:
+   ```sh
+   systemctl restart systemd-resolved
+   ```
 
 ## 🛠️ Usage & Troubleshooting
 
-### 🚫 GlusterFS Authentication Issue
-
-If you encounter an error related to GlusterFS authentication when trying to mount the GlusterFS volume, follow these steps:
-
-1. **Check auth.allow**: Ensure that the `auth.allow` option for the GlusterFS volume includes the IP address of the client. You can check this with:
-   ```bash
-   gluster volume get cert_vol auth.allow
-   ```
-   If the IP address of the client is not listed, you need to add it.
-
-2. **Set auth.allow**: To add the IP address of the client to the `auth.allow` list, use:
-   ```bash
-   gluster volume set cert_vol auth.allow <existing IPs>,<client IP>
-   ```
-   Replace `<existing IPs>` with the current list of IPs (if any) and `<client IP>` with the IP address of the client.
-
-3. **Firewall**: Ensure that there are no firewall rules blocking the necessary ports for GlusterFS communication. This includes port `24007` for GlusterD and other ports for brick communication.
-
-4. **Restart GlusterD**: After making changes, restart the GlusterD service:
-   ```bash
-   systemctl restart glusterd
-   ```
-
-5. **Re-run Ansible Playbook**: After addressing the GlusterFS authentication issue, re-run the Ansible script to ensure Media Edge is correctly installed and configured:
-   ```bash
-   ansible-playbook deploy.yml -i hosts
-   ```
-
-For more detailed troubleshooting, always refer to the GlusterFS logs, typically located in `/var/log/glusterfs/`.
-
-For more information, please refer to the [Media Edge Docs](https://docs.media.network/cdn-marketplace-edge).
-
-## 🗺️ Roadmap
-
-- [X] First Release
-- [ ] TBD
-- [ ] TBD
-- [ ] TBD
-
-See the [open issues](https://github.com/mediafoundation/media-edge/issues) for a full list of proposed features (and known issues).
+Refer to the [Media Network Documentation](https://docs.media.network/) for detailed guidance. Check [open issues](https://github.com/mediafoundation/media-edge/issues) for ongoing features and known issues.
 
 ## 🤝 Contributing
 
-Contributions make the open-source community a fantastic place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion to improve this, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement."
-Don't forget to give the project a star! Thanks again!
+Your contributions are highly valued. To contribute:
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
@@ -190,8 +126,11 @@ Don't forget to give the project a star! Thanks again!
 
 ## 📜 License
 
-Distributed under the MIT License. See `LICENSE.txt` for more information.
+This project is licensed under the MIT License. See `LICENSE.txt` for more details.
 
 ## 📞 Contact
 
-Media Foundation - [@Media_FDN](https://twitter.com/Media_FDN) - hello@media.foundation
+ [Twitter/X](https://twitter.com/Media_FDN)
+ [Telegram](https://t.me/Media_FDN)
+ [Discord](https://discord.com/invite/wwSw3J7F2j)
+
