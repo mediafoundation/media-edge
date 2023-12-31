@@ -1,7 +1,8 @@
-const models = require('../models')
+const {PurgeLogsController} = require("../controllers/purgeLogsController");
+const {CaddyController} = require("../controllers/caddyController");
 
 const resetPurgeLog = async () => {
-    await models.PurgeLog.deleteAllRecords()
+    await PurgeLogsController.deleteAllRecords()
 }
 
 /*const manageBandwidth = async () => {
@@ -30,9 +31,9 @@ const resetPurgeLog = async () => {
 
 const purgeRecord = async (deal, path) => {
     
-    let caddyHosts = await models.Caddy.getHosts(deal.id)
+    let caddyHosts = await CaddyController.getHosts(deal.id)
     for (const host of caddyHosts) {
-        await models.PurgeLog.addRecord("http://"+host + path)
+        await PurgeLogsController.addRecord("http://"+host + path)
     }
 
     // let deal = await models.Deals.getDealById(dealId)

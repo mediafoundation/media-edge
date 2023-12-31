@@ -15,12 +15,9 @@ wallet_address: "0x81974B05Dc9C1E744CD509b2E11F84897373af7d"
 private_key: 
 
 # Please specify the networks you are providing services (where you are staking your tokens). 
-networks: 
-- name: ganache
-  URL: http://127.0.0.1:8545
-  WSS: wss://127.0.0.1:8545
-  chain_id: 1
-  network_id: 1
+networks:
+- id: 5 # This is the network ID, it should the network id of the network you are providing services
+  URL: undefined # This is the URL of the network. If undefined, it will be set the default RPC from the media-sdk
 
 # Select the marketplace ID where you are providing services.
 marketplace_id: 1
@@ -37,7 +34,11 @@ dns_config:
   - medianetwork.app
 
 # Postgres config
-postgres_password: kjhn2f3FQ@eh
+db_host: localhost
+db_port: 5432
+db_user: origin
+db_password:
+db_name: origin
 
 # Testing server, set to true to provision the server with ganache
 testing: false

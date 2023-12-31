@@ -7,7 +7,6 @@
   "license": "MIT",
   "dependencies": {
     "@elastic/elasticsearch": "^8.7.0",
-    "@metamask/eth-sig-util": "^5.0.2",
     "acme-client": "^5.0.0",
     "axios": "^0.21.1",
     "basic-auth": "^2.0.1",
@@ -16,22 +15,22 @@
     "dohjs": "^0.3.2",
     "dotenv": "^10.0.0",
     "ejs": "^3.1.6",
-    "ethers": "^5.4.3",
     "express": "^4.17.1",
+    "media-sdk": "3.1.0-alpha",
     "nanoid": "^3.3.4",
+    "node-fetch": "^3.3.2",
     "pg": "^8.5.1",
     "pg-hstore": "^2.3.3",
     "rsync": "^0.6.1",
-    "sequelize": "^6.21.3",
+    "sequelize": "^6.33.3",
     "toml": "^3.0.0",
-    "tweetnacl-sealedbox-js": "^1.2.0",
-    "web3": "^1.5.1"
+    "zod": "^3.22.4"
   },
   "devDependencies": {
-    "jest": "^29.5.0"
+    "jest": "^29.7.0",
+    "sqlite3": "^5.1.6"
   },
   "scripts": {
-    "test": "jest"
+    "test": "NODE_ENV=testing jest"
   }
-
 }

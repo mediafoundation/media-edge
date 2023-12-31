@@ -31,9 +31,9 @@
 
 - name: Create origin user, and grant access to database and table
   community.postgresql.postgresql_user:
-    db: origin
-    name: origin
-    password: '{{ postgres_password }}'
+    db: '{{db_name}}'
+    name: '{{ db_user }}'
+    password: '{{ db_password }}'
     expires: "Jan 31 2420"
   become: true
   become_method: su

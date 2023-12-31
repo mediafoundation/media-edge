@@ -47,7 +47,7 @@
         - set_fact:
             postgres_password: "{{ postgres_password_input.user_input }}"
       when: 
-        - (postgres_password is not defined or postgres_password == "" or postgres_password == none)
+        - (db_password is not defined or db_password == "" or db_password == none)
         - inventory_hostname in groups["origin"]
 
 
