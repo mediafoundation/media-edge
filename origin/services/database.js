@@ -11,27 +11,27 @@ const initDatabase = async function (network) {
     let marketplaceViewer = new MarketplaceViewer();
     let resourcesInstance = new Resources();
 
-    let resources = await resourcesInstance.getPaginatedResources({address: env.WALLET, start: 0, steps: 10})
-    let deals = await marketplaceViewer.getPaginatedDeals({
+    let resources = await resourcesInstance.getAllResourcesPaginating({address: env.WALLET, start: 0, steps: 10})
+    let deals = await marketplaceViewer.getAllDealsPaginating({
         marketplaceId: env.MARKETPLACE_ID,
         address: env.WALLET,
         isProvider: true,
         start: 0,
-        steps: 10
+        steps: 20
     })
     let resourcesToBeUpdatedInCaddy = []
 
-    if(deals[0] === undefined || resources[0] === undefined) return
+    if(deals === undefined || resources === undefined) return
 
-    deals[0] = deals[0].filter((deal) => deal.status.active === true)
+    deals = deals.filter((deal) => deal.status.active === true)
 
     let resourcesWithoutDeal = resourcesNotMatchingDeal(resources.map((resource) => resource.id), deals.map((deal) => deal.resourceId))
 
-    resources[0] = resources[0].filter((resource) => !resourcesWithoutDeal.includes(resource.id))
+    resources = resources.filter((resource) => !resourcesWithoutDeal.includes(resource.id))
 
     let filteredDomains = []
 
-    for (const resource of resources[0]) {
+    for (const resource of resources) {
         let attr = JSON.parse(resource.encryptedData)
         let decryptedSharedKey = await Encryption.ethSigDecrypt(
             resource.encryptedSharedKey,
@@ -47,9 +47,9 @@ const initDatabase = async function (network) {
 
         let data = JSON.parse(decrypted)
 
-        console.log("Domains", filterDomainsMatchingDeals(data.domains, deals[0].map((deal) => Number(deal.id))))
+        //console.log("Domains", filterDomainsMatchingDeals(data.domains, deals[0].map((deal) => Number(deal.id))))
 
-        if(data.domains) filteredDomains = filterDomainsMatchingDeals(data.domains, deals[0].map((deal) => Number(deal.id)))
+        if(data.domains) filteredDomains.push(filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id))))
 
         const upsertResult = await ResourcesController.upsertResource({id: resource.id, owner: resource.owner, ...data})
         if (upsertResult.originalResource) {
@@ -58,7 +58,7 @@ const initDatabase = async function (network) {
         }
     }
 
-    for (const deal of deals[0]) {
+    for (const deal of deals) {
         //Parse deal metadata
         try{
             DealsController.parseDealMetadata(deal.terms.metadata)
@@ -82,10 +82,14 @@ const initDatabase = async function (network) {
         }
     }
 
-    for(const key of Object.keys(filteredDomains)){
-        for (const domain of filteredDomains[key]) {
-            let dealsForDomains = deals[0].filter((deal) => Number(deal.id).toString() === key)
-            await ResourcesController.upsertResourceDomain({resourceId: dealsForDomains[0].resourceId, domain: domain, dealId: parseInt(key)})
+    console.log("Filtered domains", filteredDomains)
+    //Update domains in resources
+    for (const domainObject of filteredDomains) {
+        for(const key of Object.keys(domainObject)){
+            for (const domain of domainObject[key]) {
+                let dealsForDomains = deals.filter((deal) => Number(deal.id).toString() === key)
+                await ResourcesController.upsertResourceDomain({resourceId: dealsForDomains[0].resourceId, domain: domain, dealId: parseInt(key)})
+            }
         }
     }
 

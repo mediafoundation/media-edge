@@ -192,11 +192,9 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
         if(Number(event.args._marketplaceId) !== env.MARKETPLACE_ID) continue
         let marketplace = new Marketplace()
         let resourceInstance = new Resources()
-        let deal = await marketplace.getDealById({ marketplaceId: env.MARKETPLACE_ID, dealId: Number(event.args._dealId) })
-        let resource = await resourceInstance.getResource({ id: deal.resourceId, address: env.WALLET })
-        let filteredDomains = []
+        const deal = await marketplace.getDealById({ marketplaceId: env.MARKETPLACE_ID, dealId: Number(event.args._dealId) })
 
-        //parse deal metadata
+        //Parse deal metadata
         try{
             DealsController.parseDealMetadata(deal.terms.metadata)
         } catch (e) {
@@ -211,90 +209,107 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
                 continue
             }
         }
-        if (resource) {
+
+        //Check if deal is active
+        let formattedDeal = DealsController.formatDeal(deal)
+        if (DealsController.dealIsActive(formattedDeal) === false || formattedDeal.active === false){
+            console.log("Deal is not active: ", formattedDeal.id)
+            continue
+        }
+
+        const resource = await resourceInstance.getResource({ id: deal.resourceId, address: env.WALLET })
+
+        if(!resource){
+            console.log("Resource not found for deal: ", deal.resourceId)
+            continue
+        }
+
+        let filteredDomains = []
+        //parse deal metadata
+
             //Upsert resource
 
-            try{
-                let attr = JSON.parse(resource.encryptedData)
-                let decryptedSharedKey = await Encryption.ethSigDecrypt(
-                    resource.encryptedSharedKey,
-                    env.PRIVATE_KEY
-                );
+        try{
+            let attr = JSON.parse(resource.encryptedData)
+            let decryptedSharedKey = await Encryption.ethSigDecrypt(
+                resource.encryptedSharedKey,
+                env.PRIVATE_KEY
+            );
 
-                let decrypted = Encryption.decrypt(
-                    decryptedSharedKey,
-                    attr.iv,
-                    attr.tag,
-                    attr.encryptedData
-                );
+            let decrypted = Encryption.decrypt(
+                decryptedSharedKey,
+                attr.iv,
+                attr.tag,
+                attr.encryptedData
+            );
 
-                let data = JSON.parse(decrypted)
-                await ResourcesController.upsertResource({ id: resource.id, owner: resource.owner, ...data })
+            let data = JSON.parse(decrypted)
+            await ResourcesController.upsertResource({ id: resource.id, owner: resource.owner, ...data })
 
-                if(data.domains) filteredDomains = filterDomainsMatchingDeals(data.domains, [Number(deal.id)])
+            if(data.domains) filteredDomains = filterDomainsMatchingDeals(data.domains, [Number(deal.id)])
 
-                console.log("Filtered domains", filteredDomains)
-            }catch (e) {
-                console.log("Error when upsertResource resource and its domains", e)
-                continue
-            }
-
-
-
-
-
-            /*for(const key of Object.keys(filteredDomains)){
-                for (const domain of filteredDomains[key]) {
-                    let dealsForDomains = deals[0].filter((deal) => Number(deal.id).toString() === key)
-                    await ResourcesController.upsertResourceDomain({resourceId: dealsForDomains[0].resourceId, domain: domain, dealId: parseInt(key)})
-                }
-            }*/
-            //Upsert deal
-            let formattedDeal = DealsController.formatDeal(deal)
-            console.log("Deal", formattedDeal)
-            if (DealsController.dealIsActive(formattedDeal) !== false && formattedDeal.active !== false) {
-                try {
-                    //DealsController.parseDealMetadata(deal.metadata)
-                    await DealsController.upsertDeal(formattedDeal)
-                } catch (e) {
-                    console.log("Deal Id: ", deal.id)
-                    console.error("Error", e);
-                    await ResourcesController.deleteResourceById(Number(resource.id))
-                    continue
-                }
-
-                let domains = filteredDomains[Number(formattedDeal.id)]
-
-                try{
-                    if(domains && Object.keys(domains).length > 0){
-                        for (const domain of domains) {
-                            await ResourcesController.upsertResourceDomain({resourceId: resource.id, domain: domain, dealId: Number(deal.id)})
-                        }
-                    }
-                }catch (e) {
-                    console.log("Error upserting domains", e)
-                    continue
-                }
-
-
-
-                //Upsert caddy
-
-                let caddyFile = await CaddyController.getRecords()
-                let deal = await DealsController.getDealById(Number(event.args._dealId))
-                let resource = await DealsController.getDealResource(Number(event.args._dealId))
-                console.log("Resource", resource)
-                console.log("Deal", deal)
-                let domainsForCaddy = domains = await ResourcesController.getResourceDomain(resource.id, deal.id)
-                await CaddyController.addRecords([{
-                    resource: resource,
-                    deal: deal,
-                    domains: domainsForCaddy
-                }], caddyFile, CURRENT_NETWORK)
-                let dealForBandwidth = await BandwidthController.formatDataToDb(deal)
-                await BandwidthController.upsertRecord(dealForBandwidth)
-            }
+            console.log("Filtered domains", filteredDomains)
+        }catch (e) {
+            console.log("Error when upsertResource resource and its domains", e)
+            continue
         }
+
+        //Upsert deal
+        console.log("Deal", formattedDeal)
+
+        try {
+            //DealsController.parseDealMetadata(deal.metadata)
+            await DealsController.upsertDeal(formattedDeal)
+        } catch (e) {
+            console.log("Deal Id: ", deal.id)
+            console.error("Error", e);
+            await ResourcesController.deleteResourceById(Number(resource.id))
+            continue
+        }
+
+        let domains = filteredDomains[Number(formattedDeal.id)]
+
+        try{
+            if(domains && Object.keys(domains).length > 0){
+                let resourceId = formattedDeal.resourceId
+                let dealId = formattedDeal.id
+                for (const domain of domains) {
+                    await ResourcesController.upsertResourceDomain({resourceId: resourceId, domain: domain, dealId: Number(dealId)})
+                }
+            }
+        }catch (e) {
+            console.log("Error upserting domains", e)
+            continue
+        }
+
+        //Upsert caddy
+
+        try{
+            let caddyFile = await CaddyController.getRecords()
+            let deal = await DealsController.getDealById(Number(event.args._dealId))
+            let resource = await DealsController.getDealResource(Number(event.args._dealId))
+            console.log("Resource", resource)
+            console.log("Deal", deal)
+            let domainsForCaddy = domains = await ResourcesController.getResourceDomain(resource.id, deal.id)
+            await CaddyController.addRecords([{
+                resource: resource,
+                deal: deal,
+                domains: domainsForCaddy
+            }], caddyFile, CURRENT_NETWORK)
+        }catch (e) {
+            console.log("Error upserting caddy", e)
+            continue
+        }
+
+        //Upsert bandwidth
+        try {
+            let dealFromDb = await DealsController.getDealById(event.args._dealId)
+            let dealForBandwidth = await BandwidthController.formatDataToDb(dealFromDb)
+            await BandwidthController.upsertRecord(dealForBandwidth)
+        }catch (e) {
+            console.log("Error upserting bandwidth", e)
+        }
+
     }
 }
 

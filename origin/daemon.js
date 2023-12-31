@@ -112,7 +112,7 @@ async function start(){
                 } catch(e){
                     console.log("Something failed while checking events", e)
                 }
-            }, 10000)
+            }, 60000)
         }
 
         //Check if deals has balance to remain

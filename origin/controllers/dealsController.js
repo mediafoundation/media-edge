@@ -183,8 +183,6 @@ class DealsController {
             d.getMonth() + 1
         )}/${pad2(d.getFullYear())} · ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
 
-        console.log(totalTime, calculatedEnd, d, formattedCalculatedEnd)
-
         return Date.parse(formattedCalculatedEnd) > Date.now()
     }
 }
