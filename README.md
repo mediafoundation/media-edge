@@ -13,7 +13,7 @@
 
 ## 📢 About Media Edge
 
-Media Edge is an innovative software solution designed for CDN providers. It enables them to establish and market their content delivery networks within the decentralized Media Network marketplace. This tool simplifies the process of setting up and offering CDN services, allowing providers to earn MEDIA rewards for their contributions.
+Media Edge is a state-of-the-art software solution designed for CDN providers to effectively monetize their hardware resources. It enables providers to easily set up and manage their content delivery networks, facilitating the selling of these services on the decentralized Media Network marketplace. Providers can efficiently integrate their offerings into the marketplace, earning MEDIA tokens as compensation for their CDN services. 
 
 ## Built With 💼
 
