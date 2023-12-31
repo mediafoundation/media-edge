@@ -162,21 +162,27 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
         //console.log(events)
         //await models.Caddy.deleteRecord()
         for (const event of cancelledDeals) {
+            try{
+                let deal = await DealsController.getDealById(event.args._dealId)
+
+                //Check if the resource associated to that deal has any other deals or need to be removed
+                let dealResource = await DealsController.getDealResource(deal.id)
+                console.log("DealResource", dealResource)
+                let dealsOfResource = await ResourcesController.getNumberOfMatchingDeals(dealResource.resourceId)
+
+                await CaddyController.deleteRecord(deal.id)
+                await DealsController.deleteDealById(event.args._dealId)
+
+                if (dealsOfResource.length === 0) {
+                    console.log("Resource Id", deal.resourceId)
+                    await ResourcesController.deleteResourceById(deal.resourceId)
+                }
+            } catch (e) {
+                console.log("Error when deleting deal", e)
+            }
             //delete deal from caddy and db
 
-            await CaddyController.deleteRecord(getId(event.args._dealId, CURRENT_NETWORK))
-            await DealsController.deleteDealById([getId(event.args._dealId, CURRENT_NETWORK)])
-            await BandwidthController.deleteRecords([getId(event.args._dealId, CURRENT_NETWORK)])
 
-            //Check if the resource associated to that deal has any other deals or need to be removed
-            let marketplace = new Marketplace()
-            let deal = await marketplace.getDealById({ marketplaceId: env.MARKETPLACE_ID, dealId: event.args._dealId })
-            let dealsOfResource = await ResourcesController.getNumberOfMatchingDeals(deal.resourceId)
-
-            if (dealsOfResource.length === 0) {
-                console.log("Resource Id", deal.resourceId)
-                await ResourcesController.deleteResourceById(deal.resourceId)
-            }
         }
     }
 
@@ -313,8 +319,8 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
     }
 }
 
-let getId = (id, network) => {
+/*let getId = (id, network) => {
     return id + "_" + network.network_id + "_" + network.chain_id + "_" + env.MARKETPLACE_ID
-}
+}*/
 
 module.exports = { checkEvents }

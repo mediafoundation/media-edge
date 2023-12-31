@@ -230,6 +230,7 @@ class CaddyController {
             //await Caddy.destroy({ where: { account:caddy.account }})
             return true
         } catch (e){
+            console.log("Error when deleting from caddy:", e)
             let data = e?.response?.data?.error;
             if(data.includes("unknown object")){
                 if(env.debug) console.log('Deal already deleted:', dealId)

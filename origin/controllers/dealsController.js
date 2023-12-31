@@ -7,6 +7,8 @@ const { DealsBandwidthLimit } = require("../models/deals/DealsBandwidthLimit");
 const { DealsLocations} = require("../models/deals/DealsLocations");
 const {DealsResources} = require("../models/associations/DealsResources");
 const {DealsNodeLocations} = require("../models/deals/DealsNodeLocations");
+const {Domains} = require("../models/resources/Domains");
+const {BandwidthsLog} = require("../models/BandwidthsLog");
 
 class DealsController {
     constructor() {}
@@ -137,6 +139,13 @@ class DealsController {
             if (!deal) {
                 return null;
             }
+            await DealsResources.destroy({where: {dealId: id}})
+            await DealsLocations.destroy({where: {dealId: id}})
+            await DealsMetadata.destroy({where: {dealId: id}})
+            await DealsBandwidthLimit.destroy({where: {dealId: id}})
+            await BandwidthsLog.destroy({where: {dealId: id}})
+            await Domains.destroy({where: {dealId: id}})
+
             await deal.destroy();
             return deal;
         } catch (error) {

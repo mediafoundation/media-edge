@@ -12,7 +12,13 @@ const CaddySource = sequelize.define('CaddySource', {
     type: DataTypes.STRING,
     unique: true
   },
-  deal_id: DataTypes.STRING,
+  deal_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'Deals',
+      key: 'id',
+    }
+  }
 })
 
 module.exports = {CaddySource};

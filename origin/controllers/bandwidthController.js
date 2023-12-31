@@ -214,7 +214,7 @@ class BandwidthController {
         try {
             const deletedRows = await BandwidthsLog.destroy({
                 where: {
-                    id: ids
+                    dealId: ids
                 }
             });
             if(env.debug) console.log("Number of deals deleted: ", deletedRows);
