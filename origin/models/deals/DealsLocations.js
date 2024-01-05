@@ -5,10 +5,11 @@ const {Deal} = require("./Deal");
 const DealsLocations = sequelize.define("DealsLocations", {
     id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
     dealId: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.STRING,
         references: {
             model: 'Deal',
-            key: 'id'
+            key: 'id',
+            type: DataTypes.STRING
         }
     },
     nodeId: {

@@ -9,11 +9,12 @@ const BandwidthsLog = sequelize.define('BandwidthsLogs', {
         autoIncrement: true
     },
     dealId: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.STRING,
         allowNull: false,
         references: {
             model: 'Deals',
-            key: 'id'
+            key: 'id',
+            type: DataTypes.STRING
         }
     },
     bytes_sent: {

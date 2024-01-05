@@ -3,7 +3,7 @@ const {sequelize} = require("../index");
 
 const Deal = sequelize.define("Deals",
     {
-        id: {type: DataTypes.BIGINT, primaryKey: true},
+        id: {type: DataTypes.STRING, primaryKey: true},
         offerId: DataTypes.BIGINT,
         clientId: {
             type: DataTypes.BIGINT,

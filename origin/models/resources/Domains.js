@@ -13,10 +13,11 @@ const Domains = sequelize.define("Domains",
             }
         },
         dealId: {
-            type: DataTypes.BIGINT,
+            type: DataTypes.STRING,
             references: {
                 model: "Deals",
-                key: "id"
+                key: "id",
+                type: DataTypes.STRING
             }
         },
     },

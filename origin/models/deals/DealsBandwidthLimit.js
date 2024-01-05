@@ -3,10 +3,11 @@ const DataTypes = require("sequelize");
 const DealsBandwidthLimit = sequelize.define("DealsBandwidthLimit", {
     id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
     dealId: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.STRING,
         references: {
             model: 'Deals',
-            key: 'id'
+            key: 'id',
+            type: DataTypes.STRING
         }
     },
     amount: DataTypes.BIGINT,

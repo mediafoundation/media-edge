@@ -6,10 +6,11 @@ const {DealsBandwidthLimit} = require("./DealsBandwidthLimit");
 const DealsMetadata = sequelize.define("DealsMetadata", {
     id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
     dealId: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.STRING,
         references: {
             model: 'Deals',
-            key: 'id'
+            key: 'id',
+            type: DataTypes.STRING
         }
     },
     label: DataTypes.STRING,
