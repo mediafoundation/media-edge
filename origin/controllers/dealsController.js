@@ -9,12 +9,15 @@ const {DealsResources} = require("../models/associations/DealsResources");
 const {DealsNodeLocations} = require("../models/deals/DealsNodeLocations");
 const {Domains} = require("../models/resources/Domains");
 const {BandwidthsLog} = require("../models/BandwidthsLog");
+const {generateUniqueDealId} = require("../utils/deals");
 
 class DealsController {
     constructor() {}
 
 
-    static async upsertDeal(deal) {
+    static async upsertDeal(deal, chainId) {
+        console.log("Deal in upsert", deal.id, chainId)
+        deal.id = generateUniqueDealId(deal.id, chainId)
         const resource = await Resource.findOne({
             where: {id: deal.resourceId}
         });
@@ -166,6 +169,8 @@ class DealsController {
             } else if (typeof deal[key] === 'bigint') {
                 // If the property is a bigint, parse it to a number
                 result[key] = Number(deal[key]);
+            } else if(key === 'id') {
+                result['dealId'] = generateUniqueDealId(deal[key], network.chainId)
             } else {
                 // Otherwise, just copy the property to the result
                 result[key] = deal[key];
@@ -188,9 +193,9 @@ class DealsController {
         const pad2 = (n) => {
             return (n < 10 ? "0" : "") + n;
         };
-        let formattedCalculatedEnd = `${pad2(d.getDate())}/${pad2(
+        let formattedCalculatedEnd = `${pad2(
             d.getMonth() + 1
-        )}/${pad2(d.getFullYear())} · ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+        )}/${pad2(d.getDate())}/${pad2(d.getFullYear())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
 
         return Date.parse(formattedCalculatedEnd) > Date.now()
     }

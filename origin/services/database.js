@@ -6,6 +6,7 @@ const {z} = require("zod");
 const {DealsMetadataType} = require("../models/deals/DealsMetadata");
 const {ResourcesController} = require("../controllers/resourcesController");
 const {CaddyController} = require("../controllers/caddyController");
+const {generateUniqueDealId} = require("../utils/deals");
 const initDatabase = async function (network) {
     //fetch resources and deals
     let marketplaceViewer = new MarketplaceViewer();
@@ -74,7 +75,7 @@ const initDatabase = async function (network) {
         let formattedDeal = DealsController.formatDeal(deal)
         if(DealsController.dealIsActive(formattedDeal)){
             try {
-                await DealsController.upsertDeal(formattedDeal)
+                await DealsController.upsertDeal(formattedDeal, network.id)
             } catch (e) {
                 console.log("Deal Id: ", deal.id)
                 console.error("Error when upsert to db:", e);
@@ -88,7 +89,7 @@ const initDatabase = async function (network) {
         for(const key of Object.keys(domainObject)){
             for (const domain of domainObject[key]) {
                 let dealsForDomains = deals.filter((deal) => Number(deal.id).toString() === key)
-                await ResourcesController.upsertResourceDomain({resourceId: dealsForDomains[0].resourceId, domain: domain, dealId: parseInt(key)})
+                await ResourcesController.upsertResourceDomain({resourceId: dealsForDomains[0].resourceId, domain: domain, dealId: generateUniqueDealId(Number(key), network.id)})
             }
         }
     }

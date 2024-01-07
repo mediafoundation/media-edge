@@ -1,7 +1,6 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../index");
 const { array, boolean, number, object, string, z } = require("zod");
-const {DealsBandwidthLimit} = require("./DealsBandwidthLimit");
 
 const DealsMetadata = sequelize.define("DealsMetadata", {
     id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},

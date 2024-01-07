@@ -1,5 +1,7 @@
-import env from "../config/env";
+const env = require('../config/env');
 
-function generateUniqueDealId(dealId, chainId) {
-    return `${dealId}_${chainId}_${env.MARKETPLACE_ID}`;
+const generateUniqueDealId = (dealId, chainId) => {
+    return dealId.toString() + "_" + chainId.toString() + "_" + env.MARKETPLACE_ID.toString();
 }
+
+module.exports = {generateUniqueDealId};
