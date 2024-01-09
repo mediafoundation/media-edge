@@ -10,10 +10,21 @@ const {Signer} = require("media-sdk");
 const {DealsController} = require("../controllers/dealsController");
 const {PurgeLogsController} = require("../controllers/purgeLogsController");
 const {CaddyController} = require("../controllers/caddyController");
+const {generateUniqueDealId} = require("../utils/deals");
+const {generateNonce, SiweMessage} = require("siwe");
+const Session = require("express-session");
 
 const signer = new Signer()
 
 app.use(express.json())
+
+app.use(Session({
+  name: 'siwe-quickstart',
+  secret: "siwe-quickstart-secret",
+  resave: true,
+  saveUninitialized: true,
+  cookie: { secure: false, sameSite: false }
+}));
 
 // Define the endpoint for your remote function
 app.post('/', async (req, res) => {
@@ -82,10 +93,19 @@ app.get('/purge', async (req, res) => {
 
 app.get('/getAllDealsEndpoints', async (req, res) => {
   let payload = req.body
+  let signer = new Signer()
+  await signer.checkTypedSignature({
+    address: payload.address,
+    domain: payload.domain,
+    types: payload.types,
+    primaryType: payload.primaryType,
+    message: payload.message,
+    signature: payload.signature
+  })
   try{
     const endpoints = {}
     for (const dealId of payload.dealIds) {
-        endpoints[dealId] = await CaddyController.getHosts(dealId)
+        endpoints[dealId] = await CaddyController.getHosts(generateUniqueDealId(dealId, payload.chainId))
     }
     res.send(endpoints)
   } catch (e){
@@ -103,6 +123,46 @@ app.post('/getDealsEndpoints', async (req, res) => {
     res.send(e)
   }
 })
+
+app.get('/nonce', function (_, res) {
+  res.setHeader('Content-Type', 'text/plain');
+  res.send(generateNonce());
+});
+
+app.post('/verify', async function (req, res) {
+  try {
+    if (!req.body.message) {
+      res.status(422).json({ message: 'Expected prepareMessage object as body.' });
+      return;
+    }
+
+    let SIWEObject = new SiweMessage(req.body.message);
+    const { data: message } = await SIWEObject.verify({ signature: req.body.signature, nonce: req.session.nonce });
+
+    req.session.siwe = message;
+    req.session.cookie.expires = new Date(message.expirationTime);
+    req.session.save(() => res.status(200).send(true));
+  } catch (e) {
+    req.session.siwe = null;
+    req.session.nonce = null;
+    console.error(e);
+    switch (e) {
+      case ErrorTypes.EXPIRED_MESSAGE: {
+        req.session.save(() => res.status(440).json({ message: e.message }));
+        break;
+      }
+      case ErrorTypes.INVALID_SIGNATURE: {
+        req.session.save(() => res.status(422).json({ message: e.message }));
+        break;
+      }
+      default: {
+        req.session.save(() => res.status(500).json({ message: e.message }));
+        break;
+      }
+    }
+  }
+});
+
 
 // Start the server
 app.listen(port, () => {
