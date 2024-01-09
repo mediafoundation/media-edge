@@ -7,6 +7,7 @@ const { z } = require("zod");
 const { DealsMetadataType } = require("../models/deals/DealsMetadata");
 const { BandwidthController } = require("../controllers/bandwidthController");
 const {filterDomainsMatchingDeals} = require("../utils/resources");
+const {generateUniqueDealId} = require("../utils/deals");
 
 let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     //let blockNumber = lastReadBlock + 1
@@ -163,7 +164,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
         //await models.Caddy.deleteRecord()
         for (const event of cancelledDeals) {
             try{
-                let deal = await DealsController.getDealById(event.args._dealId)
+                let deal = await DealsController.getDealById(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK))
 
                 //Check if the resource associated to that deal has any other deals or need to be removed
                 let dealResource = await DealsController.getDealResource(deal.id)
@@ -171,7 +172,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                 let dealsOfResource = await ResourcesController.getNumberOfMatchingDeals(dealResource.resourceId)
 
                 await CaddyController.deleteRecord(deal.id)
-                await DealsController.deleteDealById(event.args._dealId)
+                await DealsController.deleteDealById(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK))
 
                 if (dealsOfResource.length === 0) {
                     console.log("Resource Id", deal.resourceId)
@@ -261,7 +262,7 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
         }
 
         //Upsert deal
-        console.log("Deal", formattedDeal)
+        if(env.debug) console.log("Deal", formattedDeal)
 
         try {
             //DealsController.parseDealMetadata(deal.metadata)
@@ -309,7 +310,7 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
 
         //Upsert bandwidth
         try {
-            let dealFromDb = await DealsController.getDealById(event.args._dealId)
+            let dealFromDb = await DealsController.getDealById(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK))
             let dealForBandwidth = await BandwidthController.formatDataToDb(dealFromDb)
             await BandwidthController.upsertRecord(dealForBandwidth)
         }catch (e) {
