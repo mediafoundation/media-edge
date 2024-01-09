@@ -4,7 +4,7 @@ const cors = require('cors')
 const app = express()
 app.use(cors())
 const port = 8080; // Change this to your desired port number
-const networks = require("./../config/networks")
+//const networks = require("./../config/networks")
 const env = require("./../config/env")
 const {Signer} = require("media-sdk");
 const {DealsController} = require("../controllers/dealsController");
@@ -39,7 +39,7 @@ app.post('/', async (req, res) => {
   
   for (const dealId of payload.deals) {
     try {
-      let network = networks.find((network) => network.chain_id === payload.chainId)
+      //let network = networks.find((network) => network.chain_id === payload.chainId)
       const deal = await DealsController.getDealById(payload.dealId)
 
       //check if address is owner of deal
@@ -93,15 +93,10 @@ app.get('/purge', async (req, res) => {
 
 app.get('/getAllDealsEndpoints', async (req, res) => {
   let payload = req.body
-  let signer = new Signer()
-  await signer.checkTypedSignature({
-    address: payload.address,
-    domain: payload.domain,
-    types: payload.types,
-    primaryType: payload.primaryType,
-    message: payload.message,
-    signature: payload.signature
-  })
+  if (!req.session.siwe) {
+    res.status(401).json({ message: 'You have to first sign_in' });
+    return;
+  }
   try{
     const endpoints = {}
     for (const dealId of payload.dealIds) {
