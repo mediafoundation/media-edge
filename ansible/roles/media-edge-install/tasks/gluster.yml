@@ -62,13 +62,22 @@
             {{ hostvars[host]['ansible_host'] }}:/etc/ssl/caddy
             {% endfor %}
             force
-
+          register: create_volume
+          failed_when: 
+            - "'already exists' not in create_volume.stderr"
+            - create_volume.rc != 0
+            
         - name: Set auth.allow for GlusterFS volume
           command: >
             gluster volume set cert_vol auth.allow {{ ((groups['origin'] | map('extract', hostvars, 'ansible_host') | list) + (groups['edge'] | map('extract', hostvars, 'ansible_host') | list)) | join(',') }}
 
         - name: Start GlusterFS volume
           command: gluster volume start cert_vol
+          when: inventory_hostname in groups["origin"]
+          register: start_volume
+          failed_when: 
+            - "'already started' not in start_volume.stderr"
+            - start_volume.rc != 0
       when: inventory_hostname == groups["origin"][0]
     ##
   when: inventory_hostname in groups["origin"]
@@ -84,10 +93,23 @@
   set_fact:
     mount_opts: "{{ 'defaults,_netdev,ro' + (',backup-volfile-servers=' + backup_origin_servers if groups['origin'] | length > 1 else '') if inventory_hostname in groups['edge'] else 'defaults,_netdev' + (',backup-volfile-servers=' + backup_origin_servers if groups['origin'] | length > 1 else '') }}"
 
+- name: Check if mount point is mounted
+  shell: >
+    mountpoint -q "{{ mount_point }}" && echo 'mounted' || echo 'not mounted'
+  register: mount_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Unmount mount point if mounted
+  shell: umount "{{ mount_point }}"
+  when: "'mounted' in mount_check.stdout"
+  ignore_errors: true
+
 - name: Clear mount point just in case
   file:
     state: absent
     path: "{{ mount_point }}"
+  when: "'not mounted' in mount_check.stdout"
 
 - name: Create mount point
   file:
