@@ -266,7 +266,7 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
 
         try {
             //DealsController.parseDealMetadata(deal.metadata)
-            await DealsController.upsertDeal(formattedDeal)
+            await DealsController.upsertDeal(formattedDeal, CURRENT_NETWORK.id)
         } catch (e) {
             console.log("Deal Id: ", deal.id)
             console.error("Error", e);
