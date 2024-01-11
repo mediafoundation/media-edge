@@ -124,6 +124,21 @@ class DealsController {
         }
     };
 
+    static async getDealOwner(id) {
+
+        try {
+            const deal = await Deal.findByPk(id, {attributes: ['clientId'], raw: true});
+            if (!deal) {
+                return null;
+            }
+            const client = await Client.findByPk(deal.clientId, {attributes: ['account'], raw: true});
+            return client.account;
+        } catch (error) {
+            throw error;
+        }
+    };
+    
+
     static async getDealResource(dealId){
         try {
             return await DealsResources.findOne({

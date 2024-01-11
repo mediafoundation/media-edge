@@ -229,8 +229,14 @@ app.post('/getDealEndpoints', async (req, res) => {
   } else {
     try{
       const endpoints = {}
-      endpoints[req.body.dealId] = await CaddyController.getHosts(req.body.dealId)
-      res.send(endpoints)
+      let owner = DealsController.getDealOwner(req.body.dealId);
+      console.log(owner)
+      if(owner === req.body.message.address){
+        endpoints[req.body.dealId] = await CaddyController.getHosts(req.body.dealId)
+        res.send(endpoints)
+      } else {
+        res.status(401).json({ message: 'You are not the owner of the deal' });
+      }
     } catch (e){
       res.status(500).json({ message: 'Unknown error: '+ e });
     }
