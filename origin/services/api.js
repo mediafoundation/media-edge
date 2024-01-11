@@ -229,8 +229,8 @@ app.post('/getDealEndpoints', async (req, res) => {
   } else {
     try{
       const endpoints = {}
-      let owner = DealsController.getDealOwner(req.body.dealId);
-      console.log(owner)
+      let owner = await DealsController.getDealOwner(req.body.dealId);
+      console.log("owner",owner)
       if(owner === req.body.message.address){
         endpoints[req.body.dealId] = await CaddyController.getHosts(req.body.dealId)
         res.send(endpoints)
