@@ -142,7 +142,7 @@ class DealsController {
     static async getDealResource(dealId){
         try {
             return await DealsResources.findOne({
-                where: {id: dealId},
+                where: {dealId: dealId},
                 attributes: {exclude: ['createdAt', 'updatedAt', 'deletedAt']},
                 raw: true
             });
