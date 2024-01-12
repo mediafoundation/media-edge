@@ -165,9 +165,11 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
         for (const event of cancelledDeals) {
             try{
                 let deal = await DealsController.getDealById(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK))
+                console.log("Deal cancelled", event.args._dealId, generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK), deal)
+
 
                 //Check if the resource associated to that deal has any other deals or need to be removed
-                let dealResource = await DealsController.getDealResource(deal.id)
+                let dealResource = await DealsController.getDealResource(generateUniqueDealId())
                 console.log("DealResource", dealResource)
                 let dealsOfResource = await ResourcesController.getNumberOfMatchingDeals(dealResource.resourceId)
 
