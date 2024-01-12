@@ -164,7 +164,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
         //await models.Caddy.deleteRecord()
         for (const event of cancelledDeals) {
             try{
-                const uniqueId = generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK);
+                const uniqueId = generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK.id);
                 let deal = await DealsController.getDealById(uniqueId)
                 console.log("Deal cancelled", event.args._dealId, uniqueId, deal)
 
