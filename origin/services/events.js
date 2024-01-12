@@ -226,6 +226,8 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
 
         const resource = await resourceInstance.getResource({ id: deal.resourceId, address: env.WALLET })
 
+        console.log("Resource on event", resource)
+
         if(!resource){
             console.log("Resource not found for deal: ", deal.resourceId)
             continue
@@ -293,8 +295,8 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
 
         try{
             let caddyFile = await CaddyController.getRecords()
-            let deal = await DealsController.getDealById(Number(event.args._dealId))
-            let resource = await DealsController.getDealResource(Number(event.args._dealId))
+            let deal = await DealsController.getDealById(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK))
+            let resource = await DealsController.getDealResource(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK))
             console.log("Resource", resource)
             console.log("Deal", deal)
             let domainsForCaddy = domains = await ResourcesController.getResourceDomain(resource.id, deal.id)
