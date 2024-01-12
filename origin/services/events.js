@@ -298,7 +298,7 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
 
         try{
             let caddyFile = await CaddyController.getRecords()
-            console.log("UniqueId",generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK), event.args._dealId, CURRENT_NETWORK.id )
+            console.log("UniqueId",generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK.id), event.args._dealId, CURRENT_NETWORK.id )
             let deal = await DealsController.getDealById(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK.id))
             let resource = await DealsController.getDealResource(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK.id))
             console.log("Resource", resource)
@@ -316,7 +316,7 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
 
         //Upsert bandwidth
         try {
-            let dealFromDb = await DealsController.getDealById(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK))
+            let dealFromDb = await DealsController.getDealById(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK.id))
             let dealForBandwidth = await BandwidthController.formatDataToDb(dealFromDb)
             await BandwidthController.upsertRecord(dealForBandwidth)
         }catch (e) {
