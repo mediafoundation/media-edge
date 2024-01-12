@@ -164,17 +164,18 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
         //await models.Caddy.deleteRecord()
         for (const event of cancelledDeals) {
             try{
-                let deal = await DealsController.getDealById(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK))
-                console.log("Deal cancelled", event.args._dealId, generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK), deal)
+                const uniqueId = generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK);
+                let deal = await DealsController.getDealById(uniqueId)
+                console.log("Deal cancelled", event.args._dealId, uniqueId, deal)
 
 
                 //Check if the resource associated to that deal has any other deals or need to be removed
-                let dealResource = await DealsController.getDealResource(generateUniqueDealId())
+                let dealResource = await DealsController.getDealResource(uniqueId)
                 console.log("DealResource", dealResource)
                 let dealsOfResource = await ResourcesController.getNumberOfMatchingDeals(dealResource.resourceId)
 
-                await CaddyController.deleteRecord(deal.id)
-                await DealsController.deleteDealById(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK))
+                await CaddyController.deleteRecord(uniqueId)
+                await DealsController.deleteDealById(uniqueId)
 
                 if (dealsOfResource.length === 0) {
                     console.log("Resource Id", deal.resourceId)
