@@ -3,6 +3,7 @@ const http = require('http');
 const {CaddyController, queues} = require("../controllers/caddyController");
 const {DealsController} = require("../controllers/dealsController");
 const {ResourcesController} = require("../controllers/resourcesController");
+const {generateUniqueDealId} = require("../utils/deals");
 
 let caddyNeedsUpdate = false
 
@@ -21,7 +22,7 @@ let initCaddy = async function(network){
     for (const deal of dealsFromDB) {
         let matchDealResource = {}
         matchDealResource.deal = deal
-        let dealsResource = await DealsController.getDealResource(deal.id)
+        let dealsResource = await DealsController.getDealResource(generateUniqueDealId(deal.id, network.chain_id))
         matchDealResource.resource = resourcesFromDB.find(resource => resource.id === dealsResource.resourceId)
         matchDealResource.domains = await ResourcesController.getResourceDomain(matchDealResource.resource.id, deal.id)
         matchDealResources.push(matchDealResource)
