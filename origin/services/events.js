@@ -298,8 +298,9 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
 
         try{
             let caddyFile = await CaddyController.getRecords()
-            let deal = await DealsController.getDealById(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK))
-            let resource = await DealsController.getDealResource(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK))
+            console.log("UniqueId",generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK), event.args._dealId, CURRENT_NETWORK.id )
+            let deal = await DealsController.getDealById(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK.id))
+            let resource = await DealsController.getDealResource(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK.id))
             console.log("Resource", resource)
             console.log("Deal", deal)
             let domainsForCaddy = domains = await ResourcesController.getResourceDomain(resource.id, deal.id)
