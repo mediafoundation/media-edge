@@ -185,19 +185,30 @@ app.post('/', async (req, res) => {
 });
 
 app.get('/purge', async (req, res) => {
-  const password = req.query.password
-  const host = req.query.host
-  const path = req.query.path ? req.query.path : '/*'
-  if (password === env.PURGE_PASSWORD) {
-    try {
-      await PurgeLogsController.addRecord("http://"+host + path)
-      res.send('Purge executed successfully!')
-    } catch (e) {
-      console.log(e)
-      res.send(`Error performing purge ${e}`, 500)
-    }
+
+  const data = await checkSignature(req);
+
+  if (!data) {
+    console.log('Bad Signature')
+    res.status(401).json({ message: 'Bad Signature' });
+    return;
   } else {
-    res.send(`Bad password`, 403)
+    try{
+      let owner = await DealsController.getDealOwner(req.body.dealId);
+      if(owner === req.body.message.address){
+
+        const host = req.body.host
+        const path = req.body.path ? req.body.path : '/*'
+        await PurgeLogsController.addRecord("http://"+host + path)
+        res.send('Purge executed successfully!')
+
+        res.json({ success: 'true' });
+      } else {
+        res.status(401).json({ message: 'You are not the owner of the deal' });
+      }
+    } catch (e){
+      res.status(500).json({ message: 'Unknown error: '+ e });
+    }
   }
 });
 
@@ -244,7 +255,27 @@ app.post('/getDealEndpoints', async (req, res) => {
 
 })
 
+app.post('/getDNSConfig', async (req, res) => {
+  const data = await checkSignature(req);
 
+  if (!data) {
+    console.log('Bad Signature')
+    res.status(401).json({ message: 'Bad Signature' });
+    return;
+  } else {
+    try{
+      let owner = await DealsController.getDealOwner(req.body.dealId);
+      if(owner === req.body.message.address){
+        res.json({ cname: 'cname.'+env.hosts[0], a_record: '123.45.67.89'});
+      } else {
+        res.status(401).json({ message: 'You are not the owner of the deal' });
+      }
+    } catch (e){
+      res.status(500).json({ message: 'Unknown error: '+ e });
+    }
+  }
+
+})
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
