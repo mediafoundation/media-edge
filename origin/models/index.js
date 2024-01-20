@@ -16,10 +16,12 @@ if (process.env.NODE_ENV === "testing") {
     });
 }
 
+const DECIMALS_DIGITS = 50
+
 sequelize.authenticate().then(() => {
     console.log('[+] Database connection has been established successfully.')
 }).catch( _ => {
     console.error('[-] Unable to connect to the database.')
 });
 
-module.exports = {sequelize}
+module.exports = {sequelize, DECIMALS_DIGITS}
