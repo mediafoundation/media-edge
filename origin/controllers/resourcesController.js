@@ -31,7 +31,7 @@ class ResourcesController {
                 where: {
                     resourceId: resourceDomain.resourceId,
                     dealId: resourceDomain.dealId,
-                    domain: resourceDomain.domain
+                    //domain: resourceDomain.domain
                 },
                 defaults: resourceDomain
             });

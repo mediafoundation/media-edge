@@ -1,6 +1,7 @@
 const {ResourcesController} = require('../../controllers/resourcesController');
 const {resetDB} = require("../../utils/resetDB");
 const {DealsController} = require("../../controllers/dealsController");
+const {generateUniqueDealId} = require("../../utils/deals");
 
 const mockResource = {
     id: 1,
@@ -41,7 +42,7 @@ const mockDeal = {
 const mockDomain = {
     domain: 'example.com',
     resourceId: 1,
-    dealId: 1
+    dealId: generateUniqueDealId(1, 1)
 };
 describe('ResourcesController', () => {
     beforeAll(async () => {
@@ -79,7 +80,7 @@ describe('ResourcesController', () => {
     describe('upsertResourceDomain', () => {
         it('should create a new domain if it does not exist', async () => {
             await DealsController.parseDealMetadata(mockDeal.terms.metadata)
-            await DealsController.upsertDeal(DealsController.formatDeal(mockDeal))
+            await DealsController.upsertDeal(DealsController.formatDeal(mockDeal), 1)
 
 
             let result = await ResourcesController.upsertResourceDomain(mockDomain)
@@ -90,7 +91,7 @@ describe('ResourcesController', () => {
         });
 
         it('should update an existing domain if it exists', async () => {
-            const newDomain = {resourceId: 1, domain: 'example2.com', dealId: 1};
+            const newDomain = {resourceId: 1, domain: 'example2.com', dealId: generateUniqueDealId(1, 1)};
 
             let result = await ResourcesController.upsertResourceDomain(newDomain)
 
