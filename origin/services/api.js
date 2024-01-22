@@ -6,9 +6,10 @@ const {Signer} = require("media-sdk");
 const {DealsController} = require("../controllers/dealsController");
 const {PurgeLogsController} = require("../controllers/purgeLogsController");
 const {CaddyController} = require("../controllers/caddyController");
-const {generateUniqueDealId} = require("../utils/deals");
+const {generateUniqueDealId, recoverOriginalDataFromUniqueDealId} = require("../utils/deals");
 const {generateNonce, SiweMessage, SiweErrorType} = require("siwe");
 const Session = require("express-session");
+const {manageDealCreatedOrAccepted} = require("./events");
 
 /* const helmet = require('helmet'); */
 
@@ -60,7 +61,6 @@ app.post('/me', async (req, res) => {
   if (!data) {
     console.log('Bad Signature')
     res.status(401).json({ message: 'Bad Signature' });
-    return;
   } else {
     res.status(200)
     .json({
@@ -191,7 +191,6 @@ app.get('/purge', async (req, res) => {
   if (!data) {
     console.log('Bad Signature')
     res.status(401).json({ message: 'Bad Signature' });
-    return;
   } else {
     try{
       let owner = await DealsController.getDealOwner(req.body.dealId);
@@ -236,7 +235,6 @@ app.post('/getDealEndpoints', async (req, res) => {
   if (!data) {
     console.log('Bad Signature')
     res.status(401).json({ message: 'Bad Signature' });
-    return;
   } else {
     try{
       const endpoints = {}
@@ -261,7 +259,6 @@ app.post('/getDNSConfig', async (req, res) => {
   if (!data) {
     console.log('Bad Signature')
     res.status(401).json({ message: 'Bad Signature' });
-    return;
   } else {
     try{
       let owner = await DealsController.getDealOwner(req.body.dealId);
@@ -275,6 +272,13 @@ app.post('/getDNSConfig', async (req, res) => {
     }
   }
 
+})
+
+app.post('/syncDeal', async (req, res) => {
+    const {dealId} = req.body
+    const splitIds = recoverOriginalDataFromUniqueDealId(dealId)
+    await manageDealCreatedOrAccepted(splitIds.marketplaceId, splitIds.dealId, splitIds.chainId)
+    res.status(200).send('Deal synced successfully!')
 })
 // Start the server
 app.listen(port, () => {
