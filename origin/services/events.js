@@ -156,7 +156,9 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     }
 
     if (typeof createdDeals !== "undefined" && createdDeals.length > 0) {
-        await manageDealCreatedOrAccepted(createdDeals, CURRENT_NETWORK)
+        for (const createdDeal of createdDeals) {
+            await manageDealCreatedOrAccepted(createdDeal.args._marketplaceId, createdDeal.args._dealId, CURRENT_NETWORK)
+        }
     }
 
     if (typeof cancelledDeals !== "undefined" && cancelledDeals.length > 0) {
@@ -191,13 +193,16 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     }
 
     if (typeof acceptedDeals !== "undefined" && acceptedDeals.length > 0) {
-        await manageDealCreatedOrAccepted(acceptedDeals, CURRENT_NETWORK)
+        //await manageDealCreatedOrAccepted(acceptedDeals, CURRENT_NETWORK)
+        for (const acceptedDeal of acceptedDeals) {
+            await manageDealCreatedOrAccepted(acceptedDeal.args._marketplaceId, acceptedDeal.args._dealId, CURRENT_NETWORK)
+        }
     }
 
     return blockNumber
 }
 
-let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
+/*let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
     for (const event of events) {
         if(Number(event.args._marketplaceId) !== env.MARKETPLACE_ID) continue
         let marketplace = new Marketplace()
@@ -325,10 +330,138 @@ let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
         }
 
     }
+}*/
+
+let manageDealCreatedOrAccepted = async (marketplaceId, dealId, CURRENT_NETWORK) => {
+
+    if(Number(marketplaceId) !== env.MARKETPLACE_ID) return
+    let marketplace = new Marketplace()
+    let resourceInstance = new Resources()
+    const deal = await marketplace.getDealById({ marketplaceId: env.MARKETPLACE_ID, dealId: Number(dealId) })
+
+    //Parse deal metadata
+    try{
+        DealsController.parseDealMetadata(deal.terms.metadata)
+    } catch (e) {
+        if (e instanceof z.ZodError) {
+            console.log("Deal Id: ", deal.id)
+            console.error("Metadata Validation failed!\n", "Expected: ", DealsMetadataType.keyof()._def.values, " Got: ", deal.metadata);
+        }
+
+        else {
+            console.log("Deal Id: ", deal.id)
+            console.error("Error", e);
+            return
+        }
+    }
+
+    //Check if deal is active
+    let formattedDeal = DealsController.formatDeal(deal)
+    if (DealsController.dealIsActive(formattedDeal) === false || formattedDeal.active === false){
+        console.log("Deal is not active: ", formattedDeal.id)
+        return
+    }
+
+    const resource = await resourceInstance.getResource({ id: deal.resourceId, address: env.WALLET })
+
+    console.log("Resource on event", resource)
+
+    if(!resource){
+        console.log("Resource not found for deal: ", deal.resourceId)
+        return
+    }
+
+    let filteredDomains = []
+    //parse deal metadata
+
+    //Upsert resource
+
+    try{
+        let attr = JSON.parse(resource.encryptedData)
+        let decryptedSharedKey = await Encryption.ethSigDecrypt(
+            resource.encryptedSharedKey,
+            env.PRIVATE_KEY
+        );
+
+        let decrypted = Encryption.decrypt(
+            decryptedSharedKey,
+            attr.iv,
+            attr.tag,
+            attr.encryptedData
+        );
+
+        let data = JSON.parse(decrypted)
+        await ResourcesController.upsertResource({ id: resource.id, owner: resource.owner, ...data })
+
+        if(data.domains) filteredDomains = filterDomainsMatchingDeals(data.domains, [Number(deal.id)])
+
+        console.log("Filtered domains", filteredDomains)
+    }catch (e) {
+        console.log("Error when upsertResource resource and its domains", e)
+        return
+    }
+
+    //Upsert deal
+    if(env.debug) console.log("Deal", formattedDeal)
+
+    try {
+        //DealsController.parseDealMetadata(deal.metadata)
+        await DealsController.upsertDeal(formattedDeal, CURRENT_NETWORK.id)
+    } catch (e) {
+        console.log("Deal Id: ", deal.id)
+        console.error("Error", e);
+        await ResourcesController.deleteResourceById(Number(resource.id))
+        return
+    }
+
+    let domains = filteredDomains[Number(formattedDeal.id)]
+
+    try{
+        if(domains && Object.keys(domains).length > 0){
+            let resourceId = formattedDeal.resourceId
+            let dealId = formattedDeal.id
+            for (const domain of domains) {
+                await ResourcesController.upsertResourceDomain({resourceId: resourceId, domain: domain, dealId: Number(dealId)})
+            }
+        }
+    }catch (e) {
+        console.log("Error upserting domains", e)
+        return
+    }
+
+    //Upsert caddy
+
+    try{
+        let caddyFile = await CaddyController.getRecords()
+        console.log("UniqueId",generateUniqueDealId(Number(dealId), CURRENT_NETWORK.id), dealId, CURRENT_NETWORK.id )
+        let deal = await DealsController.getDealById(generateUniqueDealId(Number(dealId), CURRENT_NETWORK.id))
+        let dealResource = await DealsController.getDealResource(generateUniqueDealId(Number(dealId), CURRENT_NETWORK.id))
+        let resource = await ResourcesController.getResourceById(dealResource.resourceId)
+        console.log("Resource", resource)
+        console.log("Deal", deal)
+        let domainsForCaddy = domains = await ResourcesController.getResourceDomain(dealResource.id, deal.id)
+        await CaddyController.addRecords([{
+            resource: resource.dataValues,
+            deal: deal,
+            domains: domainsForCaddy
+        }], caddyFile, CURRENT_NETWORK)
+    }catch (e) {
+        console.log("Error upserting caddy", e)
+        return
+    }
+
+    //Upsert bandwidth
+    try {
+        let dealFromDb = await DealsController.getDealById(generateUniqueDealId(Number(dealId), CURRENT_NETWORK.id))
+        let dealForBandwidth = await BandwidthController.formatDataToDb(dealFromDb)
+        await BandwidthController.upsertRecord(dealForBandwidth)
+    }catch (e) {
+        console.log("Error upserting bandwidth", e)
+    }
 }
 
 /*let getId = (id, network) => {
     return id + "_" + network.network_id + "_" + network.chain_id + "_" + env.MARKETPLACE_ID
 }*/
 
-module.exports = { checkEvents }
+module.exports = { checkEvents, manageDealCreatedOrAccepted }
