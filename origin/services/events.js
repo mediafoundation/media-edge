@@ -439,7 +439,7 @@ let manageDealCreatedOrAccepted = async (marketplaceId, dealId, CURRENT_NETWORK)
         let resource = await ResourcesController.getResourceById(dealResource.resourceId)
         console.log("Resource", resource)
         console.log("Deal", deal)
-        let domainsForCaddy = domains = await ResourcesController.getResourceDomain(dealResource.id, deal.id)
+        let domainsForCaddy = await ResourcesController.getResourceDomain(dealResource.id, deal.id)
         await CaddyController.addRecords([{
             resource: resource.dataValues,
             deal: deal,
