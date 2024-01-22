@@ -3,7 +3,7 @@ const {DataTypes} = require("sequelize");
 
 const CaddySource = sequelize.define('CaddySource', {
     id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.BIGINT,
         primaryKey: true,
         allowNull: false,
         autoIncrement: true

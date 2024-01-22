@@ -1,4 +1,4 @@
-const {sequelize} = require("./index");
+const {sequelize, DECIMALS_DIGITS} = require("./index");
 const { DataTypes } = require("sequelize");
 const {Deal} = require("./deals/Deal");
 
@@ -18,16 +18,16 @@ const BandwidthsLog = sequelize.define('BandwidthsLogs', {
         }
     },
     bytes_sent: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
         allowNull: false,
         defaultValue: 0,
     },
     last_read: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
         allowNull: false,
     },
     period_end: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
         allowNull: false
     },
     is_limited: {
@@ -36,7 +36,7 @@ const BandwidthsLog = sequelize.define('BandwidthsLogs', {
         defaultValue: false
     },
     periods: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
         allowNull: false,
         defaultValue: 1
     }

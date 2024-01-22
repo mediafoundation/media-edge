@@ -184,8 +184,6 @@ class DealsController {
             } else if (typeof deal[key] === 'bigint') {
                 // If the property is a bigint, parse it to a number
                 result[key] = Number(deal[key]);
-            } else if(key === 'id') {
-                result['dealId'] = generateUniqueDealId(deal[key], network.chainId)
             } else {
                 // Otherwise, just copy the property to the result
                 result[key] = deal[key];

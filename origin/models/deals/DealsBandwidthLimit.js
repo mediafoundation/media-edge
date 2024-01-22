@@ -1,5 +1,6 @@
 const sequelize = require("./../index").sequelize;
 const DataTypes = require("sequelize");
+const {DECIMALS_DIGITS} = require("../index");
 const DealsBandwidthLimit = sequelize.define("DealsBandwidthLimit", {
     id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
     dealId: {
@@ -10,7 +11,7 @@ const DealsBandwidthLimit = sequelize.define("DealsBandwidthLimit", {
             type: DataTypes.STRING
         }
     },
-    amount: DataTypes.BIGINT,
+    amount: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
     period: DataTypes.STRING,
     unit: DataTypes.STRING,
 }, {

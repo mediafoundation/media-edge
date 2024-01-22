@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../index");
+const { sequelize, DECIMALS_DIGITS} = require("../index");
 const { array, boolean, number, object, string, z } = require("zod");
 
 const DealsMetadata = sequelize.define("DealsMetadata", {
@@ -14,7 +14,7 @@ const DealsMetadata = sequelize.define("DealsMetadata", {
     },
     label: DataTypes.STRING,
     autoSsl: DataTypes.BOOLEAN,
-    burstSpeed: DataTypes.BIGINT,
+    burstSpeed: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
     apiEndpoint: DataTypes.STRING,
     customCnames: DataTypes.STRING,
 }, {
