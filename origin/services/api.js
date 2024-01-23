@@ -10,6 +10,7 @@ const {generateUniqueDealId, recoverOriginalDataFromUniqueDealId} = require("../
 const {generateNonce, SiweMessage, SiweErrorType} = require("siwe");
 const Session = require("express-session");
 const {manageDealCreatedOrAccepted} = require("./events");
+const psl = require('psl');
 
 /* const helmet = require('helmet'); */
 
@@ -263,7 +264,25 @@ app.post('/getDNSConfig', async (req, res) => {
     try{
       let owner = await DealsController.getDealOwner(req.body.dealId);
       if(owner === req.body.message.address){
-        res.json({ cname: 'cname.'+env.hosts[0], a_record: '123.45.67.89'});
+        if(psl.isValid(req.body.domain)){
+          const parsed = psl.parse(req.body.domain);
+          if(parsed.subdomain){
+            res.json({ 
+              type: 'cname', 
+              name: parsed.domain, 
+              subdomain: parsed.subdomain, 
+              value: 'cname.'+env.hosts[0] 
+            });
+          } else {
+            res.json({ 
+              type: 'a', 
+              name: parsed.domain, 
+              value: '123.45.67.89' 
+            });
+          }
+        } else {
+          res.status(400).json({ message: 'Invalid domain' });
+        }
       } else {
         res.status(401).json({ message: 'You are not the owner of the deal' });
       }
