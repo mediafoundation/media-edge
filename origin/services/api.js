@@ -268,14 +268,14 @@ app.post('/getDNSConfig', async (req, res) => {
           const parsed = psl.parse(req.body.domain);
           if(parsed.subdomain){
             res.json({ 
-              type: 'cname', 
+              type: 'CNAME', 
               name: parsed.domain, 
               subdomain: parsed.subdomain, 
               value: 'cname.'+env.hosts[0] 
             });
           } else {
             res.json({ 
-              type: 'a', 
+              type: 'A', 
               name: parsed.domain, 
               value: '123.45.67.89' 
             });
