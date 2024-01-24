@@ -11,6 +11,7 @@ const {DealsResources} = require("../models/associations/DealsResources");
 const {DealsNodeLocations} = require("../models/deals/DealsNodeLocations");
 const {Domains} = require("../models/resources/Domains");
 const {sequelize} = require("../models");
+const { PurgeLog } = require("../models/purgeLog");
 const resetDB = async () => {
 
     // Drop tables
@@ -37,6 +38,7 @@ const resetDB = async () => {
     await Domains.sync({force: true})
 
     await CaddySource.sync({force: true})
+    await PurgeLog.sync({force: true})
 
     Deal.hasOne(DealsMetadata, {
         foreignKey: 'dealId',
