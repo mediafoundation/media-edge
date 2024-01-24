@@ -185,7 +185,7 @@ app.post('/', async (req, res) => {
 
 });
 
-app.get('/purge', async (req, res) => {
+app.post('/purge', async (req, res) => {
 
   const data = await checkSignature(req);
 
