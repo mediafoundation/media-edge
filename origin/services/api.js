@@ -192,6 +192,7 @@ app.post('/purge', async (req, res) => {
   if (!data) {
     console.log('Bad Signature')
     res.status(401).json({ message: 'Bad Signature' });
+    return;
   } else {
     try{
       let owner = await DealsController.getDealOwner(req.body.dealId);
@@ -210,9 +211,11 @@ app.post('/purge', async (req, res) => {
         res.json({ success: 'true' });
       } else {
         res.status(401).json({ message: 'You are not the owner of the deal' });
+        return;
       }
-    } catch (e){
-      res.status(500).json({ message: 'Unknown error: '+ e });
+    } catch (error){
+      res.status(500).json({message: error});
+      return;
     }
   }
 });
@@ -230,8 +233,9 @@ app.get('/getAllDealsEndpoints', async (req, res) => {
         endpoints[dealId] = await CaddyController.getHosts(generateUniqueDealId(dealId, payload.chainId))
     }
     res.send(endpoints)
-  } catch (e){
-    res.send(e)
+  } catch (error){
+    res.status(500).json({message: error});
+    return;
   }
 })
 
@@ -252,8 +256,9 @@ app.post('/getDealEndpoints', async (req, res) => {
       } else {
         res.status(401).json({ message: 'You are not the owner of the deal' });
       }
-    } catch (e){
-      res.status(500).json({ message: 'Unknown error: '+ e });
+    } catch (error){
+      res.status(500).json({message: error});
+      return;
     }
   }
 
@@ -291,8 +296,9 @@ app.post('/getDNSConfig', async (req, res) => {
       } else {
         res.status(401).json({ message: 'You are not the owner of the deal' });
       }
-    } catch (e){
-      res.status(500).json({ message: 'Unknown error: '+ e });
+    } catch (error){
+      res.status(500).json({message: error});
+      return;
     }
   }
 
