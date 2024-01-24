@@ -210,12 +210,10 @@ app.post('/purge', async (req, res) => {
 
         res.json({ success: 'true' });
       } else {
-        res.status(401).json({ message: 'You are not the owner of the deal' });
-        return;
+        return res.status(401).json({ message: 'You are not the owner of the deal' });
       }
     } catch (error){
-      res.status(500).json({message: error});
-      return;
+      return res.status(500).json({message: error});
     }
   }
 });
@@ -224,8 +222,7 @@ app.post('/purge', async (req, res) => {
 app.get('/getAllDealsEndpoints', async (req, res) => {
   let payload = req.body
   if (!req.session.siwe) {
-    res.status(401).json({ message: 'You have to first sign_in' });
-    return;
+    return res.status(401).json({ message: 'You have to first sign_in' });
   }
   try{
     const endpoints = {}
@@ -234,8 +231,7 @@ app.get('/getAllDealsEndpoints', async (req, res) => {
     }
     res.send(endpoints)
   } catch (error){
-    res.status(500).json({message: error});
-    return;
+    return res.status(500).json({message: error});
   }
 })
 
@@ -254,11 +250,10 @@ app.post('/getDealEndpoints', async (req, res) => {
         endpoints[req.body.dealId] = await CaddyController.getHosts(req.body.dealId)
         res.send(endpoints)
       } else {
-        res.status(401).json({ message: 'You are not the owner of the deal' });
+        return res.status(401).json({ message: 'You are not the owner of the deal' });
       }
     } catch (error){
-      res.status(500).json({message: error});
-      return;
+      return res.status(500).json({message: error});
     }
   }
 
@@ -269,7 +264,7 @@ app.post('/getDNSConfig', async (req, res) => {
 
   if (!data) {
     console.log('Bad Signature')
-    res.status(401).json({ message: 'Bad Signature' });
+    return res.status(401).json({ message: 'Bad Signature' });
   } else {
     try{
       let owner = await DealsController.getDealOwner(req.body.dealId);
@@ -291,14 +286,13 @@ app.post('/getDNSConfig', async (req, res) => {
             });
           }
         } else {
-          res.status(400).json({ message: 'Invalid domain' });
+          return res.status(400).json({ message: 'Invalid domain' });
         }
       } else {
-        res.status(401).json({ message: 'You are not the owner of the deal' });
+        return res.status(401).json({ message: 'You are not the owner of the deal' });
       }
     } catch (error){
-      res.status(500).json({message: error});
-      return;
+      return res.status(500).json({message: error});
     }
   }
 
@@ -308,7 +302,7 @@ app.post('/syncDeal', async (req, res) => {
     const {dealId} = req.body
     const splitIds = recoverOriginalDataFromUniqueDealId(dealId)
     await manageDealCreatedOrAccepted(splitIds.marketplaceId, splitIds.dealId, splitIds.chainId)
-    res.status(200).send('Deal synced successfully!')
+    res.send('Deal synced successfully!')
 })
 // Start the server
 app.listen(port, () => {
