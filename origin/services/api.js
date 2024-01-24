@@ -205,14 +205,14 @@ app.post('/purge', async (req, res) => {
             await PurgeLogsController.addRecord("http://"+host + path)
           }
         }
-        res.send('Purge executed successfully!')
-
+        console.log('Purge executed successfully!')
         res.json({ success: 'true' });
       } else {
-        return res.status(401).json({ message: 'You are not the owner of the deal' });
+        res.status(401).send({ message: 'You are not the owner of the deal' });
       }
     } catch (error){
-      return res.status(500).json({message: error});
+      console.log(error)
+      res.status(500).send({message: error});
     }
   }
 });
@@ -221,7 +221,7 @@ app.post('/purge', async (req, res) => {
 app.get('/getAllDealsEndpoints', async (req, res) => {
   let payload = req.body
   if (!req.session.siwe) {
-    return res.status(401).json({ message: 'You have to first sign_in' });
+    res.status(401).json({ message: 'You have to first sign_in' });
   }
   try{
     const endpoints = {}
@@ -230,7 +230,7 @@ app.get('/getAllDealsEndpoints', async (req, res) => {
     }
     res.send(endpoints)
   } catch (error){
-    return res.status(500).json({message: error});
+    res.status(500).json({message: error});
   }
 })
 
@@ -249,10 +249,10 @@ app.post('/getDealEndpoints', async (req, res) => {
         endpoints[req.body.dealId] = await CaddyController.getHosts(req.body.dealId)
         res.send(endpoints)
       } else {
-        return res.status(401).json({ message: 'You are not the owner of the deal' });
+        res.status(401).json({ message: 'You are not the owner of the deal' });
       }
     } catch (error){
-      return res.status(500).json({message: error});
+      res.status(500).json({message: error});
     }
   }
 
@@ -263,7 +263,7 @@ app.post('/getDNSConfig', async (req, res) => {
 
   if (!data) {
     console.log('Bad Signature')
-    return res.status(401).json({ message: 'Bad Signature' });
+    res.status(401).json({ message: 'Bad Signature' });
   } else {
     try{
       let owner = await DealsController.getDealOwner(req.body.dealId);
@@ -285,13 +285,13 @@ app.post('/getDNSConfig', async (req, res) => {
             });
           }
         } else {
-          return res.status(400).json({ message: 'Invalid domain' });
+          res.status(400).json({ message: 'Invalid domain' });
         }
       } else {
-        return res.status(401).json({ message: 'You are not the owner of the deal' });
+        res.status(401).json({ message: 'You are not the owner of the deal' });
       }
     } catch (error){
-      return res.status(500).json({message: error});
+      res.status(500).json({message: error});
     }
   }
 
