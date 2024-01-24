@@ -191,8 +191,7 @@ app.post('/purge', async (req, res) => {
 
   if (!data) {
     console.log('Bad Signature')
-    res.status(401).json({ message: 'Bad Signature' });
-    return;
+    return res.status(401).json({ message: 'Bad Signature' });
   } else {
     try{
       let owner = await DealsController.getDealOwner(req.body.dealId);
