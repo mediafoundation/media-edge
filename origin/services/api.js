@@ -197,9 +197,14 @@ app.post('/purge', async (req, res) => {
       let owner = await DealsController.getDealOwner(req.body.dealId);
       if(owner === req.body.message.address){
 
-        const host = req.body.host
-        const path = req.body.path ? req.body.path : '/*'
-        await PurgeLogsController.addRecord("http://"+host + path)
+        const paths = req.body.paths ? req.body.paths : '/*'
+        const hostnames = await CaddyController.getHosts(req.body.dealId)
+
+        for(const host of hostnames){
+          for(const path of paths){
+            await PurgeLogsController.addRecord("http://"+host + path)
+          }
+        }
         res.send('Purge executed successfully!')
 
         res.json({ success: 'true' });
