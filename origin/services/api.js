@@ -197,7 +197,7 @@ app.post('/purge', async (req, res) => {
       let owner = await DealsController.getDealOwner(req.body.dealId);
       if(owner === req.body.message.address){
 
-        const paths = req.body.paths ? req.body.paths : '/*'
+        const paths = req.body.paths ? req.body.paths : ['/*']
         const hostnames = await CaddyController.getHosts(req.body.dealId)
 
         for(const host of hostnames){
