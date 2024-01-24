@@ -373,6 +373,21 @@ class CaddyController {
         }
     }
 
+    static async checkARecord(targetDomain,expectedDomain){
+        try {
+            let response = await resolver.query(targetDomain, 'A')
+            if(response.answers.length > 0){
+                let answers = [];
+                response.answers.forEach(ans => answers.push(ans.data))
+                return answers.includes(expectedDomain);
+            }
+            return false
+        } catch (e) {
+            console.log(e)
+            return false
+        }
+    }
+
     static async cleanUpCname(deal_id, cname){
         let added = await this.isCnameAlreadyAdded(cname)
         if(added && added !== deal_id) await this.removeCname(added, cname)
