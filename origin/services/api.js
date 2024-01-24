@@ -271,13 +271,13 @@ app.post('/getDNSConfig', async (req, res) => {
               type: 'CNAME', 
               name: parsed.domain, 
               subdomain: parsed.subdomain, 
-              value: 'cname.'+env.hosts[0] 
+              value: env.cname
             });
           } else {
             res.json({ 
               type: 'A', 
               name: parsed.domain, 
-              value: '123.45.67.89' 
+              value: env.a_record
             });
           }
         } else {
