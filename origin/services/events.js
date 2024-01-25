@@ -102,6 +102,8 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
 
                     let data = JSON.parse(decrypted)
 
+                    console.log("Data from evm on update", data)
+
                     let upsertResourceResult = await ResourcesController.upsertResource({ id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data })
 
                     for (const id of dealIds) {
