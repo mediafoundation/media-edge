@@ -106,12 +106,13 @@ const initDatabase = async function (network) {
     console.log("Filtered domains", filteredDomains)
     //Update domains in resources
     for (const domainObject of filteredDomains) {
-        for(const key of Object.keys(domainObject)){
+        /*for(const key of Object.keys(domainObject)){
             for (const domain of domainObject[key]) {
                 let dealsForDomains = deals.filter((deal) => Number(deal.id).toString() === key)
                 await ResourcesController.upsertResourceDomain({resourceId: dealsForDomains[0].resourceId, domain: domain, dealId: generateUniqueDealId(Number(key), network.id)})
             }
-        }
+        }*/
+        await ResourcesController.upsertResourceDomain({resourceId: domainObject.resourceId, domain: domainObject.domain, dealId: generateUniqueDealId(Number(domainObject.dealId), network.id)})
     }
 
     //Update records in caddy if needed
