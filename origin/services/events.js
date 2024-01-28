@@ -87,6 +87,8 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                     let resources = new Resources()
                     let resourceFromEvm = resources.getResource({ id: event.args._id, address: env.WALLET })
 
+                    console.log("Resource from evm", resourceFromEvm)
+
                     let attr = JSON.parse(resourceFromEvm.encryptedData)
                     let decryptedSharedKey = await Encryption.ethSigDecrypt(
                         resourceFromEvm.encryptedSharedKey,
