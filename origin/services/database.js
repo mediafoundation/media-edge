@@ -51,6 +51,8 @@ const initDatabase = async function (network) {
 
             let data = JSON.parse(decrypted)
 
+            console.log("Resource data", data)
+
             //console.log("Domains", filterDomainsMatchingDeals(data.domains, deals[0].map((deal) => Number(deal.id))))
 
             let resourceForDb = {id: resource.id, owner: resource.owner, ...data}
