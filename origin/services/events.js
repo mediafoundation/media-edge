@@ -71,7 +71,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     if (typeof updatedResources !== "undefined" && updatedResources.length > 0) {
         console.log("Update resource");
         for (const event of updatedResources) {
-            let deals = await ResourcesController.getNumberOfMatchingDeals(
+            let deals = await ResourcesController.getResourcesDeals(
                 event.args._id,
             )
             if (deals.length > 0) {
@@ -179,7 +179,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                 //Check if the resource associated to that deal has any other deals or need to be removed
                 let dealResource = await DealsController.getDealResource(uniqueId)
                 console.log("DealResource", dealResource)
-                let dealsOfResource = await ResourcesController.getNumberOfMatchingDeals(dealResource.resourceId)
+                let dealsOfResource = await ResourcesController.getResourcesDeals(dealResource.resourceId)
 
                 await CaddyController.deleteRecord(uniqueId)
                 await DealsController.deleteDealById(uniqueId)

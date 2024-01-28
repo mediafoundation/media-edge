@@ -1,5 +1,7 @@
 const {Resource} = require("../models/resources/Resource");
 const {Domains} = require("../models/resources/Domains");
+const {DealsResources} = require("../models/associations/DealsResources");
+const {DealsController} = require("./dealsController");
 
 class ResourcesController {
     static upsertResource = async (resource) => {
@@ -129,11 +131,18 @@ class ResourcesController {
         }
     }
 
-    static getNumberOfMatchingDeals = async (resourceId) => {
-        const resource = await Resource.findByPk(resourceId);
+    static getResourcesDeals = async (resourceId) => {
+        const dealsResources = await DealsResources.findAll({where: {resourceId: resourceId}, raw: true});
 
-        if (resource) {
-            return await resource.getDeals()
+        let deals = []
+
+        if (dealsResources) {
+            //return await dealsResources.getDeals()
+            for (const dealsResource of dealsResources) {
+                let deal = await DealsController.getDealOwner(dealsResource.dealId)
+                deals.push(deal)
+            }
+            return deals
         } else {
             throw new Error("Resource not found")
         }
