@@ -107,7 +107,7 @@ class CaddyController {
             if(!dealInFile) {
                 //console.log("Item", item)
                 if(item.domains && item.domains.length !== 0) {
-                    //console.log(item.domains)
+                    console.log(item.domains)
                     await this.addToQueue(queues.Minutely, item.deal.id, item)
                 }
                 payload.push(caddyData)
@@ -323,7 +323,7 @@ class CaddyController {
                 if (!item.retry) item.retry = 0;
                 if (item.retry <= limit) {
                     item.retry++;
-                    if (env.debug) console.log(`Retrying to apply custom domain ${item.domains.domain} (${item.retry})`, item);
+                    if (env.debug) console.log(`Retrying to apply custom domain ${item.domains.domain} (${item.retry})`);
                     const patched = await this.patchRecord(item);
                     if (patched) {
                         if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.domains.domain}`);
