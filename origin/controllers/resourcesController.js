@@ -1,4 +1,4 @@
-const {Resource} = require("../models/resources/Resource");
+const {Resource, ResourceType} = require("../models/resources/Resource");
 const {Domains} = require("../models/resources/Domains");
 const {DealsResources} = require("../models/associations/DealsResources");
 const {DealsController} = require("./dealsController");
@@ -145,6 +145,10 @@ class ResourcesController {
         } else {
             throw new Error("Resource not found")
         }
+    }
+
+    static parseResource = (resource) => {
+        ResourceType.parse(resource)
     }
 }
 

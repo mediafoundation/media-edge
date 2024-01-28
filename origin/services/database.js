@@ -7,7 +7,9 @@ const {DealsMetadataType} = require("../models/deals/DealsMetadata");
 const {ResourcesController} = require("../controllers/resourcesController");
 const {CaddyController} = require("../controllers/caddyController");
 const {generateUniqueDealId} = require("../utils/deals");
+const {ResourceType} = require("../models/resources/Resource");
 const initDatabase = async function (network) {
+
     //fetch resources and deals
     let marketplaceViewer = new MarketplaceViewer();
     let resourcesInstance = new Resources();
@@ -33,31 +35,41 @@ const initDatabase = async function (network) {
     let filteredDomains = []
 
     for (const resource of resources) {
-        let attr = JSON.parse(resource.encryptedData)
-        let decryptedSharedKey = await Encryption.ethSigDecrypt(
-            resource.encryptedSharedKey,
-            env.PRIVATE_KEY
-        );
+        try {
+            let attr = JSON.parse(resource.encryptedData)
+            let decryptedSharedKey = await Encryption.ethSigDecrypt(
+                resource.encryptedSharedKey,
+                env.PRIVATE_KEY
+            );
 
-        let decrypted = await Encryption.decrypt(
-            decryptedSharedKey,
-            attr.iv,
-            attr.tag,
-            attr.encryptedData
-        );
+            let decrypted = Encryption.decrypt(
+                decryptedSharedKey,
+                attr.iv,
+                attr.tag,
+                attr.encryptedData
+            );
 
-        let data = JSON.parse(decrypted)
+            let data = JSON.parse(decrypted)
 
-        //console.log("Domains", filterDomainsMatchingDeals(data.domains, deals[0].map((deal) => Number(deal.id))))
+            //console.log("Domains", filterDomainsMatchingDeals(data.domains, deals[0].map((deal) => Number(deal.id))))
 
-        console.log("Data from resource", data)
+            let resourceForDb = {id: resource.id, owner: resource.owner, ...data}
 
-        if(data.domains) filteredDomains.push(...filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id))))
+            await ResourcesController.parseResource(resourceForDb)
 
-        const upsertResult = await ResourcesController.upsertResource({id: resource.id, owner: resource.owner, ...data})
-        if (upsertResult.originalResource) {
-            let resourceNeedsToBeUpdated = compareOldAndNewResourceOnDB(upsertResult.instance.dataValues, upsertResult.originalResource.dataValues)
-            if (resourceNeedsToBeUpdated) resourcesToBeUpdatedInCaddy.push(upsertResult.instance.dataValues)
+            if(data.domains) filteredDomains.push(...filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id))))
+
+            const upsertResult = await ResourcesController.upsertResource(resourceForDb)
+            if (upsertResult.originalResource) {
+                let resourceNeedsToBeUpdated = compareOldAndNewResourceOnDB(upsertResult.instance.dataValues, upsertResult.originalResource.dataValues)
+                if (resourceNeedsToBeUpdated) resourcesToBeUpdatedInCaddy.push(upsertResult.instance.dataValues)
+            }
+        } catch (e) {
+            if (e instanceof z.ZodError) {
+                console.error("Resource Validation failed!\n", "Expected: ", ResourceType.keyof()._def.values, " Got: ", resource);
+            } else {
+                console.error("Unknown error when upsert resource:", resource.id, e);
+            }
         }
     }
 
