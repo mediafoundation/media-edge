@@ -139,7 +139,7 @@ class ResourcesController {
         if (dealsResources) {
             //return await dealsResources.getDeals()
             for (const dealsResource of dealsResources) {
-                let deal = await DealsController.getDealOwner(dealsResource.dealId)
+                let deal = await DealsController.getDealById(dealsResource.dealId)
                 deals.push(deal)
             }
             return deals

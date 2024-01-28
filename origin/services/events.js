@@ -109,8 +109,8 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                     let upsertResourceResult = await ResourcesController.upsertResource({ id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data })
 
                     for (const deal of deals) {
-                        console.log("Deal id", deal.dataValues.id)
-                        let dealFromDB = await DealsController.getDealById(deal.dataValues.id)
+                        console.log("Deal id", deal)
+                        let dealFromDB = await DealsController.getDealById(deal.id)
                         await CaddyController.upsertRecord(
                             {
                                 resource: upsertResourceResult.instance,
