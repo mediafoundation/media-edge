@@ -42,7 +42,7 @@ const initDatabase = async function (network) {
                 env.PRIVATE_KEY
             );
 
-            let decrypted = Encryption.decrypt(
+            let decrypted = await Encryption.decrypt(
                 decryptedSharedKey,
                 attr.iv,
                 attr.tag,
