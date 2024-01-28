@@ -105,7 +105,9 @@ class CaddyController {
             let dealInFile = caddyFile.find(o => o["@id"] === item.deal.id);
             //if resource is not on caddyfile already, add to payload
             if(!dealInFile) {
+                console.log("Item", item)
                 if(item.domains && item.domains.length !== 0) {
+                    console.log(item.domains)
                     await this.addToQueue(queues.Minutely, item.deal.id, item)
                 }
                 payload.push(caddyData)
