@@ -71,10 +71,10 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     if (typeof updatedResources !== "undefined" && updatedResources.length > 0) {
         console.log("Update resource");
         for (const event of updatedResources) {
-            let dealIds = await ResourcesController.getNumberOfMatchingDeals(
+            let deals = await ResourcesController.getNumberOfMatchingDeals(
                 event.args._id,
             )
-            if (dealIds.length > 0) {
+            if (deals.length > 0) {
                 let resource = await ResourcesController.getResourceById(event.args._id)
                 if (resource !== false) {
                     /*let formattedResource = await ResourcesController.(
@@ -108,13 +108,13 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
 
                     let upsertResourceResult = await ResourcesController.upsertResource({ id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data })
 
-                    for (const id of dealIds) {
-                        console.log("Deal id", id)
-                        let deal = await DealsController.getDealById(id)
+                    for (const deal of deals) {
+                        console.log("Deal id", deal.dataValues.id)
+                        let dealFromDB = await DealsController.getDealById(deal.dataValues.id)
                         await CaddyController.upsertRecord(
                             {
                                 resource: upsertResourceResult.instance,
-                                deal: deal
+                                deal: dealFromDB
                             },
                             CURRENT_NETWORK
                         )
