@@ -79,13 +79,13 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                 if (resource !== false) {
                     /*let formattedResource = await ResourcesController.(
                         resource.resource_id, 
-                        resource.owner, 
+                        resource.owner,
                         resource.data, 
                         CURRENT_NETWORK
                     )*/
 
                     let resources = new Resources()
-                    let resourceFromEvm = resources.getResource({ id: event.args._id, address: env.WALLET })
+                    let resourceFromEvm = await resources.getResource({ id: event.args._id, address: env.WALLET })
 
                     console.log("Resource from evm", resourceFromEvm)
 
