@@ -112,7 +112,7 @@ const initDatabase = async function (network) {
                 await ResourcesController.upsertResourceDomain({resourceId: dealsForDomains[0].resourceId, domain: domain, dealId: generateUniqueDealId(Number(key), network.id)})
             }
         }*/
-        for (const domain of resource) {
+        for (const domain of resource.domains) {
             console.log("Domain", domain, resource)
             await ResourcesController.upsertResourceDomain({resourceId: domainObject.resourceId, domain: domainObject.domain, dealId: generateUniqueDealId(Number(domainObject.dealId), network.id)})
         }
