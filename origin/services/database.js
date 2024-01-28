@@ -59,8 +59,10 @@ const initDatabase = async function (network) {
             await ResourcesController.parseResource(resourceForDb)
 
             if(data.domains) {
-                console.log("Domains", data.domains, deals.map((deal) => Number(deal.id)))
-                filteredDomains.push(...filterDomainsMatchingDeals(data.domains, deals.map((deal) => deal.id)))
+                console.log("Domains", data.domains, deals.map((deal) => deal.id))
+                let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id)))
+                console.log("Filtered domains for deal", filteredDomainsForDeal)
+                filteredDomains.push(...filteredDomainsForDeal)
             }
 
             const upsertResult = await ResourcesController.upsertResource(resourceForDb)
