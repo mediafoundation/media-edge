@@ -7,7 +7,6 @@ const {DealsMetadataType} = require("../models/deals/DealsMetadata");
 const {ResourcesController} = require("../controllers/resourcesController");
 const {CaddyController} = require("../controllers/caddyController");
 const {generateUniqueDealId} = require("../utils/deals");
-const {ResourceType} = require("../models/resources/Resource");
 const initDatabase = async function (network) {
 
     //fetch resources and deals
@@ -59,7 +58,10 @@ const initDatabase = async function (network) {
 
             await ResourcesController.parseResource(resourceForDb)
 
-            if(data.domains) filteredDomains.push(...filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id))))
+            if(data.domains) {
+                console.log("Domains", data.domains, deals.map((deal) => Number(deal.id)))
+                filteredDomains.push(...filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id))))
+            }
 
             const upsertResult = await ResourcesController.upsertResource(resourceForDb)
             if (upsertResult.originalResource) {
