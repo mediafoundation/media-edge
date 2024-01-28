@@ -41,7 +41,7 @@ const initDatabase = async function (network) {
                 env.PRIVATE_KEY
             );
 
-            let decrypted = await Encryption.decrypt(
+            let decrypted = Encryption.decrypt(
                 decryptedSharedKey,
                 attr.iv,
                 attr.tag,
@@ -50,8 +50,6 @@ const initDatabase = async function (network) {
 
             let data = JSON.parse(decrypted)
 
-            console.log("Resource data", data)
-
             //console.log("Domains", filterDomainsMatchingDeals(data.domains, deals[0].map((deal) => Number(deal.id))))
 
             let resourceForDb = {id: resource.id, owner: resource.owner, ...data}
@@ -59,9 +57,7 @@ const initDatabase = async function (network) {
             await ResourcesController.parseResource(resourceForDb)
 
             if(data.domains) {
-                console.log("Domains", data.domains, deals.map((deal) => deal.id))
                 let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id).toString()))
-                console.log("Filtered domains for deal", filteredDomainsForDeal)
                 filteredDomains.push({resourceId: Number(resource.id), domains: filteredDomainsForDeal})
             }
 
@@ -113,7 +109,6 @@ const initDatabase = async function (network) {
             }
         }*/
         for (const domain of resource.domains) {
-            console.log("Domain", domain, resource)
             await ResourcesController.upsertResourceDomain({resourceId: resource.resourceId, domain: domain.host, dealId: generateUniqueDealId(Number(domain.dealId), network.id)})
         }
 
