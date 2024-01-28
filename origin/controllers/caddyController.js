@@ -250,6 +250,7 @@ class CaddyController {
     static async updateCaddyHost(host, item){
         //let cname_is_valid = await this.checkCname(item.domains.domain, host[0]);
         if (true) {
+            console.log("Update caddy host", host, item)
             await this.cleanUpCname(item.id, item.domain);
             host.push(item.domain);
             await CaddySource.findOrCreate({
