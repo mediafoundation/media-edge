@@ -282,19 +282,19 @@ class CaddyController {
             return false;
         }*/
 
-        let host = await this.getHosts(item.deal.id);
+        let host = await this.getHosts(item.id);
         let hostUpdated = await this.updateCaddyHost(host, item);
         if (hostUpdated) {
             try {
                 if (env.debug) console.log('Patching caddy domain', host);
                 await axios.patch(
-                    caddyBaseUrl + 'id/' + item.deal.id + '/match/0/host',
+                    caddyBaseUrl + 'id/' + item.id + '/match/0/host',
                     JSON.stringify(host),
                     caddyReqCfg
                 );
                 return true;
             } catch(_) {
-                console.log("Error patching", item.deal.id);
+                console.log("Error patching", item.id);
                 return false;
             }
         } else {
