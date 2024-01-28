@@ -109,7 +109,7 @@ class CaddyController {
                 if(item.domains && item.domains.length !== 0) {
                     console.log(item.domains)
                     for (const domain of item.domains) {
-                        await this.addToQueue(queues.Minutely, domain.id, domain.domain);
+                        await this.addToQueue(queues.Minutely, item.deal.id, domain.domain);
                     }
                 }
                 payload.push(caddyData)
@@ -250,12 +250,12 @@ class CaddyController {
     static async updateCaddyHost(host, item){
         //let cname_is_valid = await this.checkCname(item.domains.domain, host[0]);
         if (true) {
-            await this.cleanUpCname(item.deal.id, item.domains.domain);
-            host.push(item.domains.domain);
+            await this.cleanUpCname(item.id, item.domain);
+            host.push(item.domain);
             await CaddySource.findOrCreate({
                 where: {
-                    host: item.domains.domain,
-                    deal_id: item.deal.id
+                    host: item.domain,
+                    deal_id: item.id
                 }
             });
             //await obtainAndRenewCertificate({host: item.domains.domain});
@@ -276,23 +276,25 @@ class CaddyController {
     }
 
     static async patchRecord(item){
-        if (item.domains.length !== 0) {
-            let host = await this.getHosts(item.deal.id);
-            let hostUpdated = await this.updateCaddyHost(host, item);
-            if (hostUpdated) {
-                try {
-                    if (env.debug) console.log('Patching caddy domain', host);
-                    await axios.patch(
-                        caddyBaseUrl + 'id/' + item.deal.id + '/match/0/host',
-                        JSON.stringify(host),
-                        caddyReqCfg
-                    );
-                    return true;
-                } catch(_) {
-                    console.log("Error patching", item.deal.id);
-                    return false;
-                }
-            } else {
+        /*if (item.domains.length !== 0) {
+
+        } else {
+            return false;
+        }*/
+
+        let host = await this.getHosts(item.deal.id);
+        let hostUpdated = await this.updateCaddyHost(host, item);
+        if (hostUpdated) {
+            try {
+                if (env.debug) console.log('Patching caddy domain', host);
+                await axios.patch(
+                    caddyBaseUrl + 'id/' + item.deal.id + '/match/0/host',
+                    JSON.stringify(host),
+                    caddyReqCfg
+                );
+                return true;
+            } catch(_) {
+                console.log("Error patching", item.deal.id);
                 return false;
             }
         } else {
