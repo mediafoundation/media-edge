@@ -12,7 +12,7 @@ const resourcesNotMatchingDeal = (resourcesIds, dealsIds) => {
 }
 
 function filterDomainsMatchingDeals(domains, dealIds) {
-    return domains.filter(domain => dealIds.includes(domain.dealId));
+    return domains.filter(domain => dealIds.includes(domain.dealId.toNumber()));
 }
 
 async function filterResourceDomains(resourceId, resourceDomains) {
