@@ -357,7 +357,7 @@ class CaddyController {
 
     static async addToQueue(queue, id, item){
         if (!await this.isInQueue(id)) {
-            queue.push({...item, id});
+            queue.push({item, id});
         }
     }
 
