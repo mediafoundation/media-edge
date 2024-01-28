@@ -62,7 +62,7 @@ const initDatabase = async function (network) {
                 console.log("Domains", data.domains, deals.map((deal) => deal.id))
                 let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id).toString()))
                 console.log("Filtered domains for deal", filteredDomainsForDeal)
-                filteredDomains.push({resourceId: resource.id, domains: filteredDomainsForDeal})
+                filteredDomains.push({resourceId: Number(resource.id), domains: filteredDomainsForDeal})
             }
 
             const upsertResult = await ResourcesController.upsertResource(resourceForDb)
@@ -105,14 +105,18 @@ const initDatabase = async function (network) {
 
     console.log("Filtered domains", filteredDomains)
     //Update domains in resources
-    for (const domainObject of filteredDomains) {
+    for (const resource of filteredDomains) {
         /*for(const key of Object.keys(domainObject)){
             for (const domain of domainObject[key]) {
                 let dealsForDomains = deals.filter((deal) => Number(deal.id).toString() === key)
                 await ResourcesController.upsertResourceDomain({resourceId: dealsForDomains[0].resourceId, domain: domain, dealId: generateUniqueDealId(Number(key), network.id)})
             }
         }*/
-        await ResourcesController.upsertResourceDomain({resourceId: domainObject.resourceId, domain: domainObject.domain, dealId: generateUniqueDealId(Number(domainObject.dealId), network.id)})
+        for (const domain of resource) {
+            console.log("Domain", domain, resource)
+            await ResourcesController.upsertResourceDomain({resourceId: domainObject.resourceId, domain: domainObject.domain, dealId: generateUniqueDealId(Number(domainObject.dealId), network.id)})
+        }
+
     }
 
     //Update records in caddy if needed
