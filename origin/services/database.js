@@ -99,7 +99,6 @@ const initDatabase = async function (network) {
         }
     }
 
-    console.log("Filtered domains", filteredDomains)
     //Update domains in resources
     for (const resource of filteredDomains) {
         /*for(const key of Object.keys(domainObject)){
