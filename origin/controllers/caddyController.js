@@ -323,7 +323,7 @@ class CaddyController {
                 if (!item.retry) item.retry = 0;
                 if (item.retry <= limit) {
                     item.retry++;
-                    if (env.debug) console.log(`Retrying to apply custom domain ${item.domains.domain} (${item.retry})`);
+                    if (env.debug) console.log(`Retrying to apply custom domain ${item.domains.domain} (${item.retry})`, item);
                     const patched = await this.patchRecord(item);
                     if (patched) {
                         if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.domains.domain}`);
