@@ -1,3 +1,5 @@
+const {DealsResources} = require("../models/associations/DealsResources");
+const {recoverOriginalDataFromUniqueDealId} = require("./deals");
 const resourcesNotMatchingDeal = (resourcesIds, dealsIds) => {
     let difference = [];
     let set1 = new Set(dealsIds);
@@ -9,18 +11,22 @@ const resourcesNotMatchingDeal = (resourcesIds, dealsIds) => {
     return difference;
 }
 
-function filterDomainsMatchingDeals(domainsKeys, dealIds) {
-    const newObj = {};
-
-    for (const key of Object.keys(domainsKeys)) {
-        if (dealIds.includes(parseInt(key))) {
-            newObj[key] = domainsKeys[key];
-        } else {
-            delete domainsKeys[key];
-        }
-    }
-
-    return newObj;
+function filterDomainsMatchingDeals(domains, dealIds) {
+    return domains.filter(domain => dealIds.includes(domain.dealId));
 }
 
-module.exports = {resourcesNotMatchingDeal, filterDomainsMatchingDeals}
+async function filterResourceDomains(resourceId, resourceDomains) {
+    let filteredDomains = {}
+    let dealsResources = await DealsResources.findAll({where: {resourceId: resourceId}, raw: true})
+    let dealIds = dealsResources.map(deal => deal.dealId)
+    let formattedDealIds = []
+
+    for (const dealId of dealIds) {
+        formattedDealIds.push(recoverOriginalDataFromUniqueDealId(dealId))
+    }
+
+    filteredDomains = await filterDomainsMatchingDeals(resourceDomains, formattedDealIds)
+    return filteredDomains
+}
+
+module.exports = {resourcesNotMatchingDeal, filterDomainsMatchingDeals, filterResourceDomains}

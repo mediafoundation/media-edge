@@ -16,7 +16,6 @@ class DealsController {
 
 
     static async upsertDeal(deal, chainId) {
-        console.log("Deal in upsert", deal.id, chainId)
         deal.id = generateUniqueDealId(deal.id, chainId)
         const resource = await Resource.findOne({
             where: {id: deal.resourceId}
