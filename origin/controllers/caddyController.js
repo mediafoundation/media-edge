@@ -244,8 +244,8 @@ class CaddyController {
 
 
     static async updateCaddyHost(host, item){
-        let cname_is_valid = await this.checkCname(item.domains.domain, host[0]);
-        if (cname_is_valid) {
+        //let cname_is_valid = await this.checkCname(item.domains.domain, host[0]);
+        if (true) {
             await this.cleanUpCname(item.deal.id, item.domains.domain);
             host.push(item.domains.domain);
             await CaddySource.findOrCreate({
@@ -254,7 +254,7 @@ class CaddyController {
                     deal_id: item.deal.id
                 }
             });
-            await obtainAndRenewCertificate({host: item.domains.domain});
+            //await obtainAndRenewCertificate({host: item.domains.domain});
             return true;
         }
         return false;
