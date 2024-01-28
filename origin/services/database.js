@@ -68,7 +68,7 @@ const initDatabase = async function (network) {
             }
         } catch (e) {
             if (e instanceof z.ZodError) {
-                console.error("Resource Validation failed!\n", "Expected: ", ResourceType.keyof()._def.values, " Got: ", resource);
+                console.error("Resource Validation failed on resource", resource.id);
             } else {
                 console.error("Unknown error when upsert resource:", resource.id, e);
             }

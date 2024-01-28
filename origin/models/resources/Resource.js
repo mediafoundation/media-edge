@@ -26,7 +26,7 @@ const ResourceType = z.object({
     domains: array(object({
         "dealId": string(),
         "host": string()
-    }))
+    })).optional()
 })
 
 module.exports = {Resource, ResourceType};
