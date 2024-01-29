@@ -125,20 +125,23 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
 
                         await ResourcesController.parseResource(resourceForDb)
 
+                        for (const domainToBeDeleted of domainsFromDbNotInFilteredDomains) {
+                            await ResourcesController.deleteResourceDomain(domainToBeDeleted.id)
+                        }
+
                         let upsertResourceResult = await ResourcesController.upsertResource({ id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data })
 
                         for (const resource of filteredDomains) {
                             for (const domain of resource.domains) {
                                 await ResourcesController.upsertResourceDomain({resourceId: resource.resourceId, domain: domain.host, dealId: generateUniqueDealId(Number(domain.dealId), CURRENT_NETWORK.id)})
                             }
-                        }
 
-                        for (const domainToBeDeleted of domainsFromDbNotInFilteredDomains) {
-                            await ResourcesController.deleteResourceDomain(domainToBeDeleted.id)
                         }
 
                         for (const deal of deals) {
+                            console.log("Deal on caddy loop", deal)
                             let dealFromDB = await DealsController.getDealById(deal.id)
+                            console.log("Deal from db", dealFromDB)
                             await CaddyController.upsertRecord(
                                 {
                                     resource: upsertResourceResult.instance,
