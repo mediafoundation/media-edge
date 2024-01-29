@@ -139,14 +139,13 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                         }
 
                         for (const deal of deals) {
-                            console.log("Deal on caddy loop", deal)
                             let dealFromDB = await DealsController.getDealById(deal.id)
-                            console.log("Deal from db", dealFromDB)
+                            let caddyDomain = await ResourcesController.getResourceDomain(deal.resourceId, dealFromDB.id)
                             await CaddyController.upsertRecord(
                                 {
                                     resource: upsertResourceResult.instance,
                                     deal: dealFromDB,
-                                    domains: filteredDomains[0].domains
+                                    domains: caddyDomain
                                 },
                                 CURRENT_NETWORK
                             )
