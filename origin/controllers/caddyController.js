@@ -270,9 +270,9 @@ class CaddyController {
         let host = caddyData.match[0].host;
         let hostUpdated = await this.updateCaddyHost(host, item);
         if (hostUpdated) {
-            if (env.debug) console.log("Added CaddySources for domain:", item.domains.domain, item.resource.id);
+            if (env.debug) console.log("Added CaddySources for domain:", item);
         } else {
-            if (env.debug) console.log("Adding domain to check queue.", item.domains.domain, item.resource.id);
+            if (env.debug) console.log("Adding domain to check queue.", item);
             await this.addToQueue(queues.Minutely, item.deal.id, item);
         }
     }
