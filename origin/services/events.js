@@ -71,7 +71,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     if (typeof updatedResources !== "undefined" && updatedResources.length > 0) {
         for (const event of updatedResources) {
             try {
-                let filteredDomains = []
+                let filteredDomains = {}
 
                 let domainsFromDb = await ResourcesController.getAllResourcesDomains(event.args._id)
 
@@ -106,7 +106,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
 
                         if(data.domains) {
                             let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id).toString()))
-                            filteredDomains.push({resourceId: Number(resource.id), domains: filteredDomainsForDeal})
+                            filteredDomains = ({resourceId: Number(resource.id), domains: filteredDomainsForDeal})
                         }
 
                         console.log("Domains from db before filter", domainsFromDb)
@@ -119,7 +119,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                             });
                         }
 
-                        console.log("Domains from db after filter", domainsFromDb)
+                        console.log("Domains from db after filter", domainsFromDbNotInFilteredDomains)
 
                         await ResourcesController.parseResource(resourceForDb)
 
@@ -131,7 +131,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                             }
                         }
 
-                        for (const domainToBeDeleted of domainsFromDb) {
+                        for (const domainToBeDeleted of domainsFromDbNotInFilteredDomains) {
                             await ResourcesController.deleteResourceDomain(domainToBeDeleted.id)
                         }
 
@@ -141,7 +141,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                                 {
                                     resource: upsertResourceResult.instance,
                                     deal: dealFromDB,
-                                    domains: filteredDomains
+                                    domains: filteredDomains.domains
                                 },
                                 CURRENT_NETWORK
                             )
