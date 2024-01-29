@@ -83,6 +83,22 @@ class ResourcesController {
         }
     }
 
+    static async getAllResourcesDomains(resourceId) {
+        try {
+            return await Domains.findAll({
+                where: {
+                    resourceId: resourceId
+                },
+                attributes: {
+                    exclude: ['createdAt', 'updatedAt', 'deletedAt']
+                },
+                raw: true
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
     static getResources = async () => {
         try {
             return await Resource.findAll({attributes: {exclude: ['createdAt', 'updatedAt', 'deletedAt']}, raw: true});
@@ -112,14 +128,9 @@ class ResourcesController {
         }
     };
 
-    static deleteResourceDomain = async (resourceId, dealId) => {
+    static deleteResourceDomain = async (domainId) => {
         try {
-            const domain = await Domains.findOne({
-                where: {
-                    resourceId: resourceId,
-                    dealId: dealId
-                }
-            });
+            const domain = await Domains.findByPk(domainId)
             if (!domain) {
                 return null;
             }

@@ -73,6 +73,10 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
             try {
                 let filteredDomains = []
 
+                let domainsFromDb = await ResourcesController.getAllResourcesDomains(event.args._id)
+
+                let domainsFromDbNotInFilteredDomains = []
+
                 let deals = await ResourcesController.getResourcesDeals(
                     event.args._id,
                 )
@@ -105,6 +109,18 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                             filteredDomains.push({resourceId: Number(resource.id), domains: filteredDomainsForDeal})
                         }
 
+                        console.log("Domains from db before filter", domainsFromDb)
+
+                        if(domainsFromDb.length > 0){
+                            domainsFromDbNotInFilteredDomains = domainsFromDb.filter(dbDomain => {
+                                return !filteredDomains.some(filteredDomain =>
+                                    filteredDomain.host === dbDomain.domain && filteredDomain.dealId === dbDomain.dealId
+                                );
+                            });
+                        }
+
+                        console.log("Domains from db after filter", domainsFromDb)
+
                         await ResourcesController.parseResource(resourceForDb)
 
                         let upsertResourceResult = await ResourcesController.upsertResource({ id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data })
@@ -113,7 +129,10 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                             for (const domain of resource.domains) {
                                 await ResourcesController.upsertResourceDomain({resourceId: resource.resourceId, domain: domain.host, dealId: generateUniqueDealId(Number(domain.dealId), CURRENT_NETWORK.id)})
                             }
+                        }
 
+                        for (const domainToBeDeleted of domainsFromDb) {
+                            await ResourcesController.deleteResourceDomain(domainToBeDeleted.id)
                         }
 
                         for (const deal of deals) {
