@@ -69,86 +69,70 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     }
 
     if (typeof updatedResources !== "undefined" && updatedResources.length > 0) {
-        console.log("Update resource");
         for (const event of updatedResources) {
-            let deals = await ResourcesController.getResourcesDeals(
-                event.args._id,
-            )
-            if (deals.length > 0) {
-                let resource = await ResourcesController.getResourceById(event.args._id)
-                if (resource !== false) {
-                    /*let formattedResource = await ResourcesController.(
-                        resource.resource_id, 
-                        resource.owner,
-                        resource.data, 
-                        CURRENT_NETWORK
-                    )*/
+            try {
+                let filteredDomains = []
 
-                    let resources = new Resources()
-                    let resourceFromEvm = await resources.getResource({ id: event.args._id, address: env.WALLET })
+                let deals = await ResourcesController.getResourcesDeals(
+                    event.args._id,
+                )
+                if (deals.length > 0) {
+                    let resource = await ResourcesController.getResourceById(event.args._id)
+                    if (resource !== false) {
 
-                    console.log("Resource from evm", resourceFromEvm)
+                        let resources = new Resources()
+                        let resourceFromEvm = await resources.getResource({ id: event.args._id, address: env.WALLET })
 
-                    let attr = JSON.parse(resourceFromEvm.encryptedData)
-                    let decryptedSharedKey = await Encryption.ethSigDecrypt(
-                        resourceFromEvm.encryptedSharedKey,
-                        env.PRIVATE_KEY
-                    );
+                        let attr = JSON.parse(resourceFromEvm.encryptedData)
+                        let decryptedSharedKey = await Encryption.ethSigDecrypt(
+                            resourceFromEvm.encryptedSharedKey,
+                            env.PRIVATE_KEY
+                        );
 
-                    let decrypted = Encryption.decrypt(
-                        decryptedSharedKey,
-                        attr.iv,
-                        attr.tag,
-                        attr.encryptedData
-                    );
+                        let decrypted = Encryption.decrypt(
+                            decryptedSharedKey,
+                            attr.iv,
+                            attr.tag,
+                            attr.encryptedData
+                        );
 
-                    let data = JSON.parse(decrypted)
+                        let data = JSON.parse(decrypted)
 
-                    console.log("Data from evm on update", data)
+                        let resourceForDb = { id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data }
 
-                    let upsertResourceResult = await ResourcesController.upsertResource({ id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data })
+                        if(data.domains) {
+                            let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id).toString()))
+                            filteredDomains.push({resourceId: Number(resource.id), domains: filteredDomainsForDeal})
+                        }
 
-                    for (const deal of deals) {
-                        console.log("Deal id", deal)
-                        let dealFromDB = await DealsController.getDealById(deal.id)
-                        await CaddyController.upsertRecord(
-                            {
-                                resource: upsertResourceResult.instance,
-                                deal: dealFromDB
-                            },
-                            CURRENT_NETWORK
-                        )
+                        await ResourcesController.parseResource(resourceForDb)
 
-                        /*                         //Check if cname is added or deleted
-                                                let caddyRecords = await models.Caddy.getHosts(deal.id, CURRENT_NETWORK)
-                                                let dbRecords = []
-                                                if(formattedResource.domain){
-                                                    dbRecords.push(formattedResource.domain)
-                                                }
-                                                dbRecords.push(...(await models.Caddy.getHosts(deal)))
-                        
-                                                //Check change of domain
-                                                if(!models.Caddy.areArraysEqual(dbRecords, caddyRecords)){
-                                                    await models.Caddy.upsertRecord({
-                                                        resource: formattedResource, 
-                                                        deal: deal.dataValues
-                                                    })
-                                                }
-                                                
-                                                //Check change of resource data
-                                                if(evmRecord.length > 0){
-                                                    if (
-                                                        evmRecord.includes('origin') || 
-                                                        evmRecord.includes('protocol') || 
-                                                        evmRecord.includes('path')
-                                                    ) {
-                                                        await models.Caddy.upsertRecord({
-                                                            resource: formattedResource, 
-                                                            deal: deal
-                                                        })
-                                                    }
-                                                } */
+                        let upsertResourceResult = await ResourcesController.upsertResource({ id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data })
+
+                        for (const resource of filteredDomains) {
+                            for (const domain of resource.domains) {
+                                await ResourcesController.upsertResourceDomain({resourceId: resource.resourceId, domain: domain.host, dealId: generateUniqueDealId(Number(domain.dealId), CURRENT_NETWORK.id)})
+                            }
+
+                        }
+
+                        for (const deal of deals) {
+                            let dealFromDB = await DealsController.getDealById(deal.id)
+                            await CaddyController.upsertRecord(
+                                {
+                                    resource: upsertResourceResult.instance,
+                                    deal: dealFromDB
+                                },
+                                CURRENT_NETWORK
+                            )
+                        }
                     }
+                }
+            } catch (e) {
+                if (e instanceof z.ZodError) {
+                    console.error("Resource Validation failed on resource", event.args._id);
+                } else {
+                    console.error("Unknown error when upsert resource:", event.args._id, e);
                 }
             }
         }
@@ -206,136 +190,6 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
 
     return blockNumber
 }
-
-/*let manageDealCreatedOrAccepted = async (events, CURRENT_NETWORK) => {
-    for (const event of events) {
-        if(Number(event.args._marketplaceId) !== env.MARKETPLACE_ID) continue
-        let marketplace = new Marketplace()
-        let resourceInstance = new Resources()
-        const deal = await marketplace.getDealById({ marketplaceId: env.MARKETPLACE_ID, dealId: Number(event.args._dealId) })
-
-        //Parse deal metadata
-        try{
-            DealsController.parseDealMetadata(deal.terms.metadata)
-        } catch (e) {
-            if (e instanceof z.ZodError) {
-                console.log("Deal Id: ", deal.id)
-                console.error("Metadata Validation failed!\n", "Expected: ", DealsMetadataType.keyof()._def.values, " Got: ", deal.metadata);
-            }
-
-            else {
-                console.log("Deal Id: ", deal.id)
-                console.error("Error", e);
-                continue
-            }
-        }
-
-        //Check if deal is active
-        let formattedDeal = DealsController.formatDeal(deal)
-        if (DealsController.dealIsActive(formattedDeal) === false || formattedDeal.active === false){
-            console.log("Deal is not active: ", formattedDeal.id)
-            continue
-        }
-
-        const resource = await resourceInstance.getResource({ id: deal.resourceId, address: env.WALLET })
-
-        console.log("Resource on event", resource)
-
-        if(!resource){
-            console.log("Resource not found for deal: ", deal.resourceId)
-            continue
-        }
-
-        let filteredDomains = []
-        //parse deal metadata
-
-            //Upsert resource
-
-        try{
-            let attr = JSON.parse(resource.encryptedData)
-            let decryptedSharedKey = await Encryption.ethSigDecrypt(
-                resource.encryptedSharedKey,
-                env.PRIVATE_KEY
-            );
-
-            let decrypted = Encryption.decrypt(
-                decryptedSharedKey,
-                attr.iv,
-                attr.tag,
-                attr.encryptedData
-            );
-
-            let data = JSON.parse(decrypted)
-            await ResourcesController.upsertResource({ id: resource.id, owner: resource.owner, ...data })
-
-            if(data.domains) filteredDomains = filterDomainsMatchingDeals(data.domains, [Number(deal.id)])
-
-            console.log("Filtered domains", filteredDomains)
-        }catch (e) {
-            console.log("Error when upsertResource resource and its domains", e)
-            continue
-        }
-
-        //Upsert deal
-        if(env.debug) console.log("Deal", formattedDeal)
-
-        try {
-            //DealsController.parseDealMetadata(deal.metadata)
-            await DealsController.upsertDeal(formattedDeal, CURRENT_NETWORK.id)
-        } catch (e) {
-            console.log("Deal Id: ", deal.id)
-            console.error("Error", e);
-            await ResourcesController.deleteResourceById(Number(resource.id))
-            continue
-        }
-
-        let domains = filteredDomains[Number(formattedDeal.id)]
-
-        try{
-            if(domains && Object.keys(domains).length > 0){
-                let resourceId = formattedDeal.resourceId
-                let dealId = formattedDeal.id
-                for (const domain of domains) {
-                    await ResourcesController.upsertResourceDomain({resourceId: resourceId, domain: domain, dealId: Number(dealId)})
-                }
-            }
-        }catch (e) {
-            console.log("Error upserting domains", e)
-            continue
-        }
-
-        //Upsert caddy
-
-        try{
-            let caddyFile = await CaddyController.getRecords()
-            console.log("UniqueId",generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK.id), event.args._dealId, CURRENT_NETWORK.id )
-            let deal = await DealsController.getDealById(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK.id))
-            let dealResource = await DealsController.getDealResource(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK.id))
-            let resource = await ResourcesController.getResourceById(dealResource.resourceId)
-            console.log("Resource", resource)
-            console.log("Deal", deal)
-            let domainsForCaddy = domains = await ResourcesController.getResourceDomain(dealResource.id, deal.id)
-            await CaddyController.addRecords([{
-                resource: resource.dataValues,
-                deal: deal,
-                domains: domainsForCaddy
-            }], caddyFile, CURRENT_NETWORK)
-        }catch (e) {
-            console.log("Error upserting caddy", e)
-            continue
-        }
-
-        //Upsert bandwidth
-        try {
-            let dealFromDb = await DealsController.getDealById(generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK.id))
-            let dealForBandwidth = await BandwidthController.formatDataToDb(dealFromDb)
-            await BandwidthController.upsertRecord(dealForBandwidth)
-        }catch (e) {
-            console.log("Error upserting bandwidth", e)
-        }
-
-    }
-}*/
 
 let manageDealCreatedOrAccepted = async (marketplaceId, dealId, CURRENT_NETWORK) => {
 

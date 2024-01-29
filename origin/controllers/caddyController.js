@@ -147,8 +147,8 @@ class CaddyController {
         let newCaddyData = await this.newObject(item.resource, item.deal, network)
 
         //if the resource has a custom cname
-        if(item.resource.domain) {
-            if (env.debug) console.log("Deal has domain:", item.resource.domain)
+        if(item.domains.length !== 0) {
+            if (env.debug) console.log("Deal has domain:", item.domains)
             await this.manageDomain(newCaddyData, item)
         }
 
@@ -276,6 +276,7 @@ class CaddyController {
     }
 
     static async patchRecord(item){
+        console.log("Item on patch record", item)
         /*if (item.domains.length !== 0) {
 
         } else {

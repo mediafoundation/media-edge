@@ -9,7 +9,7 @@ const {CaddyController} = require("../controllers/caddyController");
 const {generateUniqueDealId} = require("../utils/deals");
 const initDatabase = async function (network) {
 
-    //fetch resources and deals
+    // Fetch resources and deals
     let marketplaceViewer = new MarketplaceViewer();
     let resourcesInstance = new Resources();
 
@@ -21,15 +21,22 @@ const initDatabase = async function (network) {
         start: 0,
         steps: 20
     })
+
     let resourcesToBeUpdatedInCaddy = []
 
+    // Check deals and resources are not undefined
+
     if(deals === undefined || resources === undefined) return
+
+    // Filter resources and deals
 
     deals = deals.filter((deal) => deal.status.active === true)
 
     let resourcesWithoutDeal = resourcesNotMatchingDeal(resources.map((resource) => resource.id), deals.map((deal) => deal.resourceId))
 
     resources = resources.filter((resource) => !resourcesWithoutDeal.includes(resource.id))
+
+    // Upsert resources
 
     let filteredDomains = []
 
@@ -49,8 +56,6 @@ const initDatabase = async function (network) {
             );
 
             let data = JSON.parse(decrypted)
-
-            //console.log("Domains", filterDomainsMatchingDeals(data.domains, deals[0].map((deal) => Number(deal.id))))
 
             let resourceForDb = {id: resource.id, owner: resource.owner, ...data}
 
@@ -74,6 +79,8 @@ const initDatabase = async function (network) {
             }
         }
     }
+
+    // Upsert deals
 
     for (const deal of deals) {
         //Parse deal metadata
@@ -99,21 +106,15 @@ const initDatabase = async function (network) {
         }
     }
 
-    //Update domains in resources
+    // Upsert resource domains
     for (const resource of filteredDomains) {
-        /*for(const key of Object.keys(domainObject)){
-            for (const domain of domainObject[key]) {
-                let dealsForDomains = deals.filter((deal) => Number(deal.id).toString() === key)
-                await ResourcesController.upsertResourceDomain({resourceId: dealsForDomains[0].resourceId, domain: domain, dealId: generateUniqueDealId(Number(key), network.id)})
-            }
-        }*/
         for (const domain of resource.domains) {
             await ResourcesController.upsertResourceDomain({resourceId: resource.resourceId, domain: domain.host, dealId: generateUniqueDealId(Number(domain.dealId), network.id)})
         }
 
     }
 
-    //Update records in caddy if needed
+    // Update records in caddy if needed
     for (const resource of resourcesToBeUpdatedInCaddy) {
         for (const deal of deals) {
             await CaddyController.upsertRecord({resource: resource, deal: deal}, network)
