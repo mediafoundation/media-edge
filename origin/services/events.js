@@ -105,7 +105,9 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                         let resourceForDb = { id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data }
 
                         if(data.domains) {
-                            let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id).toString()))
+                            console.log("Domains from evm", data.domains)
+                            let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => deal.id))
+                            console.log("Filtered domains", filteredDomainsForDeal)
                             filteredDomains.push({resourceId: Number(resource.id), domains: filteredDomainsForDeal})
                         }
 
