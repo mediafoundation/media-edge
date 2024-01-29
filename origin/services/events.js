@@ -7,7 +7,7 @@ const { z } = require("zod");
 const { DealsMetadataType } = require("../models/deals/DealsMetadata");
 const { BandwidthController } = require("../controllers/bandwidthController");
 const {filterDomainsMatchingDeals} = require("../utils/resources");
-const {generateUniqueDealId} = require("../utils/deals");
+const {generateUniqueDealId, recoverOriginalDataFromUniqueDealId} = require("../utils/deals");
 
 let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     //let blockNumber = lastReadBlock + 1
@@ -105,8 +105,8 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                         let resourceForDb = { id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data }
 
                         if(data.domains) {
-                            console.log("Domains from evm", data.domains)
-                            let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => deal.id))
+                            console.log("Domains from evm", data.domains, deals.map(deal => recoverOriginalDataFromUniqueDealId(deal.id).dealId.toString()))
+                            let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => recoverOriginalDataFromUniqueDealId(deal.id).dealId.toString()))
                             console.log("Filtered domains", filteredDomainsForDeal)
                             filteredDomains.push({resourceId: Number(resource.id), domains: filteredDomainsForDeal})
                         }
