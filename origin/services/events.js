@@ -71,7 +71,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     if (typeof updatedResources !== "undefined" && updatedResources.length > 0) {
         for (const event of updatedResources) {
             try {
-                let filteredDomains = {}
+                let filteredDomains = []
 
                 let domainsFromDb = await ResourcesController.getAllResourcesDomains(event.args._id)
 
@@ -106,7 +106,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
 
                         if(data.domains) {
                             let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id).toString()))
-                            filteredDomains = ({resourceId: Number(resource.id), domains: filteredDomainsForDeal})
+                            filteredDomains.push({resourceId: Number(resource.id), domains: filteredDomainsForDeal})
                         }
 
                         console.log("Domains from db before filter", domainsFromDb)
@@ -141,7 +141,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                                 {
                                     resource: upsertResourceResult.instance,
                                     deal: dealFromDB,
-                                    domains: filteredDomains.domains
+                                    domains: filteredDomains[0].domains
                                 },
                                 CURRENT_NETWORK
                             )
