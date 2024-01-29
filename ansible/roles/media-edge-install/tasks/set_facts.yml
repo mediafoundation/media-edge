@@ -71,6 +71,16 @@
             private_key: "{{ private_key_input.user_input }}"
       when: private_key is not defined or private_key == "" or private_key == none
 
+    - name: Store origin ip if not defined
+      block:
+        - pause:
+            prompt: "\nEnter your origin ip address"
+            echo: yes
+          register: origin_ip_input
+        - set_fact:
+            origin_ip: "{{ origin_ip_input.user_input }}"
+      when: origin_ip is not defined or origin_ip == "" or origin_ip == none
+
     - name: Store testing if not defined
       block:
         - pause:

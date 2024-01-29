@@ -303,6 +303,18 @@ app.post('/syncDeal', async (req, res) => {
     await manageDealCreatedOrAccepted(splitIds.marketplaceId, splitIds.dealId, splitIds.chainId)
     res.send('Deal synced successfully!')
 })
+
+app.get("/ipAddress", async (req, res) => {
+  const data = await checkSignature(req)
+
+     if (!data) {
+         console.log("Bad Signature")
+         res.status(401).json({ message: "Bad Signature" })
+     } else {
+         res.send({ipAddress: env.ipAddress})
+     }
+
+})
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
