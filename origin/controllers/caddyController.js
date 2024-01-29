@@ -150,7 +150,7 @@ class CaddyController {
         if(item.domains.length !== 0) {
             if (env.debug) console.log("Deal has domains:", item.domains)
             for (const domain of item.domains) {
-                await this.manageDomain(newCaddyData, {id: domain.dealId, item: domain.host})
+                await this.manageDomain(newCaddyData, {id: domain.dealId, item: domain.domain})
             }
         }
 
