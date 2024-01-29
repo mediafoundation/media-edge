@@ -148,8 +148,10 @@ class CaddyController {
 
         //if the resource has a custom cname
         if(item.domains.length !== 0) {
-            if (env.debug) console.log("Deal has domain:", item.domains)
-            await this.manageDomain(newCaddyData, item)
+            if (env.debug) console.log("Deal has domains:", item.domains)
+            for (const domain of item.domains) {
+                await this.manageDomain(newCaddyData, {id: domain.dealId, item: domain.host})
+            }
         }
 
         let recordId = caddyBaseUrl+"id/"+item.deal.id

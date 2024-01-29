@@ -121,7 +121,8 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
                             await CaddyController.upsertRecord(
                                 {
                                     resource: upsertResourceResult.instance,
-                                    deal: dealFromDB
+                                    deal: dealFromDB,
+                                    domains: filteredDomains
                                 },
                                 CURRENT_NETWORK
                             )
