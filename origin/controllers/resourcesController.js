@@ -33,12 +33,14 @@ class ResourcesController {
                 where: {
                     resourceId: resourceDomain.resourceId,
                     dealId: resourceDomain.dealId,
-                    //domain: resourceDomain.domain
+                    domain: resourceDomain.domain
                 },
                 defaults: resourceDomain
             });
 
             let originalDomain = null;
+
+            // todo: record might be always created, so originalDomain will be always null
 
             if (!created) {
                 // If the record already existed, update it
