@@ -113,7 +113,11 @@ const initDatabase = async function (network) {
             let existentDomain = await ResourcesController.doesResourceExist(domain.host)
             let txtRecord = null
             if(existentDomain.length !== 0){
-                txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueDealId(Number(domain.dealId), network.id), network.id, domain.host)
+                let dealIds = existentDomain.map((domain) => domain.dealId)
+                if(!dealIds.includes(generateUniqueDealId(Number(domain.dealId), network.id))){
+                    txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueDealId(Number(domain.dealId), network.id), network.id, domain.host)
+                }
+                //txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueDealId(Number(domain.dealId), network.id), network.id, domain.host)
             }
             await ResourcesController.upsertResourceDomain({
                 resourceId: resource.resourceId,
