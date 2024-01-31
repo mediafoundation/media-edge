@@ -7,6 +7,7 @@ const {DealsMetadataType} = require("../models/deals/DealsMetadata");
 const {ResourcesController} = require("../controllers/resourcesController");
 const {CaddyController} = require("../controllers/caddyController");
 const {generateUniqueDealId} = require("../utils/deals");
+const {generateTXTRecord} = require("../utils/generateSubdomain");
 const initDatabase = async function (network) {
 
     // Fetch resources and deals
@@ -109,10 +110,31 @@ const initDatabase = async function (network) {
     // Upsert resource domains
     for (const resource of filteredDomains) {
         for (const domain of resource.domains) {
-            await ResourcesController.upsertResourceDomain({resourceId: resource.resourceId, domain: domain.host, dealId: generateUniqueDealId(Number(domain.dealId), network.id)})
+            let existentDomain = await ResourcesController.doesResourceExist(domain.host)
+            let txtRecord = null
+            if(existentDomain.length !== 0){
+                txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueDealId(Number(domain.dealId), network.id), network.id, domain.host)
+            }
+            await ResourcesController.upsertResourceDomain({
+                resourceId: resource.resourceId,
+                domain: domain.host,
+                dealId: generateUniqueDealId(Number(domain.dealId), network.id),
+                txtRecord: txtRecord
+            })
         }
 
     }
+
+    // FOR TESTING!!!
+
+    /*let txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueDealId(Number(106), network.id), network.id, "globalsysadmin.com")
+
+    await ResourcesController.upsertResourceDomain({
+        resourceId: 61,
+        domain: "globalsysadmin.com",
+        dealId: generateUniqueDealId(Number(106), network.id),
+        txtRecord: txtRecord
+    })*/
 
     // Update records in caddy if needed
     for (const resource of resourcesToBeUpdatedInCaddy) {

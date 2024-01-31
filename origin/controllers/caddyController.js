@@ -100,6 +100,7 @@ class CaddyController {
 
     static async addRecords (dealsResources, caddyFile, network){
         let payload = []
+        let domains = []
         for(const item of dealsResources) {
             let caddyData = await this.newObject(item.resource, item.deal, network)
             let dealInFile = caddyFile.find(o => o["@id"] === item.deal.id);
@@ -108,7 +109,14 @@ class CaddyController {
                 //console.log("Item", item)
                 if(item.domains && item.domains.length !== 0) {
                     for (const domain of item.domains) {
-                        await this.addToQueue(queues.Minutely, item.deal.id, domain.domain);
+                        //if domains is not already added, patch it directly
+                        if(await this.isCnameAlreadyAdded(domain.domain)) {
+                            await this.addToQueue(queues.Minutely, item.deal.id, domain.domain);
+                        }
+                        else{
+                            //await this.patchRecord({id: item.deal.id, item: domain.domain})
+                            domains.push({id: item.deal.id, item: domain.domain})
+                        }
                     }
                 }
                 payload.push(caddyData)
@@ -117,6 +125,8 @@ class CaddyController {
             }
         }
         //Add to caddy file
+        console.log("Payload", payload.length, payload)
+        console.log("Domains", domains.length, domains)
         try {
             await axios.post(
                 caddyRoutesUrl+"/...",
@@ -124,6 +134,9 @@ class CaddyController {
                 caddyReqCfg
             )
             if (env.debug) console.log('Added to caddy:', payload.length, "deals")
+            for (const domain of domains) {
+                await this.patchRecord(domain)
+            }
         } catch (e){
             console.log("axios error", e)
             return false
@@ -331,7 +344,7 @@ class CaddyController {
                 if (item.retry <= limit) {
                     item.retry++;
                     if (env.debug) console.log(`Retrying to apply custom domain ${item.item} (${item.retry})`);
-                    const patched = await this.patchRecord(item);
+                    //const patched = await this.patchRecord(item);
                     if (patched) {
                         if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.item}`);
                         queue.splice(i, 1);

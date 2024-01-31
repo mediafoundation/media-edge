@@ -33,7 +33,8 @@ class ResourcesController {
                 where: {
                     resourceId: resourceDomain.resourceId,
                     dealId: resourceDomain.dealId,
-                    domain: resourceDomain.domain
+                    domain: resourceDomain.domain,
+                    txtRecord: resourceDomain.txtRecord
                 },
                 defaults: resourceDomain
             });
@@ -97,6 +98,19 @@ class ResourcesController {
                 raw: true
             });
         } catch (error) {
+            throw error;
+        }
+    }
+
+    static async doesResourceExist(domain) {
+        try {
+            return await Domains.findAll({
+                where: {
+                    domain: domain
+                }
+            });
+        }
+        catch (error) {
             throw error;
         }
     }

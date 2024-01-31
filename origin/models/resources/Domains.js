@@ -20,6 +20,8 @@ const Domains = sequelize.define("Domains",
                 type: DataTypes.STRING
             }
         },
+
+        txtRecord: DataTypes.STRING,
     },
     {
         modelName: 'Domains',
