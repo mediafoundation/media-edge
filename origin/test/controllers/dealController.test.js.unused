@@ -1,0 +1,49 @@
+const {DealsController} = require('../../controllers/dealsController');
+const {resetDB} = require("../../utils/resetDB");
+
+// Mock data for the tests
+const mockDeal = {
+    id: 1n,
+    offerId: 0n,
+    client: '0xe2D5992C16b12D2682De9074592973065aA9221F',
+    provider: '0x81974B05Dc9C1E744CD509b2E11F84897373af7d',
+    resourceId: 1n,
+    totalPayment: 0n,
+    blockedBalance: 413728568261783730n,
+    terms: {
+        pricePerSecond: 1n,
+        minDealDuration: 15n,
+        billFullPeriods: false,
+        singlePeriodOnly: false,
+        metadata: '{ "label": "Sample Label", "bandwidthLimit": {         "amount": 500,         "period": "monthly",         "unit": "GB"     },     "autoSsl": true,     "burstSpeed": 1000,     "nodeLocations": ["Location1", "Location2", "Location3"],     "apiEndpoint": "https://api.example.com",     "customCnames": false }'
+    },
+    status: {
+        active: true,
+        createdAt: 1703595348n,
+        acceptedAt: 1703595348n,
+        billingStart: 1703595348n,
+        cancelled: false,
+        cancelledAt: 0n
+    }
+}
+
+describe('DealsController', () => {
+    beforeAll(async () => {
+        await resetDB()
+    })
+
+    describe('upsertDeal', () => {
+        it('should create a new deal if it does not exist', async () => {
+            let formattedDeal = DealsController.formatDeal(mockDeal)
+            let result = await DealsController.upsertDeal(formattedDeal, 1)
+
+            expect(result.instance).toBe(mockDeal)
+        });
+
+        it('should update an existing deal if it exists', async () => {
+            // Test the update of an existing deal
+        });
+    });
+
+    // Add more tests for other methods in the DealsController class
+});

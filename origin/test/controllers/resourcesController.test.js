@@ -90,15 +90,19 @@ describe('ResourcesController', () => {
             expect(result.originalDomain).toBe(null)
         });
 
-        it('should update an existing domain if it exists', async () => {
+        it('should add new record for same combination of dealId and resourceId', async () => {
             const newDomain = {resourceId: 1, domain: 'example2.com', dealId: generateUniqueDealId(1, 1)};
 
             let result = await ResourcesController.upsertResourceDomain(newDomain)
 
-            expect(result.created).toBe(false)
+            expect(result.created).toBe(true)
             expect(result.domain.domain).toBe(newDomain.domain)
-            expect(result.originalDomain.domain).toBe(mockDomain.domain)
-
+            expect(result.originalDomain).toBe(null)
         });
+
+        it("Should be two domains for the resource", async() => {
+            let domains = await ResourcesController.getResourceDomain(1, generateUniqueDealId(1, 1))
+            expect(domains.length).toBe(2)
+        })
     });
 });
