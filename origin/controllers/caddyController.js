@@ -6,6 +6,7 @@ const doh = require('dohjs')
 const resolver = new doh.DohResolver('https://1.1.1.1/dns-query')
 const config = require("../config/app");
 const {CaddySource} = require("../models/caddy");
+const {isHostDomain} = require("../utils/domains");
 
 const queues = {
     Minutely: [],
@@ -109,8 +110,8 @@ class CaddyController {
                 //console.log("Item", item)
                 if(item.domains && item.domains.length !== 0) {
                     for (const domain of item.domains) {
-                        //if domains is not already added, patch it directly
-                        if(await this.isCnameAlreadyAdded(domain.domain)) {
+                        //if domains is not already added and won't be added, patch it directly
+                        if(await this.isCnameAlreadyAdded(domain.domain) || domains.map(domain => domain.item).includes(domain.domain)){
                             await this.addToQueue(queues.Minutely, item.deal.id, domain.domain);
                         }
                         else{
@@ -263,7 +264,7 @@ class CaddyController {
 
     static async updateCaddyHost(host, item){
         //let cname_is_valid = await this.checkCname(item.domains.domain, host[0]);
-        if (true) {
+        try {
             console.log("Update caddy host", host, item)
             await this.cleanUpCname(item.id, item.item);
             host.push(item.item);
@@ -275,8 +276,10 @@ class CaddyController {
             });
             //await obtainAndRenewCertificate({host: item.domains.domain});
             return true;
+        } catch (e) {
+            console.log("Error updating caddy host", e)
+            return false
         }
-        return false;
     }
 
     static async manageDomain(caddyData, item){
@@ -344,17 +347,38 @@ class CaddyController {
                 if (item.retry <= limit) {
                     item.retry++;
                     if (env.debug) console.log(`Retrying to apply custom domain ${item.item} (${item.retry})`);
-                    //const patched = await this.patchRecord(item);
-                    if (patched) {
-                        if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.item}`);
-                        queue.splice(i, 1);
-                    } else if (item.retry === limit) {
-                        if (env.debug) console.log(`Domain exceeded retry limits, sending to next stage: ${item.item}`);
-                        if (current === "Minutely") queues.Hourly.push(item);
-                        else if (current === "Hourly") queues.Daily.push(item);
-                        else if (current === "Daily") queues.Monthly.push(item);
-                        else console.log(`Domain exceeded retry limits, checked for 12 months without restart: ${item.item}`);
-                        queue.splice(i, 1);
+                    try{
+                        let isDomain = isHostDomain(item.item)
+
+                        let hostValid = false
+
+                        if(isDomain) {
+                            hostValid = await this.checkARecord(item.item, env.a_record)
+                        }
+                        else{
+                            hostValid = await this.checkCname(item.item, env.cname)
+                        }
+
+                        if(hostValid){
+                            if(await this.isCnameAlreadyAdded(item.item)){
+                                await this.cleanUpCname(item.id, item.item)
+                            }
+                            let certificateObtained = await obtainAndRenewCertificate({host: item.item});
+
+                            if (certificateObtained) {
+                                if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.item}`);
+                                queue.splice(i, 1);
+                            } else if (item.retry === limit) {
+                                if (env.debug) console.log(`Domain exceeded retry limits, sending to next stage: ${item.item}`);
+                                if (current === "Minutely") queues.Hourly.push(item);
+                                else if (current === "Hourly") queues.Daily.push(item);
+                                else if (current === "Daily") queues.Monthly.push(item);
+                                else console.log(`Domain exceeded retry limits, checked for 12 months without restart: ${item.item}`);
+                                queue.splice(i, 1);
+                            }
+                        }
+                    } catch (e) {
+                        console.log("Error checking queue for item:", item)
                     }
                 }
             }
@@ -420,6 +444,7 @@ class CaddyController {
         try {
             let response = await axios.get(caddyRoutesUrl)
             for (const resource of response.data) {
+                console.log("Response for cnameAlreadyAdded")
                 if (resource.match[0].host.includes(cname)) {
                     if (env.debug) console.log("Cname already added to another deal: "+resource["@id"])
                     return resource["@id"]
