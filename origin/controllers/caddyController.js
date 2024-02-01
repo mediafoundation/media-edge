@@ -370,7 +370,8 @@ class CaddyController {
 
                             if (certificateObtained) {
                                 if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.item}`);
-                                queue.splice(i, 1);
+                                //queue.splice(i, 1);
+                                await this.deleteFromAllQueues(item.item)
                             } else if (item.retry === limit) {
                                 if (env.debug) console.log(`Domain exceeded retry limits, sending to next stage: ${item.item}`);
                                 if (current === "Minutely") queues.Hourly.push(item);
@@ -393,9 +394,9 @@ class CaddyController {
         return Object.values(queues).some(queue => queue.some(item => item.id === id));
     }
 
-    static async deletefromAllQueues(id){
+    static async deleteFromAllQueues(domain){
         for (const queue of Object.values(queues)) {
-            const index = queue.findIndex(item => item.id === id);
+            const index = queue.findIndex(item => item.item === domain);
             if (index !== -1) queue.splice(index, 1);
         }
     }
