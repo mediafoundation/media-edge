@@ -354,7 +354,11 @@ class CaddyController {
                         let hostValid = false
 
                         if(isDomain) {
-                            hostValid = await this.checkARecord(item.item, env.a_record)
+                            for (const aElement of env.a_record) {
+                                hostValid = await this.checkARecord(item.item, aElement)
+                                if(hostValid) break;
+                            }
+                            //hostValid = await this.checkARecord(item.item, env.a_record)
                         }
                         else{
                             hostValid = await this.checkCname(item.item, env.cname)
