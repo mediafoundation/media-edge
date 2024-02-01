@@ -117,6 +117,7 @@ class CaddyController {
                         else{
                             //await this.patchRecord({id: item.deal.id, item: domain.domain})
                             domains.push({id: item.deal.id, item: domain.domain})
+                            await this.addToQueue(queues.Minutely, item.deal.id, domain.domain);
                         }
                     }
                 }
@@ -360,9 +361,7 @@ class CaddyController {
                         }
 
                         if(hostValid){
-                            if(await this.isCnameAlreadyAdded(item.item)){
-                                await this.cleanUpCname(item.id, item.item)
-                            }
+                            await this.cleanUpCname(item.id, item.item);
                             let certificateObtained = await obtainAndRenewCertificate({host: item.item});
 
                             if (certificateObtained) {
@@ -444,7 +443,7 @@ class CaddyController {
         try {
             let response = await axios.get(caddyRoutesUrl)
             for (const resource of response.data) {
-                console.log("Response for cnameAlreadyAdded")
+                //console.log("Response for cnameAlreadyAdded", resource)
                 if (resource.match[0].host.includes(cname)) {
                     if (env.debug) console.log("Cname already added to another deal: "+resource["@id"])
                     return resource["@id"]
