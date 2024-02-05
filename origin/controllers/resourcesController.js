@@ -34,7 +34,7 @@ class ResourcesController {
                     resourceId: resourceDomain.resourceId,
                     dealId: resourceDomain.dealId,
                     domain: resourceDomain.domain,
-                    txtRecord: resourceDomain.txtRecord
+                    //txtRecord: resourceDomain.txtRecord || null
                 },
                 defaults: resourceDomain
             });
@@ -50,7 +50,8 @@ class ResourcesController {
                 domain = await Domains.findOne({
                     where: {
                         resourceId: resourceDomain.resourceId,
-                        dealId: resourceDomain.dealId
+                        dealId: resourceDomain.dealId,
+                        domain: resourceDomain.domain
                     },
                     attributes: {
                         exclude: ['createdAt', 'updatedAt', 'deletedAt']

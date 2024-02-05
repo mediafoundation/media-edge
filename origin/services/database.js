@@ -131,13 +131,12 @@ const initDatabase = async function (network) {
 
      //FOR TESTING!!!
 
-    /*let txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueDealId(Number(106), network.id), network.id, "globalsysadmin.com")
+    let txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueDealId(Number(106), network.id), network.id, "globalsysadmin.com")
 
     await ResourcesController.upsertResourceDomain({
         resourceId: 61,
         domain: "globalsysadmin.com",
-        dealId: generateUniqueDealId(Number(106), network.id),
-        txtRecord: txtRecord
+        dealId: generateUniqueDealId(Number(106), network.id)
     })
 
     await ResourcesController.upsertResourceDomain({
@@ -145,7 +144,7 @@ const initDatabase = async function (network) {
         domain: "globalsysadmin.com",
         dealId: generateUniqueDealId(Number(107), network.id),
         txtRecord: txtRecord
-    })*/
+    })
 
 
     // Update records in caddy if needed
