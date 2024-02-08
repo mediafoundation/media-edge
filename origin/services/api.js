@@ -279,7 +279,7 @@ app.post('/getDNSConfig', async (req, res) => {
             if(txtForDomain !== null){
                 txtData = {
                     type: 'TXT',
-                    name: "_mediafoundation",
+                    name: "_medianetwork",
                     value: generatedTxt
                 }
             }

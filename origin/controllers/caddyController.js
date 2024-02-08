@@ -452,7 +452,7 @@ class CaddyController {
 
     static async checkTxtRecord(targetDomain, expectedTxtRecord){
         try {
-            let response = await resolver.query("_mediafoundation"+targetDomain, 'TXT')
+            let response = await resolver.query("_medianetwork"+targetDomain, 'TXT')
             console.log("Response")
             if(response.answers.length > 0){
                 let answers = [];
