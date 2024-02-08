@@ -276,7 +276,7 @@ app.post('/getDNSConfig', async (req, res) => {
             let deal = await DealsController.getDealResource(req.body.dealId)
             let txtForDomain = await ResourcesController.getDomainTxtRecord(req.body.domain, deal.resourceId, req.body.dealId)
             let txtData;
-            if(txtForDomain !== null){
+            if(txtForDomain[0].txtRecord !== null){
                 txtData = {
                     type: 'TXT',
                     name: "_medianetwork",
