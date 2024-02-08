@@ -307,6 +307,7 @@ app.post('/getDNSConfig', async (req, res) => {
         res.status(401).json({ message: 'You are not the owner of the deal' });
       }
     } catch (error){
+        console.log("Error", error)
       res.status(500).json({message: error});
     }
   }
