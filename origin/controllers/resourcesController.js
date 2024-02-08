@@ -91,8 +91,7 @@ class ResourcesController {
         try {
             return await Domains.findAll({
                 where: {
-                    domain: domain,
-                    dealId: dealId
+                    domain: domain
                 },
                 attributes: {
                     include: ['txtRecord']
