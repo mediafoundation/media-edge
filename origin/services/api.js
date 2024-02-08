@@ -275,30 +275,32 @@ app.post('/getDNSConfig', async (req, res) => {
             let generatedTxt = generateTXTRecord(env.MARKETPLACE_ID, req.body.dealId, req.body.chainId, req.body.domain)
             let deal = await DealsController.getDealResource(req.body.dealId)
             let txtForDomain = await ResourcesController.getDomainTxtRecord(req.body.domain, deal.resourceId, req.body.dealId)
+            let txtData;
             if(txtForDomain !== null){
-                res.json({
-                    txtOptional: false,
+                txtData = {
                     type: 'TXT',
                     name: "_mediafoundation",
                     value: generatedTxt
-                });
+                }
             }
           if(parsed.subdomain){
             res.json({
                 txtOptional: true,
-              type: 'CNAME', 
-              name: parsed.domain, 
-              subdomain: parsed.subdomain, 
-              value: env.cname,
-                txtRecord: generatedTxt
+                type: 'CNAME', 
+                name: parsed.domain, 
+                subdomain: parsed.subdomain, 
+                value: env.cname,
+                txtRecord: generatedTxt,
+                txtData
             });
           } else {
             res.json({
                 txtOptional: true,
-              type: 'A', 
-              name: parsed.domain, 
-              value: env.a_record,
-                txtRecord: generatedTxt
+                type: 'A', 
+                name: parsed.domain, 
+                value: env.a_record,
+                txtRecord: generatedTxt,
+                txtData
             });
           }
         } else {
