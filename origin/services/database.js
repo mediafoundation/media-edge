@@ -110,7 +110,7 @@ const initDatabase = async function (network) {
     // Upsert resource domains
     for (const resource of filteredDomains) {
         for (const domain of resource.domains) {
-            let existentDomain = await ResourcesController.doesResourceExist(domain.host)
+            let existentDomain = await ResourcesController.getDomainByHost(domain.host)
             let txtRecord = null
             if(existentDomain.length !== 0){
                 let dealIds = existentDomain.map((domain) => domain.dealId)

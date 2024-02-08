@@ -87,22 +87,6 @@ class ResourcesController {
         }
     }
 
-    static async getDomainTxtRecord(domain, resourceId, dealId) {
-        try {
-            return await Domains.findAll({
-                where: {
-                    domain: domain
-                },
-                attributes: {
-                    include: ['txtRecord']
-                },
-                raw: true
-            });
-        } catch (error) {
-            throw error;
-        }
-    }
-
     static async getAllResourcesDomains(resourceId) {
         try {
             return await Domains.findAll({
@@ -119,7 +103,7 @@ class ResourcesController {
         }
     }
 
-    static async doesResourceExist(domain) {
+    static async getDomainByHost(domain) {
         try {
             return await Domains.findAll({
                 where: {
