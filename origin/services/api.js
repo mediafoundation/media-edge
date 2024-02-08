@@ -275,7 +275,14 @@ app.post('/getDNSConfig', async (req, res) => {
           let generatedTxt = generateTXTRecord(env.MARKETPLACE_ID, req.body.dealId, req.body.chainId, req.body.domain)
           let deal = await DealsController.getDealResource(req.body.dealId)
           let txtForDomain = await ResourcesController.getDomainTxtRecord(req.body.domain, deal.resourceId, req.body.dealId)
-          let optional = txtForDomain && txtForDomain[0].txtRecord ? false : true
+          let optional = true;
+          try{
+            if(txtForDomain[0].txtRecord){
+              optional = false
+            }
+          } catch(e){
+            console.log(e)
+          }
           let txtData = {
             type: 'TXT',
             name: "_medianetwork",
