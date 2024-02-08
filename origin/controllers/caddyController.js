@@ -112,7 +112,7 @@ class CaddyController {
                     for (const domain of item.domains) {
                         //if domains is not already added and won't be added, patch it directly
                         if(await this.isCnameAlreadyAdded(domain.domain) || domains.map(domain => domain.item).includes(domain.domain)){
-                            await this.addToQueue(queues.Minutely, item.deal.id, domain);
+                            await this.addToQueue(queues.Minutely, domain.id, domain);
                         }
                         else{
                             //await this.patchRecord({id: item.deal.id, item: domain.domain})
@@ -351,14 +351,14 @@ class CaddyController {
                 if (item.retry <= limit) {
                     item.retry++;
                     console.log("Item on check queue", item)
-                    if (env.debug) console.log(`Retrying to apply custom domain ${item.item} (${item.retry})`);
+                    if (env.debug) console.log(`Retrying to apply custom domain ${item.item.domain} (${item.retry})`);
                     try{
                         let isDomain = isHostDomain(item.item.domain)
 
                         let hostValid = false
 
                         if(item.item.txtRecord !== null){
-                            hostValid = this.checkTxtRecord(item.item.domain, item.item.txtRecord)
+                            hostValid = await this.checkTxtRecord(item.item.domain, item.item.txtRecord)
                         }
 
                         else if(isDomain) {
@@ -369,8 +369,10 @@ class CaddyController {
                             //hostValid = await this.checkARecord(item.item, env.a_record)
                         }
                         else{
-                            hostValid = await this.checkCname(item.item, env.cname)
+                            hostValid = await this.checkCname(item.item.domain, env.cname)
                         }
+
+                        console.log("Host valid", hostValid)
 
                         if(hostValid){
                             await this.cleanUpCname(item.id, item.item.domain);
