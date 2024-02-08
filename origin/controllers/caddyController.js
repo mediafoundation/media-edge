@@ -357,7 +357,11 @@ class CaddyController {
 
                         let hostValid = false
 
-                        if(isDomain) {
+                        if(item.item.txtRecord !== null){
+                            hostValid = this.checkTxtRecord(item.item.domain, item.item.txtRecord)
+                        }
+
+                        else if(isDomain) {
                             for (const aElement of env.a_record) {
                                 hostValid = await this.checkARecord(item.item.domain, aElement)
                                 if(hostValid) break;
@@ -436,6 +440,22 @@ class CaddyController {
                 let answers = [];
                 response.answers.forEach(ans => answers.push(ans.data))
                 return answers.includes(expectedDomain);
+            }
+            return false
+        } catch (e) {
+            console.log(e)
+            return false
+        }
+    }
+
+    static async checkTxtRecord(targetDomain, expectedTxtRecord){
+        try {
+            let response = await resolver.query("_mediafoundation"+targetDomain, 'TXT')
+            console.log("Response")
+            if(response.answers.length > 0){
+                let answers = [];
+                response.answers.forEach(ans => answers.push(ans.data))
+                return answers.includes(expectedTxtRecord);
             }
             return false
         } catch (e) {
