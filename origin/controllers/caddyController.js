@@ -408,7 +408,7 @@ class CaddyController {
 
     static async deleteFromAllQueues(domain){
         for (const queue of Object.values(queues)) {
-            const index = queue.findIndex(item => item.item === domain);
+            const index = queue.findIndex(item => item.item.domain === domain);
             if (index !== -1) queue.splice(index, 1);
         }
     }
