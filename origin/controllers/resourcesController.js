@@ -87,6 +87,24 @@ class ResourcesController {
         }
     }
 
+    static async getDomainTxtRecord(domain, resourceId, dealId) {
+        try {
+            return await Domains.findAll({
+                where: {
+                    domain: domain,
+                    resourceId: resourceId,
+                    dealId: dealId
+                },
+                attributes: {
+                    include: ['txtRecord']
+                },
+                raw: true
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
     static async getAllResourcesDomains(resourceId) {
         try {
             return await Domains.findAll({

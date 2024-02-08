@@ -11,6 +11,8 @@ const {generateNonce, SiweMessage, SiweErrorType} = require("siwe");
 const Session = require("express-session");
 const {manageDealCreatedOrAccepted} = require("./events");
 const psl = require('psl');
+const {ResourcesController} = require("../controllers/resourcesController");
+const {generateTXTRecord} = require("../utils/generateSubdomain");
 
 /* const helmet = require('helmet'); */
 
@@ -270,18 +272,32 @@ app.post('/getDNSConfig', async (req, res) => {
       if(owner === req.body.message.address){
         if(psl.isValid(req.body.domain)){
           const parsed = psl.parse(req.body.domain);
+            let txtForDomain = await ResourcesController.getDomainTxtRecord(req.body.domain, req.body.resourceId, req.body.dealId)
+            if(txtForDomain !== null){
+                res.json({
+                    txtOptional: false,
+                    type: 'TXT',
+                    name: "_mediafoundation",
+                    value: txtForDomain
+                });
+            }
+          let generatedTxt = generateTXTRecord(env.MARKETPLACE_ID, req.body.dealId, req.body.chainId, req.body.domain)
           if(parsed.subdomain){
-            res.json({ 
+            res.json({
+                txtOptional: true,
               type: 'CNAME', 
               name: parsed.domain, 
               subdomain: parsed.subdomain, 
-              value: env.cname
+              value: env.cname,
+                txtRecord: generatedTxt
             });
           } else {
-            res.json({ 
+            res.json({
+                txtOptional: true,
               type: 'A', 
               name: parsed.domain, 
-              value: env.a_record
+              value: env.a_record,
+                txtRecord: generatedTxt
             });
           }
         } else {
