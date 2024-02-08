@@ -284,21 +284,17 @@ app.post('/getDNSConfig', async (req, res) => {
           };
           if(parsed.subdomain){
             res.json({
-                txtOptional: true,
                 type: 'CNAME', 
                 name: parsed.domain, 
                 subdomain: parsed.subdomain, 
                 value: env.cname,
-                txtRecord: generatedTxt,
                 txtData
             });
           } else {
             res.json({
-                txtOptional: true,
                 type: 'A', 
                 name: parsed.domain, 
                 value: env.a_record,
-                txtRecord: generatedTxt,
                 txtData
             });
           }
