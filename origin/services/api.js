@@ -272,16 +272,17 @@ app.post('/getDNSConfig', async (req, res) => {
       if(owner === req.body.message.address){
         if(psl.isValid(req.body.domain)){
           const parsed = psl.parse(req.body.domain);
-            let txtForDomain = await ResourcesController.getDomainTxtRecord(req.body.domain, req.body.resourceId, req.body.dealId)
+            let generatedTxt = generateTXTRecord(env.MARKETPLACE_ID, req.body.dealId, req.body.chainId, req.body.domain)
+            let resourceId = await DealsController.getDealResource(req.body.dealId)
+            let txtForDomain = await ResourcesController.getDomainTxtRecord(req.body.domain, resourceId, req.body.dealId)
             if(txtForDomain !== null){
                 res.json({
                     txtOptional: false,
                     type: 'TXT',
                     name: "_mediafoundation",
-                    value: txtForDomain
+                    value: generatedTxt
                 });
             }
-          let generatedTxt = generateTXTRecord(env.MARKETPLACE_ID, req.body.dealId, req.body.chainId, req.body.domain)
           if(parsed.subdomain){
             res.json({
                 txtOptional: true,
