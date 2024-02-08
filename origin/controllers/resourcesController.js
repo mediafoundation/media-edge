@@ -92,7 +92,6 @@ class ResourcesController {
             return await Domains.findAll({
                 where: {
                     domain: domain,
-                    resourceId: resourceId,
                     dealId: dealId
                 },
                 attributes: {
