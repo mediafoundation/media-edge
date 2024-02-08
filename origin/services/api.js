@@ -273,8 +273,7 @@ app.post('/getDNSConfig', async (req, res) => {
         if(psl.isValid(req.body.domain)){
           const parsed = psl.parse(req.body.domain);
           let generatedTxt = generateTXTRecord(env.MARKETPLACE_ID, req.body.dealId, req.body.chainId, req.body.domain)
-          let deal = await DealsController.getDealResource(req.body.dealId)
-          let txtForDomain = await ResourcesController.getDomainTxtRecord(req.body.domain, deal.resourceId, req.body.dealId)
+          let txtForDomain = await ResourcesController.getDomainTxtRecord(req.body.domain, req.body.dealId)
           let optional = true;
           try{
             if(txtForDomain[0].txtRecord){
