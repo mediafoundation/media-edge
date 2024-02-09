@@ -6,9 +6,9 @@ const doh = require('dohjs')
 const resolver = new doh.DohResolver('https://1.1.1.1/dns-query')
 const config = require("../config/app");
 const {CaddySource} = require("../models/caddy");
-const {isARecord} = require("../utils/domains");
+const {isARecord, getHostName} = require("../utils/domains");
 const {generateTXTRecord} = require("../utils/generateSubdomain");
-const psl = require('psl');
+
 
 const queues = {
     Minutely: [],
@@ -380,17 +380,11 @@ class CaddyController {
 
                         console.log("Host valid item", item)
 
-                        let parsed = psl.parse(item.item.domain);
-
-                        console.log("Parsed", parsed)
-
-
+                        console.log(`checking txt record for ${getHostName(item.item.domain)}`)
                         hostValid = await this.checkTxtRecord(
-                          parsed.domain, 
-                          generateTXTRecord(item.owner, item.item.domain)
+                          getHostName(item.item.domain), 
+                          generateTXTRecord(item.owner, getHostName(item.item.domain))
                         )
-
-
 
                         console.log("Host valid", hostValid)
 

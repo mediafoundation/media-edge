@@ -7,5 +7,13 @@ function isARecord(host) {
         throw new Error("Invalid host");
     }
 }
+function getHostName(host) {
+    if(psl.isValid(host)){
+        const parsed = psl.parse(host);
+        return parsed.domain;
+    } else {
+        throw new Error("Invalid host");
+    }
+}
 
-module.exports = {isARecord};
+module.exports = {isARecord, getHostName};
