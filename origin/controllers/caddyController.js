@@ -112,7 +112,7 @@ class CaddyController {
                 if(item.domains && item.domains.length !== 0) {
                     for (const domain of item.domains) {
                       console.log("Domain", domain)
-                      await this.addToQueue(queues.Minutely, domain.id, domain);
+                      await this.addToQueue(queues.Minutely, domain.id, domain, item.resource.owner);
                         //if domains is not already added and won't be added, patch it directly
 /*                         if(
                             await this.isCustomDomainAlreadyAdded(domain.domain) 
@@ -176,7 +176,7 @@ class CaddyController {
         if(item.domains.length !== 0) {
             if (env.debug) console.log("Deal has domains:", item.domains)
             for (const domain of item.domains) {
-                await this.manageDomain(newCaddyData, {id: domain.dealId, item: domain.domain})
+                await this.manageDomain(newCaddyData, {id: domain.dealId, item: domain.domain, owner: item.resource.owner})
             }
         }
 
@@ -301,7 +301,7 @@ class CaddyController {
             if (env.debug) console.log("Added CaddySources for domain:", item);
         } else {
             if (env.debug) console.log("Adding domain to check queue.", item);
-            await this.addToQueue(queues.Minutely, item.deal.id, item);
+            await this.addToQueue(queues.Minutely, item.id, item.item, item.owner);
         }
     }
 
