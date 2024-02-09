@@ -8,6 +8,7 @@ const config = require("../config/app");
 const {CaddySource} = require("../models/caddy");
 const {isARecord} = require("../utils/domains");
 const {generateTXTRecord} = require("../utils/generateSubdomain");
+const psl = require('psl');
 
 const queues = {
     Minutely: [],
