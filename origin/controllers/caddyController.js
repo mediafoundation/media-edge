@@ -469,13 +469,13 @@ class CaddyController {
         return true
     }
 
-    static async isCustomDomainAlreadyAdded(cname){
+    static async isCustomDomainAlreadyAdded(host){
         try {
             let response = await axios.get(caddyRoutesUrl)
             for (const resource of response.data) {
                 //console.log("Response for cnameAlreadyAdded", resource)
-                if (resource.match[0].host.includes(cname)) {
-                    if (env.debug) console.log("Cname already added to another deal: "+resource["@id"])
+                if (resource.match[0].host.includes(host)) {
+                    if (env.debug) console.log(`Domain ${host} already added to another deal: ${resource["@id"]}`)
                     return resource["@id"]
                 }
             }
@@ -486,20 +486,21 @@ class CaddyController {
         }
     }
 
-    static async removeCustomDomain(id, cname){
+    static async removeCustomDomain(id, host){
         try {
             //get all current domains for a given resource
             const hosts = await this.getHosts(id)
-            const hostToRemove = hosts.indexOf(cname)
-            //remove cname from resource
+            const hostToRemove = hosts.indexOf(host)
+            //remove host from resource
             hosts.splice(hostToRemove, 1)
             axios.patch(
                 caddyBaseUrl + 'id/' + id + '/match/0/host',
                 JSON.stringify(hosts),
                 caddyReqCfg
             )
-            //remove cname from CaddySources
-            await CaddySource.destroy({ where: { host:cname } })
+            //remove host from CaddySources
+            await CaddySource.destroy({ where: { host } })
+            if (env.debug) console.log(`Removed domain ${host} from deal ${id}`)
             return true
         } catch (e){
             console.log(e)
