@@ -468,14 +468,15 @@ class CaddyController {
         try {
             let response = await resolver.query("_medianetwork."+targetDomain, 'TXT')
             console.log(`checking txt record for _medianetwork.${targetDomain}`)
-            console.log("Response", response)
             if(response.answers.length > 0){
                 let answers = [];
-                response.answers.forEach(ans => answers.push(ans.data))
+                for (const answer of response.answers) {
+                  answers.push(answer.data)
+                }
+                console.log(`Answers for _medianetwork.${targetDomain}`, answers)
                 return answers.includes(expectedTxtRecord);
             }
-            console.log("answers", answers)
-            return true
+            return false
         } catch (e) {
             console.log(e)
             return false
