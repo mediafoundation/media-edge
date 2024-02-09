@@ -14,6 +14,7 @@ const psl = require('psl');
 const {ResourcesController} = require("../controllers/resourcesController");
 const {generateTXTRecord} = require("../utils/generateSubdomain");
 const {getHostName} = require("../utils/domains");
+const { CaddySource } = require('../models/caddy');
 
 /* const helmet = require('helmet'); */
 
@@ -274,11 +275,16 @@ app.post('/getDNSConfig', async (req, res) => {
         if(psl.isValid(req.body.domain)){
           const parsed = psl.parse(req.body.domain);
           let generatedTxt = generateTXTRecord(owner, getHostName(req.body.domain))
-          let domain = await ResourcesController.getDomainByHost(req.body.domain)
+          let domain = await CaddySource.findOne({
+            where: {
+              host: req.body.domain
+            }
+          })
+            //req.body.domain)
           console.log("domain", domain)
           let optional = true;
           try{
-            if(domain && domain[0].dealId != req.body.dealId){
+            if(domain && domain.deal_id != req.body.dealId){
               optional = false
             }
           } catch(e){
