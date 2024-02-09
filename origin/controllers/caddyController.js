@@ -379,9 +379,14 @@ class CaddyController {
 
                         console.log("Host valid item", item)
 
+                        let parsed = psl.parse(item.item.domain);
+
+                        console.log("Parsed", parsed)
+
+
                         hostValid = await this.checkTxtRecord(
-                          item.item.domain, 
-                          generateTXTRecord("owner", item.item.domain)
+                          parsed.domain, 
+                          generateTXTRecord(item.owner, item.item.domain)
                         )
 
 
@@ -466,8 +471,7 @@ class CaddyController {
 
     static async checkTxtRecord(targetDomain, expectedTxtRecord){
         try {
-            let response = await resolver.query("_medianetwork"+targetDomain, 'TXT')
-            console.log("Response")
+            let response = await resolver.query("_medianetwork."+targetDomain, 'TXT')
             if(response.answers.length > 0){
                 let answers = [];
                 response.answers.forEach(ans => answers.push(ans.data))
