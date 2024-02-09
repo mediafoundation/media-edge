@@ -363,7 +363,7 @@ class CaddyController {
                     if (env.debug) console.log(`Retrying to apply custom domain ${item.item.domain} (${item.retry})`);
                     try{
 
-                        let hostValid = await isRecordPointingCorrectly(item.item.domain);
+                        let hostValid = await this.isRecordPointingCorrectly(item.item.domain);
  /*                        let isA = isARecord(item.item.domain)
 
                         let hostValid = false
