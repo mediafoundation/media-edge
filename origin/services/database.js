@@ -64,7 +64,7 @@ const initDatabase = async function (network) {
 
             if(data.domains) {
                 let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id).toString()))
-                filteredDomains.push({resourceId: Number(resource.id), domains: filteredDomainsForDeal})
+                filteredDomains.push({resourceId: Number(resource.id), owner: resource.owner, domains: filteredDomainsForDeal})
             }
 
             const upsertResult = await ResourcesController.upsertResource(resourceForDb)
@@ -115,7 +115,7 @@ const initDatabase = async function (network) {
             if(existentDomain.length !== 0){
                 let dealIds = existentDomain.map((domain) => domain.dealId)
                 if(!dealIds.includes(generateUniqueDealId(Number(domain.dealId), network.id))){
-                    txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueDealId(Number(domain.dealId), network.id), network.id, domain.host)
+                    txtRecord = generateTXTRecord(resource.owner, domain.host)
                 }
                 //txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueDealId(Number(domain.dealId), network.id), network.id, domain.host)
             }
@@ -130,21 +130,6 @@ const initDatabase = async function (network) {
     }
 
      //FOR TESTING!!!
-
-    let txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueDealId(Number(106), network.id), network.id, "globalsysadmin.com")
-
-    await ResourcesController.upsertResourceDomain({
-        resourceId: 61,
-        domain: "globalsysadmin.com",
-        dealId: generateUniqueDealId(Number(106), network.id)
-    })
-
-    await ResourcesController.upsertResourceDomain({
-        resourceId: 61,
-        domain: "globalsysadmin.com",
-        dealId: generateUniqueDealId(Number(107), network.id),
-        txtRecord: txtRecord
-    })
 
 
     // Update records in caddy if needed

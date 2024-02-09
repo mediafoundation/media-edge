@@ -272,7 +272,7 @@ app.post('/getDNSConfig', async (req, res) => {
       if(owner === req.body.message.address){
         if(psl.isValid(req.body.domain)){
           const parsed = psl.parse(req.body.domain);
-          let generatedTxt = generateTXTRecord(env.MARKETPLACE_ID, req.body.dealId, req.body.chainId, req.body.domain)
+          let generatedTxt = generateTXTRecord(owner, req.body.domain)
           let domain = await ResourcesController.getDomainByHost(req.body.domain)
           console.log("domain", domain)
           let optional = true;

@@ -10,9 +10,9 @@ function generateSubdomain(marketplaceId, dealId, networkId, chainId) {
     return result.toLocaleLowerCase().slice(0, 6);  // Only take first 6 characters
 }
 
-function generateTXTRecord(marketplaceId, dealId, chainId, domain) {
+function generateTXTRecord(owner, domain) {
     let hash = crypto.createHash('sha256');
-    hash.update(marketplaceId + dealId + chainId + env.PRIVATE_KEY);
+    hash.update(owner + domain + env.PRIVATE_KEY);
 
     let result = hash.digest('base64').replace(/[^a-z0-9]/gi, '0'); // replace invalid characters with '0'
 

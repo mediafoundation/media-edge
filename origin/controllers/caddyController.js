@@ -7,6 +7,7 @@ const resolver = new doh.DohResolver('https://1.1.1.1/dns-query')
 const config = require("../config/app");
 const {CaddySource} = require("../models/caddy");
 const {isARecord} = require("../utils/domains");
+const {generateTXTRecord} = require("../utils/generateSubdomain");
 
 const queues = {
     Minutely: [],
@@ -110,8 +111,13 @@ class CaddyController {
                 //console.log("Item", item)
                 if(item.domains && item.domains.length !== 0) {
                     for (const domain of item.domains) {
+                      console.log("Domain", domain)
+                      await this.addToQueue(queues.Minutely, domain.id, domain);
                         //if domains is not already added and won't be added, patch it directly
-                        if(await this.isCustomDomainAlreadyAdded(domain.domain) || domains.map(domain => domain.item).includes(domain.domain)){
+/*                         if(
+                            await this.isCustomDomainAlreadyAdded(domain.domain) 
+                            || domains.map(domain => domain.item).includes(domain.domain)
+                        ){
                             await this.addToQueue(queues.Minutely, domain.id, domain);
                         }
                         else{
@@ -120,7 +126,7 @@ class CaddyController {
                             console.log("Deal resource item", item)
                             await this.addToQueue(queues.Minutely, domain.id, domain);
                             console.log("Queue", queues.Minutely)
-                        }
+                        } */
                     }
                 }
                 payload.push(caddyData)
@@ -128,6 +134,7 @@ class CaddyController {
                 await this.upsertRecord(item, /* dealInFile, */ network)
             }
         }
+
         //Add to caddy file
         console.log("Payload", payload.length, payload)
         console.log("Domains", domains.length, domains)
@@ -145,6 +152,8 @@ class CaddyController {
             console.log("axios error", e)
             return false
         }
+
+
     }
 
     static async upsertRecord(item, network){
@@ -353,7 +362,9 @@ class CaddyController {
                     console.log("Item on check queue", item)
                     if (env.debug) console.log(`Retrying to apply custom domain ${item.item.domain} (${item.retry})`);
                     try{
-                        let isA = isARecord(item.item.domain)
+
+                        let hostValid = await isRecordPointingCorrectly(item.item.domain);
+ /*                        let isA = isARecord(item.item.domain)
 
                         let hostValid = false
 
@@ -364,10 +375,16 @@ class CaddyController {
                             }
                         } else {
                             hostValid = await this.checkCname(item.item.domain, env.cname)
-                        }
-                        if(item.item.txtRecord !== null){
-                          hostValid = await this.checkTxtRecord(item.item.domain, item.item.txtRecord)
-                        }
+                        }*/
+
+                        console.log("Host valid item", item)
+
+                        hostValid = await this.checkTxtRecord(
+                          item.item.domain, 
+                          generateTXTRecord("owner", item.item.domain)
+                        )
+
+
 
                         console.log("Host valid", hostValid)
 
@@ -461,6 +478,23 @@ class CaddyController {
             console.log(e)
             return false
         }
+    }
+
+    static async isRecordPointingCorrectly(targetDomain){
+      let isA = isARecord(targetDomain)
+
+      let hostValid = false
+
+      if(isA) {
+          for (const aElement of env.a_record) {
+              hostValid = await this.checkARecord(targetDomain, aElement)
+              if(hostValid) break;
+          }
+      } else {
+          hostValid = await this.checkCname(targetDomain, env.cname)
+      }
+
+      return hostValid;
     }
 
     static async cleanUpCustomDomain(deal_id, cname){
