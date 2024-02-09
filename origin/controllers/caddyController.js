@@ -108,7 +108,7 @@ class CaddyController {
             let dealInFile = caddyFile.find(o => o["@id"] === item.deal.id);
             //if resource is not on caddyfile already, add to payload
             if(!dealInFile) {
-                //console.log("Item", item)
+                console.log("Item", item)
                 if(item.domains && item.domains.length !== 0) {
                     for (const domain of item.domains) {
                       console.log("Domain", domain)
