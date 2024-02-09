@@ -471,7 +471,7 @@ class CaddyController {
             if(response.answers.length > 0){
                 let answers = [];
                 for (const answer of response.answers) {
-                  answers.push(answer.data)
+                  answers.push(answer.data.toString())
                 }
                 console.log(`Answers for _medianetwork.${targetDomain}`, answers)
                 return answers.includes(expectedTxtRecord);
