@@ -1,5 +1,5 @@
 const psl = require("psl");
-function isHostDomain(host) {
+function isARecord(host) {
     if(psl.isValid(host)){
         const parsed = psl.parse(host);
         return !parsed.subdomain;
@@ -8,4 +8,4 @@ function isHostDomain(host) {
     }
 }
 
-module.exports = {isHostDomain};
+module.exports = {isARecord};

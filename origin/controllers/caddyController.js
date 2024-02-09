@@ -6,7 +6,7 @@ const doh = require('dohjs')
 const resolver = new doh.DohResolver('https://1.1.1.1/dns-query')
 const config = require("../config/app");
 const {CaddySource} = require("../models/caddy");
-const {isHostDomain} = require("../utils/domains");
+const {isARecord} = require("../utils/domains");
 
 const queues = {
     Minutely: [],
@@ -111,7 +111,7 @@ class CaddyController {
                 if(item.domains && item.domains.length !== 0) {
                     for (const domain of item.domains) {
                         //if domains is not already added and won't be added, patch it directly
-                        if(await this.isCnameAlreadyAdded(domain.domain) || domains.map(domain => domain.item).includes(domain.domain)){
+                        if(await this.isCustomDomainAlreadyAdded(domain.domain) || domains.map(domain => domain.item).includes(domain.domain)){
                             await this.addToQueue(queues.Minutely, domain.id, domain);
                         }
                         else{
@@ -149,7 +149,7 @@ class CaddyController {
 
     static async upsertRecord(item, network){
 
-        //Destroy previous custom cnames records associated to deal id
+        //Destroy previous custom domains records associated to deal id
         let destroyed = await CaddySource.destroy({
             where: {
                 deal_id: item.deal.id
@@ -158,7 +158,7 @@ class CaddyController {
         if (env.debug) if(destroyed) console.log("Removing CaddySources for:", item.deal.id)
 
         //Remove deal from queue
-        await this.deletefromAllQueues(item.deal.id)
+        //await this.deletefromAllQueues(item.deal.id) //TODO: what to do now?
 
         //create Caddy object required to be posted on caddyFile
         let newCaddyData = await this.newObject(item.resource, item.deal, network)
@@ -269,7 +269,7 @@ class CaddyController {
         //let cname_is_valid = await this.checkCname(item.domains.domain, host[0]);
         try {
             console.log("Update caddy host", host, item)
-            await this.cleanUpCname(item.id, item.item);
+            await this.cleanUpCustomDomain(item.id, item.item);
             host.push(item.item);
             await CaddySource.findOrCreate({
                 where: {
@@ -353,34 +353,31 @@ class CaddyController {
                     console.log("Item on check queue", item)
                     if (env.debug) console.log(`Retrying to apply custom domain ${item.item.domain} (${item.retry})`);
                     try{
-                        let isDomain = isHostDomain(item.item.domain)
+                        let isA = isARecord(item.item.domain)
 
                         let hostValid = false
 
-                        if(item.item.txtRecord !== null){
-                            hostValid = await this.checkTxtRecord(item.item.domain, item.item.txtRecord)
-                        }
-
-                        else if(isDomain) {
+                        if(isA) {
                             for (const aElement of env.a_record) {
                                 hostValid = await this.checkARecord(item.item.domain, aElement)
                                 if(hostValid) break;
                             }
-                            //hostValid = await this.checkARecord(item.item, env.a_record)
-                        }
-                        else{
+                        } else {
                             hostValid = await this.checkCname(item.item.domain, env.cname)
+                        }
+                        if(item.item.txtRecord !== null){
+                          hostValid = await this.checkTxtRecord(item.item.domain, item.item.txtRecord)
                         }
 
                         console.log("Host valid", hostValid)
 
                         if(hostValid){
-                            await this.cleanUpCname(item.id, item.item.domain);
+                            await this.cleanUpCustomDomain(item.id, item.item.domain);
                             //todo: following function should return a boolean
                             let certificateObtainedStatus = await obtainAndRenewCertificate({host: item.item.domain});
 
                             if (certificateObtainedStatus === certStatus.OBTAINED || certificateObtainedStatus === certStatus.VALID) {
-                                if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.item}`);
+                                if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.item.domain}`);
                                 //queue.splice(i, 1);
                                 await this.deleteFromAllQueues(item.item.domain)
                                 console.log("Queue after clean", queue)
@@ -466,13 +463,13 @@ class CaddyController {
         }
     }
 
-    static async cleanUpCname(deal_id, cname){
-        let added = await this.isCnameAlreadyAdded(cname)
-        if(added && added !== deal_id) await this.removeCname(added, cname)
+    static async cleanUpCustomDomain(deal_id, cname){
+        let added = await this.isCustomDomainAlreadyAdded(cname)
+        if(added && added !== deal_id) await this.removeCustomDomain(added, cname)
         return true
     }
 
-    static async isCnameAlreadyAdded(cname){
+    static async isCustomDomainAlreadyAdded(cname){
         try {
             let response = await axios.get(caddyRoutesUrl)
             for (const resource of response.data) {
@@ -489,7 +486,7 @@ class CaddyController {
         }
     }
 
-    static async removeCname(id, cname){
+    static async removeCustomDomain(id, cname){
         try {
             //get all current domains for a given resource
             const hosts = await this.getHosts(id)
