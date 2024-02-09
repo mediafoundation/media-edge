@@ -280,7 +280,10 @@ class CaddyController {
         try {
             console.log("Update caddy host", host, item)
             await this.cleanUpCustomDomain(item.id, item.item);
+
+            //this modifies the host array that is passed by reference
             host.push(item.item);
+
             await CaddySource.findOrCreate({
                 where: {
                     host: item.item,
@@ -389,7 +392,8 @@ class CaddyController {
                         console.log("Host valid", hostValid)
 
                         if(hostValid){
-                            await this.cleanUpCustomDomain(item.id, item.item.domain);
+
+                            await this.patchRecord(item);
                             //todo: following function should return a boolean
                             let certificateObtainedStatus = await obtainAndRenewCertificate({host: item.item.domain});
 
