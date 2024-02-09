@@ -279,15 +279,15 @@ class CaddyController {
         //let cname_is_valid = await this.checkCname(item.domains.domain, host[0]);
         try {
             console.log("Update caddy host", host, item)
-            await this.cleanUpCustomDomain(item.id, item.item);
+            await this.cleanUpCustomDomain(item.dealId, item.domain);
 
             //this modifies the host array that is passed by reference
-            host.push(item.item);
+            host.push(item.domain);
 
             await CaddySource.findOrCreate({
                 where: {
-                    host: item.item,
-                    deal_id: item.id
+                    host: item.domain,
+                    deal_id: item.dealId
                 }
             });
             //await obtainAndRenewCertificate({host: item.domains.domain});
@@ -317,19 +317,19 @@ class CaddyController {
             return false;
         }*/
 
-        let host = await this.getHosts(item.id);
-        let hostUpdated = await this.updateCaddyHost(host, item);
+        let host = await this.getHosts(item.item.dealId);
+        let hostUpdated = await this.updateCaddyHost(host, item.item);
         if (hostUpdated) {
             try {
                 if (env.debug) console.log('Patching caddy domain', host);
                 await axios.patch(
-                    caddyBaseUrl + 'id/' + item.id + '/match/0/host',
+                    caddyBaseUrl + 'id/' + item.item.dealId + '/match/0/host',
                     JSON.stringify(host),
                     caddyReqCfg
                 );
                 return true;
             } catch(_) {
-                console.log("Error patching", item.id);
+                console.log("Error patching", item.item.dealId);
                 return false;
             }
         } else {
