@@ -8,6 +8,7 @@ const {ResourcesController} = require("../controllers/resourcesController");
 const {CaddyController} = require("../controllers/caddyController");
 const {generateUniqueDealId} = require("../utils/deals");
 const {generateTXTRecord} = require("../utils/generateSubdomain");
+const {getHostName} = require("../utils/domains");
 const initDatabase = async function (network) {
 
     // Fetch resources and deals
@@ -115,7 +116,7 @@ const initDatabase = async function (network) {
             if(existentDomain.length !== 0){
                 let dealIds = existentDomain.map((domain) => domain.dealId)
                 if(!dealIds.includes(generateUniqueDealId(Number(domain.dealId), network.id))){
-                    txtRecord = generateTXTRecord(resource.owner, domain.host)
+                    txtRecord = generateTXTRecord(resource.owner, getHostName(domain.host))
                 }
                 //txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueDealId(Number(domain.dealId), network.id), network.id, domain.host)
             }
