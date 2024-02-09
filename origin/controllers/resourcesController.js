@@ -105,11 +105,10 @@ class ResourcesController {
 
     static async getDomainByHost(domain) {
         try {
-            return await Domains.findOne({
+            return await Domains.findAll({
                 where: {
                     domain: domain
-                },
-                raw: true
+                }
             });
         }
         catch (error) {

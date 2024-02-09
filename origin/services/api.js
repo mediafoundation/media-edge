@@ -277,7 +277,7 @@ app.post('/getDNSConfig', async (req, res) => {
           console.log("domain", domain)
           let optional = true;
           try{
-            if(domain && domain.dealId != req.body.dealId){
+            if(domain && domain[0].dealId != req.body.dealId){
               optional = false
             }
           } catch(e){
