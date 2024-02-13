@@ -274,18 +274,23 @@ app.post('/getDNSConfig', async (req, res) => {
       if(owner === req.body.message.address){
         if(psl.isValid(req.body.domain)){
           const parsed = psl.parse(req.body.domain);
+
           let generatedTxt = generateTXTRecord(owner, getHostName(req.body.domain))
+
+          let txtValid = await CaddyController.checkTxtRecord(
+            getHostName(req.body.domain), 
+            generatedTxt
+          )
+
           let domain = await CaddySource.findOne({
             where: {
               host: req.body.domain
             }
           })
-            //req.body.domain)
-          console.log("domain", domain)
-          let optional = true;
+          let warning = false;
           try{
-            if(domain && domain.deal_id != req.body.dealId){
-              optional = false
+            if(txtValid && domain && domain.deal_id != req.body.dealId){
+              warning = true
             }
           } catch(e){
             console.log(e)
@@ -294,7 +299,7 @@ app.post('/getDNSConfig', async (req, res) => {
             type: 'TXT',
             name: "_medianetwork",
             value: generatedTxt,
-            optional
+            txtValid
           };
           if(parsed.subdomain){
             res.json({
@@ -302,14 +307,16 @@ app.post('/getDNSConfig', async (req, res) => {
                 name: parsed.domain, 
                 subdomain: parsed.subdomain, 
                 value: env.cname,
-                txtData
+                txtData,
+                warning
             });
           } else {
             res.json({
                 type: 'A', 
                 name: parsed.domain, 
                 value: env.a_record,
-                txtData
+                txtData,
+                warning
             });
           }
         } else {
