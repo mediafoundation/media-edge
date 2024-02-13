@@ -16,7 +16,7 @@ function generateTXTRecord(owner, domain) {
 
     let result = hash.digest('base64').replace(/[^a-z0-9]/gi, '0'); // replace invalid characters with '0'
 
-    return `mn-domain-verify=${domain},${result.toLocaleLowerCase().slice(0, 20)}`;
+    return `mn-verify=${result.toLocaleLowerCase().slice(0, 10)}`;
 }
 
 //Following an example of usage
@@ -24,3 +24,4 @@ function generateTXTRecord(owner, domain) {
 //console.log(subdomain);  // e.g., 'abc123'
 
 module.exports = {generateSubdomain, generateTXTRecord}
+
