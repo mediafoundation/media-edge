@@ -282,14 +282,14 @@ app.post('/getDNSConfig', async (req, res) => {
             generatedTxt
           )
 
-          let domain = await CaddySource.findOne({
+          let domain = await CaddySource.findAll({
             where: {
               host: req.body.domain
             }
           })
           let warning = false;
           try{
-            if(txtValid && domain && domain.deal_id != req.body.dealId){
+            if(txtValid && domain && domain.deal_id !== req.body.dealId){
               warning = true
             }
           } catch(e){
