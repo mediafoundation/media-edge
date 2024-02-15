@@ -356,4 +356,4 @@ let manageCancelledDeal = async (dealId, CURRENT_NETWORK) => {
     return id + "_" + network.network_id + "_" + network.chain_id + "_" + env.MARKETPLACE_ID
 }*/
 
-module.exports = { checkEvents, manageDealCreatedOrAccepted }
+module.exports = { checkEvents, manageDealCreatedOrAccepted, manageResourceUpdated, manageCancelledDeal }

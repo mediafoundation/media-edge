@@ -9,7 +9,7 @@ const {CaddyController} = require("../controllers/caddyController");
 const {generateUniqueDealId, recoverOriginalDataFromUniqueDealId} = require("../utils/deals");
 const {generateNonce, SiweMessage, SiweErrorType} = require("siwe");
 const Session = require("express-session");
-const {manageDealCreatedOrAccepted} = require("./events");
+const {manageDealCreatedOrAccepted, manageResourceUpdated, manageCancelledDeal} = require("./events");
 const psl = require('psl');
 const {ResourcesController} = require("../controllers/resourcesController");
 const {generateTXTRecord} = require("../utils/generateSubdomain");
@@ -350,6 +350,40 @@ app.get("/ipAddress", async (req, res) => {
          res.send({ipAddress: env.ipAddress})
      }
 
+})
+
+app.post("/dealCreatedOrUpdated", async(req, res) => {
+  const {dealId, network} = req.body
+    try{
+        await manageDealCreatedOrAccepted(env.MARKETPLACE_ID, dealId, network)
+        res.send('Deal synced successfully!')
+    } catch (e) {
+        console.log(e)
+        res.status(500).send('Error syncing deal')
+    }
+
+})
+
+app.post("/resourceUpdated", async(req, res) => {
+    const {resourceId, network} = req.body
+    try{
+        await manageResourceUpdated(resourceId, network)
+        res.send('Resource updated successfully!')
+    } catch (e) {
+        console.log(e)
+        res.status(500).send('Error updating resources')
+    }
+})
+
+app.post("/dealCancelled", async(req, res) => {
+    const {dealId, network} = req.body
+        try{
+            await manageCancelledDeal(dealId, network)
+            res.send('Deal cancelled successfully!')
+        } catch (e) {
+            console.log(e)
+            res.status(500).send('Error cancelling deal')
+        }
 })
 // Start the server
 app.listen(port, () => {
