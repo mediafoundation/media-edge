@@ -71,88 +71,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     if (typeof updatedResources !== "undefined" && updatedResources.length > 0) {
         for (const event of updatedResources) {
             try {
-                let filteredDomains = []
-
-                let domainsFromDb = await ResourcesController.getAllResourcesDomains(event.args._id)
-
-                let domainsFromDbNotInFilteredDomains = []
-
-                let deals = await ResourcesController.getResourcesDeals(
-                    event.args._id,
-                )
-                if (deals.length > 0) {
-                    let resource = await ResourcesController.getResourceById(event.args._id)
-                    if (resource !== false) {
-
-                        let resources = new Resources()
-                        let resourceFromEvm = await resources.getResource({ id: event.args._id, address: env.WALLET })
-
-                        let attr = JSON.parse(resourceFromEvm.encryptedData)
-                        let decryptedSharedKey = await Encryption.ethSigDecrypt(
-                            resourceFromEvm.encryptedSharedKey,
-                            env.PRIVATE_KEY
-                        );
-
-                        let decrypted = Encryption.decrypt(
-                            decryptedSharedKey,
-                            attr.iv,
-                            attr.tag,
-                            attr.encryptedData
-                        );
-
-                        let data = JSON.parse(decrypted)
-
-                        let resourceForDb = { id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data }
-
-                        if(data.domains) {
-                            console.log("Domains from evm", data.domains, deals.map(deal => recoverOriginalDataFromUniqueDealId(deal.id).dealId.toString()))
-                            let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => recoverOriginalDataFromUniqueDealId(deal.id).dealId.toString()))
-                            console.log("Filtered domains", filteredDomainsForDeal)
-                            filteredDomains.push({resourceId: Number(resource.id), domains: filteredDomainsForDeal})
-                        }
-
-                        console.log("Domains from db before filter", domainsFromDb)
-
-                        if(domainsFromDb.length > 0){
-                            domainsFromDbNotInFilteredDomains = domainsFromDb.filter(dbDomain => {
-                                return !filteredDomains.some(filteredDomain =>
-                                    filteredDomain.host === dbDomain.domain && filteredDomain.dealId === dbDomain.dealId
-                                );
-                            });
-                        }
-
-                        console.log("Domains from db after filter", domainsFromDbNotInFilteredDomains)
-
-                        await ResourcesController.parseResource(resourceForDb)
-
-                        for (const domainToBeDeleted of domainsFromDbNotInFilteredDomains) {
-                            await ResourcesController.deleteResourceDomain(domainToBeDeleted.id)
-                        }
-
-                        let upsertResourceResult = await ResourcesController.upsertResource({ id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data })
-
-                        for (const resource of filteredDomains) {
-                            for (const domain of resource.domains) {
-                                await ResourcesController.upsertResourceDomain({resourceId: resource.resourceId, domain: domain.host, dealId: generateUniqueDealId(Number(domain.dealId), CURRENT_NETWORK.id)})
-                            }
-
-                        }
-
-                        for (const deal of deals) {
-                            let dealFromDB = await DealsController.getDealById(deal.id)
-                            let caddyDomain = await ResourcesController.getResourceDomain(event.args._id, dealFromDB.id)
-                            console.log("Caddy domain", caddyDomain)
-                            await CaddyController.upsertRecord(
-                                {
-                                    resource: upsertResourceResult.instance,
-                                    deal: dealFromDB,
-                                    domains: caddyDomain
-                                },
-                                CURRENT_NETWORK
-                            )
-                        }
-                    }
-                }
+                await manageResourceUpdated(event.args._id, CURRENT_NETWORK)
             } catch (e) {
                 if (e instanceof z.ZodError) {
                     console.error("Resource Validation failed on resource", event.args._id);
@@ -180,23 +99,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
         //await models.Caddy.deleteRecord()
         for (const event of cancelledDeals) {
             try{
-                const uniqueId = generateUniqueDealId(Number(event.args._dealId), CURRENT_NETWORK.id);
-                let deal = await DealsController.getDealById(uniqueId)
-                console.log("Deal cancelled", event.args._dealId, uniqueId, deal)
-
-
-                //Check if the resource associated to that deal has any other deals or need to be removed
-                let dealResource = await DealsController.getDealResource(uniqueId)
-                console.log("DealResource", dealResource)
-                let dealsOfResource = await ResourcesController.getResourcesDeals(dealResource.resourceId)
-
-                await CaddyController.deleteRecord(uniqueId)
-                await DealsController.deleteDealById(uniqueId)
-
-                if (dealsOfResource.length === 0) {
-                    console.log("Resource Id", deal.resourceId)
-                    await ResourcesController.deleteResourceById(deal.resourceId)
-                }
+                await manageCancelledDeal(event.args._dealId, CURRENT_NETWORK)
             } catch (e) {
                 console.log("Error when deleting deal", e)
             }
@@ -341,6 +244,111 @@ let manageDealCreatedOrAccepted = async (marketplaceId, dealId, CURRENT_NETWORK)
         await BandwidthController.upsertRecord(dealForBandwidth)
     }catch (e) {
         console.log("Error upserting bandwidth", e)
+    }
+}
+
+let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
+    let filteredDomains = []
+
+    let domainsFromDb = await ResourcesController.getAllResourcesDomains(resourceId)
+
+    let domainsFromDbNotInFilteredDomains = []
+
+    let deals = await ResourcesController.getResourcesDeals(
+        event.args._id,
+    )
+    if (deals.length > 0) {
+        let resource = await ResourcesController.getResourceById(resourceId)
+        if (resource !== false) {
+
+            let resources = new Resources()
+            let resourceFromEvm = await resources.getResource({ id: resourceId, address: env.WALLET })
+
+            let attr = JSON.parse(resourceFromEvm.encryptedData)
+            let decryptedSharedKey = await Encryption.ethSigDecrypt(
+                resourceFromEvm.encryptedSharedKey,
+                env.PRIVATE_KEY
+            );
+
+            let decrypted = Encryption.decrypt(
+                decryptedSharedKey,
+                attr.iv,
+                attr.tag,
+                attr.encryptedData
+            );
+
+            let data = JSON.parse(decrypted)
+
+            let resourceForDb = { id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data }
+
+            if(data.domains) {
+                console.log("Domains from evm", data.domains, deals.map(deal => recoverOriginalDataFromUniqueDealId(deal.id).dealId.toString()))
+                let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => recoverOriginalDataFromUniqueDealId(deal.id).dealId.toString()))
+                console.log("Filtered domains", filteredDomainsForDeal)
+                filteredDomains.push({resourceId: Number(resource.id), domains: filteredDomainsForDeal})
+            }
+
+            console.log("Domains from db before filter", domainsFromDb)
+
+            if(domainsFromDb.length > 0){
+                domainsFromDbNotInFilteredDomains = domainsFromDb.filter(dbDomain => {
+                    return !filteredDomains.some(filteredDomain =>
+                        filteredDomain.host === dbDomain.domain && filteredDomain.dealId === dbDomain.dealId
+                    );
+                });
+            }
+
+            console.log("Domains from db after filter", domainsFromDbNotInFilteredDomains)
+
+            await ResourcesController.parseResource(resourceForDb)
+
+            for (const domainToBeDeleted of domainsFromDbNotInFilteredDomains) {
+                await ResourcesController.deleteResourceDomain(domainToBeDeleted.id)
+            }
+
+            let upsertResourceResult = await ResourcesController.upsertResource({ id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data })
+
+            for (const resource of filteredDomains) {
+                for (const domain of resource.domains) {
+                    await ResourcesController.upsertResourceDomain({resourceId: resource.resourceId, domain: domain.host, dealId: generateUniqueDealId(Number(domain.dealId), CURRENT_NETWORK.id)})
+                }
+
+            }
+
+            for (const deal of deals) {
+                let dealFromDB = await DealsController.getDealById(deal.id)
+                let caddyDomain = await ResourcesController.getResourceDomain(event.args._id, dealFromDB.id)
+                console.log("Caddy domain", caddyDomain)
+                await CaddyController.upsertRecord(
+                    {
+                        resource: upsertResourceResult.instance,
+                        deal: dealFromDB,
+                        domains: caddyDomain
+                    },
+                    CURRENT_NETWORK
+                )
+            }
+        }
+    }
+}
+
+let manageCancelledDeal = async (dealId, CURRENT_NETWORK) => {
+    const uniqueId = generateUniqueDealId(Number(dealId), CURRENT_NETWORK.id);
+    let deal = await DealsController.getDealById(uniqueId)
+    console.log("Deal cancelled", dealId, uniqueId, deal)
+
+
+    //Check if the resource associated to that deal has any other deals or need to be removed
+    let dealResource = await DealsController.getDealResource(uniqueId)
+    console.log("DealResource", dealResource)
+    let dealsOfResource = await ResourcesController.getResourcesDeals(dealResource.resourceId)
+
+    await CaddyController.deleteRecord(uniqueId)
+    await DealsController.deleteDealById(uniqueId)
+
+    if (dealsOfResource.length === 0) {
+        console.log("Resource Id", deal.resourceId)
+        await ResourcesController.deleteResourceById(deal.resourceId)
     }
 }
 
