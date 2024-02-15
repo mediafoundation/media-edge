@@ -9,7 +9,7 @@ const {CaddyController} = require("../controllers/caddyController");
 const {generateUniqueDealId, recoverOriginalDataFromUniqueDealId} = require("../utils/deals");
 const {generateNonce, SiweMessage, SiweErrorType} = require("siwe");
 const Session = require("express-session");
-const {manageDealCreatedOrAccepted, manageResourceUpdated, manageCancelledDeal} = require("./events");
+const {manageDealCreatedOrAccepted, manageResourceUpdated, manageCancelledDeal, manageAddedBalance} = require("./events");
 const psl = require('psl');
 const {ResourcesController} = require("../controllers/resourcesController");
 const {generateTXTRecord} = require("../utils/generateSubdomain");
@@ -384,6 +384,17 @@ app.post("/dealCancelled", async(req, res) => {
             console.log(e)
             res.status(500).send('Error cancelling deal')
         }
+})
+
+app.post("/addedBalance", async(req, res) => {
+    const {dealId, network} = req.body
+    try{
+        await manageAddedBalance(dealId, network.id)
+        res.send('Balance added successfully!')
+    } catch (e) {
+        console.log(e)
+        res.status(500).send('Error adding balance')
+    }
 })
 // Start the server
 app.listen(port, () => {

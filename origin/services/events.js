@@ -126,7 +126,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     if(typeof addedBalance !== "undefined" && addedBalance.length > 0){
         for (const event of addedBalance) {
             try{
-                await manageAddedBalance(event.args._dealId)
+                await manageAddedBalance(event.args._dealId, CURRENT_NETWORK.id)
             }catch (e) {
                 if (e instanceof z.ZodError) {
                     console.error("Zod Metadata Validation failed on deal", event.args._dealId);
@@ -374,16 +374,16 @@ let manageCancelledDeal = async (dealId, CURRENT_NETWORK) => {
     }
 }
 
-let manageAddedBalance = async (dealId) => {
+let manageAddedBalance = async (dealId, chainId) => {
     let marketplace = new Marketplace()
     let deal = await marketplace.getDealById({marketplaceId: env.MARKETPLACE_ID, dealId: dealId})
     await DealsController.parseDealMetadata(deal.terms.metadata)
     let formattedDeal = DealsController.formatDeal(deal)
-    await DealsController.upsertDeal(formattedDeal)
+    await DealsController.upsertDeal(formattedDeal, chainId)
 }
 
 /*let getId = (id, network) => {
     return id + "_" + network.network_id + "_" + network.chain_id + "_" + env.MARKETPLACE_ID
 }*/
 
-module.exports = { checkEvents, manageDealCreatedOrAccepted, manageResourceUpdated, manageCancelledDeal }
+module.exports = { checkEvents, manageDealCreatedOrAccepted, manageResourceUpdated, manageCancelledDeal, manageAddedBalance }
