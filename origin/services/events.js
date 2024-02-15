@@ -16,6 +16,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     let createdDeals = undefined
     let cancelledDeals = undefined
     let acceptedDeals = undefined
+    let addedBalance = undefined
     let blockchain = new Blockchain()
     let blockNumber = await blockchain.getBlockNumber()
     let toNumber = Number(blockNumber)
@@ -53,6 +54,12 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
 
         acceptedDeals = await eventsHandler.getMarketplacePastEvents({
             eventName: 'DealAccepted',
+            fromBlock: lastReadBlock,
+            toBlock: toNumber
+        })
+
+        addedBalance = await eventsHandler.getMarketplacePastEvents({
+            eventName: 'AddedBalance',
             fromBlock: lastReadBlock,
             toBlock: toNumber
         })
@@ -113,6 +120,21 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
         //await manageDealCreatedOrAccepted(acceptedDeals, CURRENT_NETWORK)
         for (const acceptedDeal of acceptedDeals) {
             await manageDealCreatedOrAccepted(acceptedDeal.args._marketplaceId, acceptedDeal.args._dealId, CURRENT_NETWORK)
+        }
+    }
+
+    if(typeof addedBalance !== "undefined" && addedBalance.length > 0){
+        for (const event of addedBalance) {
+            try{
+                await manageAddedBalance(event.args._dealId)
+            }catch (e) {
+                if (e instanceof z.ZodError) {
+                    console.error("Zod Metadata Validation failed on deal", event.args._dealId);
+                } else {
+                    console.error("Unknown error when upsert deal:", event.args._dealId, e);
+                }
+            }
+
         }
     }
 
@@ -350,6 +372,14 @@ let manageCancelledDeal = async (dealId, CURRENT_NETWORK) => {
         console.log("Resource Id", deal.resourceId)
         await ResourcesController.deleteResourceById(deal.resourceId)
     }
+}
+
+let manageAddedBalance = async (dealId) => {
+    let marketplace = new Marketplace()
+    let deal = await marketplace.getDealById({marketplaceId: env.MARKETPLACE_ID, dealId: dealId})
+    await DealsController.parseDealMetadata(deal.terms.metadata)
+    let formattedDeal = DealsController.formatDeal(deal)
+    await DealsController.upsertDeal(formattedDeal)
 }
 
 /*let getId = (id, network) => {
