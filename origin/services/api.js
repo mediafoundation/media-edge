@@ -20,6 +20,7 @@ const {ResourcesController} = require("../controllers/resourcesController");
 const {generateTXTRecord} = require("../utils/generateSubdomain");
 const {getHostName} = require("../utils/domains");
 const {CaddySource} = require('../models/caddy');
+const {where, Op} = require("sequelize");
 
 /* const helmet = require('helmet'); */
 
@@ -300,7 +301,7 @@ app.post('/getDNSConfig', async (req, res) => {
             }
           })
           let warning = false;
-          //let patchedDomain = !!domain
+          let patchedDomain = !!domain
           try {
             if (txtValid && domain && domain.deal_id !== req.body.dealId) {
               warning = true
@@ -312,8 +313,7 @@ app.post('/getDNSConfig', async (req, res) => {
             type: 'TXT',
             name: "_medianetwork",
             value: generatedTxt,
-            txtValid,
-            //patchedDomain
+            txtValid
           };
           if (parsed.subdomain) {
             res.json({
@@ -322,7 +322,8 @@ app.post('/getDNSConfig', async (req, res) => {
               subdomain: parsed.subdomain,
               value: env.cname,
               txtData,
-              warning
+              warning,
+              patchedDomain
             });
           } else {
             res.json({
@@ -330,7 +331,8 @@ app.post('/getDNSConfig', async (req, res) => {
               name: parsed.domain,
               value: env.a_record,
               txtData,
-              warning
+              warning,
+              patchedDomain
             });
           }
         } else {
