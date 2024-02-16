@@ -1,5 +1,5 @@
 const express = require('express')
-const { purgeRecord } = require('./varnish')
+const {purgeRecord} = require('./varnish')
 const cors = require('cors')
 const env = require("./../config/env")
 const {Signer} = require("media-sdk");
@@ -9,12 +9,17 @@ const {CaddyController} = require("../controllers/caddyController");
 const {generateUniqueDealId, recoverOriginalDataFromUniqueDealId} = require("../utils/deals");
 const {generateNonce, SiweMessage, SiweErrorType} = require("siwe");
 const Session = require("express-session");
-const {manageDealCreatedOrAccepted, manageResourceUpdated, manageCancelledDeal, manageAddedBalance} = require("./events");
+const {
+  manageDealCreatedOrAccepted,
+  manageResourceUpdated,
+  manageCancelledDeal,
+  manageAddedBalance
+} = require("./events");
 const psl = require('psl');
 const {ResourcesController} = require("../controllers/resourcesController");
 const {generateTXTRecord} = require("../utils/generateSubdomain");
 const {getHostName} = require("../utils/domains");
-const { CaddySource } = require('../models/caddy');
+const {CaddySource} = require('../models/caddy');
 
 /* const helmet = require('helmet'); */
 
@@ -49,10 +54,10 @@ app.use(Session({
   secret: "siwe-quickstart-secrets",
   resave: true,
   saveUninitialized: true,
-  cookie: { 
+  cookie: {
     httpOnly: true,
     secure: true
- }
+  }
 }));
 
 app.get('/nonce', async (req, res) => {
@@ -65,21 +70,21 @@ app.post('/me', async (req, res) => {
 
   if (!data) {
     console.log('Bad Signature')
-    res.status(401).json({ message: 'Bad Signature' });
+    res.status(401).json({message: 'Bad Signature'});
   } else {
     res.status(200)
-    .json({
+      .json({
         address: req.body.message.address
-    })
-    .end();
+      })
+      .end();
   }
 });
 
-async function checkSignature(req){
+async function checkSignature(req) {
   try {
-    const { signature, message } = req.body;
+    const {signature, message} = req.body;
     const siweMessage = new SiweMessage(message);
-    const data = await siweMessage.verify({ signature, nonce: req.session.nonce });
+    const data = await siweMessage.verify({signature, nonce: req.session.nonce});
     return data;
   } catch (e) {
     console.log(e)
@@ -89,56 +94,56 @@ async function checkSignature(req){
 
 app.post('/sign_in', async (req, res) => {
   try {
-      const { signature } = req.body;
-      if (!req.body.message) {
-          res.status(422).json({ message: 'Expected signMessage object as body.' });
-          return;
-      }
+    const {signature} = req.body;
+    if (!req.body.message) {
+      res.status(422).json({message: 'Expected signMessage object as body.'});
+      return;
+    }
 
-      const message = new SiweMessage(req.body.message);
+    const message = new SiweMessage(req.body.message);
 
-      const { data: fields} = await message.verify({ signature, nonce: req.session.nonce });
+    const {data: fields} = await message.verify({signature, nonce: req.session.nonce});
 
-      req.session.siwe = fields;
-      req.session.nonce = null;
-      req.session.cookie.expires = new Date(fields.expirationTime);
-      req.session.save(() =>
-          res
-              .status(200)
-              .json({
-                  address: req.session.siwe.address
-              })
-              .end(),
-      );
+    req.session.siwe = fields;
+    req.session.nonce = null;
+    req.session.cookie.expires = new Date(fields.expirationTime);
+    req.session.save(() =>
+      res
+        .status(200)
+        .json({
+          address: req.session.siwe.address
+        })
+        .end(),
+    );
   } catch (e) {
-      req.session.siwe = null;
-      req.session.nonce = null;
-      console.error(e);
-      switch (e) {
-          case SiweErrorType.EXPIRED_MESSAGE: {
-              req.session.save(() => res.status(440).json({ message: e.message }));
-              break;
-          }
-          case SiweErrorType.INVALID_SIGNATURE: {
-              req.session.save(() => res.status(422).json({ message: e.message }));
-              break;
-          }
-          default: {
-              req.session.save(() => res.status(500).json({ message: e.message }));
-              break;
-          }
+    req.session.siwe = null;
+    req.session.nonce = null;
+    console.error(e);
+    switch (e) {
+      case SiweErrorType.EXPIRED_MESSAGE: {
+        req.session.save(() => res.status(440).json({message: e.message}));
+        break;
       }
+      case SiweErrorType.INVALID_SIGNATURE: {
+        req.session.save(() => res.status(422).json({message: e.message}));
+        break;
+      }
+      default: {
+        req.session.save(() => res.status(500).json({message: e.message}));
+        break;
+      }
+    }
   }
 });
 
 app.post('/logout', async (req, res) => {
   if (!req.session.siwe) {
-      res.status(401).json({ message: 'You have to first sign_in' });
-      return;
+    res.status(401).json({message: 'You have to first sign_in'});
+    return;
   }
 
   req.session.destroy(() => {
-      res.status(205).send();
+    res.status(205).send();
   });
 });
 
@@ -146,13 +151,20 @@ app.post('/logout', async (req, res) => {
 app.post('/', async (req, res) => {
   const payload = req.body
 
-  if (!await signer.checkSignature({address: payload.address, domain: payload.domain, types: payload.types, primaryType: payload.primaryType, message: payload.message, signature: payload.signature})) {
+  if (!await signer.checkSignature({
+    address: payload.address,
+    domain: payload.domain,
+    types: payload.types,
+    primaryType: payload.primaryType,
+    message: payload.message,
+    signature: payload.signature
+  })) {
     return res.status(403).send(`Bad Signature`)
   }
 
   let responsesSucceed = []
   let responseFailed = []
-  
+
   for (const dealId of payload.deals) {
     try {
       //let network = networks.find((network) => network.chain_id === payload.chainId)
@@ -168,7 +180,7 @@ app.post('/', async (req, res) => {
               await purgeRecord(deal, path)
             });
 
-          //res.status(200).send('Remote function executed successfully!')
+            //res.status(200).send('Remote function executed successfully!')
             responsesSucceed.push(dealId)
         }
       } else {
@@ -195,26 +207,26 @@ app.post('/purge', async (req, res) => {
 
   if (!data) {
     console.log('Bad Signature')
-    return res.status(401).json({ message: 'Bad Signature' });
+    return res.status(401).json({message: 'Bad Signature'});
   } else {
-    try{
+    try {
       let owner = await DealsController.getDealOwner(req.body.dealId);
-      if(owner === req.body.message.address){
+      if (owner === req.body.message.address) {
 
         const paths = req.body.paths ? req.body.paths : ['/*']
         const hostnames = await CaddyController.getHosts(req.body.dealId)
 
-        for(const host of hostnames){
-          for(const path of paths){
-            await PurgeLogsController.addRecord("http://"+host + path)
+        for (const host of hostnames) {
+          for (const path of paths) {
+            await PurgeLogsController.addRecord("http://" + host + path)
           }
         }
         console.log('Purge executed successfully!')
-        res.json({ success: 'true' });
+        res.json({success: 'true'});
       } else {
-        res.status(401).send({ message: 'You are not the owner of the deal' });
+        res.status(401).send({message: 'You are not the owner of the deal'});
       }
-    } catch (error){
+    } catch (error) {
       console.log(error)
       res.status(500).send({message: error});
     }
@@ -225,15 +237,15 @@ app.post('/purge', async (req, res) => {
 app.get('/getAllDealsEndpoints', async (req, res) => {
   let payload = req.body
   if (!req.session.siwe) {
-    res.status(401).json({ message: 'You have to first sign_in' });
+    res.status(401).json({message: 'You have to first sign_in'});
   }
-  try{
+  try {
     const endpoints = {}
     for (const dealId of payload.dealIds) {
-        endpoints[dealId] = await CaddyController.getHosts(generateUniqueDealId(dealId, payload.chainId))
+      endpoints[dealId] = await CaddyController.getHosts(generateUniqueDealId(dealId, payload.chainId))
     }
     res.send(endpoints)
-  } catch (error){
+  } catch (error) {
     res.status(500).json({message: error});
   }
 })
@@ -243,19 +255,19 @@ app.post('/getDealEndpoints', async (req, res) => {
 
   if (!data) {
     console.log('Bad Signature')
-    res.status(401).json({ message: 'Bad Signature' });
+    res.status(401).json({message: 'Bad Signature'});
   } else {
-    try{
+    try {
       const endpoints = {}
       let owner = await DealsController.getDealOwner(req.body.dealId);
-      console.log("owner",owner)
-      if(owner === req.body.message.address){
+      console.log("owner", owner)
+      if (owner === req.body.message.address) {
         endpoints[req.body.dealId] = await CaddyController.getHosts(req.body.dealId)
         res.send(endpoints)
       } else {
-        res.status(401).json({ message: 'You are not the owner of the deal' });
+        res.status(401).json({message: 'You are not the owner of the deal'});
       }
-    } catch (error){
+    } catch (error) {
       res.status(500).json({message: error});
     }
   }
@@ -267,66 +279,68 @@ app.post('/getDNSConfig', async (req, res) => {
 
   if (!data) {
     console.log('Bad Signature')
-    res.status(401).json({ message: 'Bad Signature' });
+    res.status(401).json({message: 'Bad Signature'});
   } else {
-    try{
+    try {
       let owner = await DealsController.getDealOwner(req.body.dealId);
-      if(owner === req.body.message.address){
-        if(psl.isValid(req.body.domain)){
+      if (owner === req.body.message.address) {
+        if (psl.isValid(req.body.domain)) {
           const parsed = psl.parse(req.body.domain);
 
           let generatedTxt = generateTXTRecord(owner, getHostName(req.body.domain))
 
           let txtValid = await CaddyController.checkTxtRecord(
-            getHostName(req.body.domain), 
+            getHostName(req.body.domain),
             generatedTxt
           )
 
-          let domain = await CaddySource.findAll({
+          let domain = await CaddySource.findOne({
             where: {
               host: req.body.domain
             }
           })
           let warning = false;
-          try{
-            if(txtValid && domain && domain.deal_id !== req.body.dealId){
+          //let patchedDomain = !!domain
+          try {
+            if (txtValid && domain && domain.deal_id !== req.body.dealId) {
               warning = true
             }
-          } catch(e){
+          } catch (e) {
             console.log(e)
           }
           let txtData = {
             type: 'TXT',
             name: "_medianetwork",
             value: generatedTxt,
-            txtValid
+            txtValid,
+            //patchedDomain
           };
-          if(parsed.subdomain){
+          if (parsed.subdomain) {
             res.json({
-                type: 'CNAME', 
-                name: parsed.domain, 
-                subdomain: parsed.subdomain, 
-                value: env.cname,
-                txtData,
-                warning
+              type: 'CNAME',
+              name: parsed.domain,
+              subdomain: parsed.subdomain,
+              value: env.cname,
+              txtData,
+              warning
             });
           } else {
             res.json({
-                type: 'A', 
-                name: parsed.domain, 
-                value: env.a_record,
-                txtData,
-                warning
+              type: 'A',
+              name: parsed.domain,
+              value: env.a_record,
+              txtData,
+              warning
             });
           }
         } else {
-          res.status(400).json({ message: 'Invalid domain' });
+          res.status(400).json({message: 'Invalid domain'});
         }
       } else {
-        res.status(401).json({ message: 'You are not the owner of the deal' });
+        res.status(401).json({message: 'You are not the owner of the deal'});
       }
-    } catch (error){
-        console.log("Error", error)
+    } catch (error) {
+      console.log("Error", error)
       res.status(500).json({message: error});
     }
   }
@@ -334,21 +348,21 @@ app.post('/getDNSConfig', async (req, res) => {
 })
 
 app.post('/syncDeal', async (req, res) => {
-    const {dealId} = req.body
-    const splitIds = recoverOriginalDataFromUniqueDealId(dealId)
-    await manageDealCreatedOrAccepted(splitIds.marketplaceId, splitIds.dealId, splitIds.chainId)
-    res.send('Deal synced successfully!')
+  const {dealId} = req.body
+  const splitIds = recoverOriginalDataFromUniqueDealId(dealId)
+  await manageDealCreatedOrAccepted(splitIds.marketplaceId, splitIds.dealId, splitIds.chainId)
+  res.send('Deal synced successfully!')
 })
 
 app.get("/ipAddress", async (req, res) => {
   const data = await checkSignature(req)
 
-     if (!data) {
-         console.log("Bad Signature")
-         res.status(401).json({ message: "Bad Signature" })
-     } else {
-         res.send({ipAddress: env.ipAddress})
-     }
+  if (!data) {
+    console.log("Bad Signature")
+    res.status(401).json({message: "Bad Signature"})
+  } else {
+    res.send({ipAddress: env.ipAddress})
+  }
 
 })
 
@@ -358,49 +372,49 @@ Following params for network should be and object on the following form:
     id: 1
 }
  */
-app.post("/dealCreatedOrUpdated", async(req, res) => {
+app.post("/dealCreatedOrUpdated", async (req, res) => {
   const {dealId, network} = req.body
-    try{
-        await manageDealCreatedOrAccepted(env.MARKETPLACE_ID, dealId, network)
-        res.send('Deal synced successfully!')
-    } catch (e) {
-        console.log(e)
-        res.status(500).send('Error syncing deal')
-    }
+  try {
+    await manageDealCreatedOrAccepted(env.MARKETPLACE_ID, dealId, network)
+    res.send('Deal synced successfully!')
+  } catch (e) {
+    console.log(e)
+    res.status(500).send('Error syncing deal')
+  }
 
 })
 
-app.post("/resourceUpdated", async(req, res) => {
-    const {resourceId, network} = req.body
-    try{
-        await manageResourceUpdated(resourceId, network)
-        res.send('Resource updated successfully!')
-    } catch (e) {
-        console.log(e)
-        res.status(500).send('Error updating resources')
-    }
+app.post("/resourceUpdated", async (req, res) => {
+  const {resourceId, network} = req.body
+  try {
+    await manageResourceUpdated(resourceId, network)
+    res.send('Resource updated successfully!')
+  } catch (e) {
+    console.log(e)
+    res.status(500).send('Error updating resources')
+  }
 })
 
-app.post("/dealCancelled", async(req, res) => {
-    const {dealId, network} = req.body
-        try{
-            await manageCancelledDeal(dealId, network)
-            res.send('Deal cancelled successfully!')
-        } catch (e) {
-            console.log(e)
-            res.status(500).send('Error cancelling deal')
-        }
+app.post("/dealCancelled", async (req, res) => {
+  const {dealId, network} = req.body
+  try {
+    await manageCancelledDeal(dealId, network)
+    res.send('Deal cancelled successfully!')
+  } catch (e) {
+    console.log(e)
+    res.status(500).send('Error cancelling deal')
+  }
 })
 
-app.post("/addedBalance", async(req, res) => {
-    const {dealId, network} = req.body
-    try{
-        await manageAddedBalance(dealId, network.id)
-        res.send('Balance added successfully!')
-    } catch (e) {
-        console.log(e)
-        res.status(500).send('Error adding balance')
-    }
+app.post("/addedBalance", async (req, res) => {
+  const {dealId, network} = req.body
+  try {
+    await manageAddedBalance(dealId, network.id)
+    res.send('Balance added successfully!')
+  } catch (e) {
+    console.log(e)
+    res.status(500).send('Error adding balance')
+  }
 })
 // Start the server
 app.listen(port, () => {
