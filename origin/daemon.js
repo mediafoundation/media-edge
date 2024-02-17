@@ -9,6 +9,7 @@ const {initSdk, Blockchain, validChains} = require("media-sdk");
 const {PRIVATE_KEY} = require("./config/env");
 const {CaddyController} = require("./controllers/caddyController");
 const {checkEvents} = require("./services/events");
+const { toHex } = require("viem");
 
 // Initialize the lastReadBlock variable to 0
 let lastReadBlock = {};
@@ -76,10 +77,10 @@ const init = async (network) => {
     //Read block to use in events
     try {
         let blockchain = new Blockchain()
-        let blockNumber = await blockchain.getBlockNumber()
-        lastReadBlock[network.id] = Number(blockNumber)
+        let blockNumber = toHex(await blockchain.getBlockNumber())
+        lastReadBlock[network.id] = toHex(Number(blockNumber))
     }catch (e){
-        lastReadBlock[network.id] = 0
+        lastReadBlock[network.id] = toHex(0)
         console.log("Error when getting last block", e)
         blockReadStatus = false
     }

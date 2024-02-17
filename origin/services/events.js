@@ -8,6 +8,7 @@ const { DealsMetadataType } = require("../models/deals/DealsMetadata");
 const { BandwidthController } = require("../controllers/bandwidthController");
 const {filterDomainsMatchingDeals} = require("../utils/resources");
 const {generateUniqueDealId, recoverOriginalDataFromUniqueDealId} = require("../utils/deals");
+const { toHex } = require("viem");
 
 let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     //let blockNumber = lastReadBlock + 1
@@ -18,8 +19,8 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     let acceptedDeals = undefined
     let addedBalance = undefined
     let blockchain = new Blockchain()
-    let blockNumber = await blockchain.getBlockNumber()
-    let toNumber = Number(blockNumber)
+    let blockNumber = toHex(await blockchain.getBlockNumber())
+    let toNumber = toHex(Number(blockNumber))
 
     try {
         let eventsHandler = new EventHandler()
