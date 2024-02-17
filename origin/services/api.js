@@ -370,6 +370,8 @@ app.get("/ipAddress", async (req, res) => {
 Following params for network should be and object on the following form:
 {
     id: 1
+  chain_id: 1,
+  network_id: 1
 }
  */
 app.post("/dealCreated", async (req, res) => {
