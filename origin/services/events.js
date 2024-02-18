@@ -144,6 +144,8 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
 
 let manageDealCreatedOrAccepted = async (marketplaceId, dealId, CURRENT_NETWORK) => {
 
+    console.log("Data from event", marketplaceId, dealId, CURRENT_NETWORK)
+
     if(Number(marketplaceId) !== env.MARKETPLACE_ID) return
     let marketplace = new Marketplace()
     let resourceInstance = new Resources()
