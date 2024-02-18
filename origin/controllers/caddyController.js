@@ -250,7 +250,7 @@ class CaddyController {
         try {
             await CaddySource.destroy({ where: { deal_id: dealId } })
 
-            await this.deletefromAllQueues(dealId)
+            await this.deleteFromAllQueues(dealId)
 
             await axios.delete(
                 caddyBaseUrl +'id/'+ dealId,
