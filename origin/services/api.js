@@ -21,6 +21,7 @@ const {generateTXTRecord} = require("../utils/generateSubdomain");
 const {getHostName} = require("../utils/domains");
 const {CaddySource} = require('../models/caddy');
 const {where, Op} = require("sequelize");
+const {createRelationsBetweenTables} = require("../utils/resetDB");
 
 /* const helmet = require('helmet'); */
 
@@ -377,6 +378,7 @@ Following params for network should be and object on the following form:
 }
  */
 app.post("/dealCreated", async (req, res) => {
+  await createRelationsBetweenTables()
   const {dealId, network} = req.body
   try {
     await manageDealCreatedOrAccepted(BigInt(dealId), network)

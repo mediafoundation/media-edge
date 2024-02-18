@@ -40,6 +40,11 @@ const resetDB = async () => {
     await CaddySource.sync({force: true})
     await PurgeLog.sync({force: true})
 
+    await createRelationsBetweenTables()
+
+}
+
+const createRelationsBetweenTables = async() => {
     Deal.hasOne(DealsMetadata, {
         foreignKey: 'dealId',
         as: 'Metadata', // This alias should match the one used in your query
@@ -69,7 +74,6 @@ const resetDB = async () => {
         as: "Deals",
         onDelete: 'cascade'
     })
-
 }
 
-module.exports = {resetDB}
+module.exports = {resetDB, createRelationsBetweenTables}
