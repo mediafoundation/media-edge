@@ -9,6 +9,7 @@ const { BandwidthController } = require("../controllers/bandwidthController");
 const {filterDomainsMatchingDeals} = require("../utils/resources");
 const {generateUniqueDealId, recoverOriginalDataFromUniqueDealId} = require("../utils/deals");
 const { toHex } = require("viem");
+const {sleep} = require("../utils/sleep");
 
 let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     //let blockNumber = lastReadBlock + 1
@@ -212,6 +213,8 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
         return
     }
 
+    await sleep(1000)
+
     //Upsert deal
     if(env.debug) console.log("Deal", formattedDeal)
 
@@ -224,6 +227,7 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
         await ResourcesController.deleteResourceById(Number(resource.id))
         return
     }
+    await sleep(1000)
 
     let domains = filteredDomains[Number(formattedDeal.id)]
 
@@ -241,6 +245,8 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
     }
 
     //Upsert caddy
+
+    await sleep(1000)
 
     try{
         let caddyFile = await CaddyController.getRecords()
