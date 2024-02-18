@@ -352,7 +352,7 @@ app.post('/getDNSConfig', async (req, res) => {
 app.post('/syncDeal', async (req, res) => {
   const {dealId} = req.body
   const splitIds = recoverOriginalDataFromUniqueDealId(dealId)
-  await manageDealCreatedOrAccepted(splitIds.marketplaceId, splitIds.dealId, splitIds.chainId)
+  await manageDealCreatedOrAccepted(splitIds.dealId, splitIds.chainId)
   res.send('Deal synced successfully!')
 })
 
@@ -379,7 +379,7 @@ Following params for network should be and object on the following form:
 app.post("/dealCreated", async (req, res) => {
   const {dealId, network} = req.body
   try {
-    await manageDealCreatedOrAccepted(env.MARKETPLACE_ID, BigInt(dealId), network)
+    await manageDealCreatedOrAccepted(BigInt(dealId), network)
     res.send('Deal synced successfully!')
   } catch (e) {
     console.log(e)

@@ -120,7 +120,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     if (typeof acceptedDeals !== "undefined" && acceptedDeals.length > 0) {
         //await manageDealCreatedOrAccepted(acceptedDeals, CURRENT_NETWORK)
         for (const acceptedDeal of acceptedDeals) {
-            await manageDealCreatedOrAccepted(acceptedDeal.args._marketplaceId, acceptedDeal.args._dealId, CURRENT_NETWORK)
+            await manageDealCreatedOrAccepted(acceptedDeal.args._dealId, CURRENT_NETWORK)
         }
     }
 
@@ -142,11 +142,10 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     return blockNumber
 }
 
-let manageDealCreatedOrAccepted = async (marketplaceId, dealId, CURRENT_NETWORK) => {
+let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
 
-    console.log("Data from event", marketplaceId, dealId, CURRENT_NETWORK)
+    console.log("Data from event", dealId, CURRENT_NETWORK)
 
-    if(Number(marketplaceId) !== env.MARKETPLACE_ID) return
     let marketplace = new Marketplace()
     let resourceInstance = new Resources()
     const deal = await marketplace.getDealById({ marketplaceId: env.MARKETPLACE_ID, dealId: Number(dealId) })
