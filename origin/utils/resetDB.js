@@ -46,6 +46,12 @@ const resetDB = async () => {
         onDelete: 'cascade'
     });
 
+    DealsMetadata.belongsTo(Deal, {
+        foreignKey: 'dealId',
+        as: 'Deal',
+        onDelete: 'cascade'
+    });
+
     Deal.hasOne(DealsBandwidthLimit, {
         foreignKey: 'dealId',
         as: 'BandwidthLimit', // This alias should match the one used in your query
