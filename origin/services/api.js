@@ -372,9 +372,11 @@ app.get("/ipAddress", async (req, res) => {
 Following params for network should be and object on the following form:
 {
     id: 1
+  chain_id: 1,
+  network_id: 1
 }
  */
-app.post("/dealCreatedOrUpdated", async (req, res) => {
+app.post("/dealCreated", async (req, res) => {
   const {dealId, network} = req.body
   try {
     await manageDealCreatedOrAccepted(env.MARKETPLACE_ID, dealId, network)

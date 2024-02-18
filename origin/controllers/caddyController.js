@@ -1,5 +1,5 @@
 const env = require("../config/env");
-const {generateSubdomain} = require("../utils/generateSubdomain");
+const {generateSubdomain, generateTXTRecord} = require("../utils/generateSubdomain");
 const axios = require("axios");
 const {obtainAndRenewCertificate, certStatus} = require("../utils/certs");
 const doh = require('dohjs')
@@ -7,7 +7,6 @@ const resolver = new doh.DohResolver('https://1.1.1.1/dns-query')
 const config = require("../config/app");
 const {CaddySource} = require("../models/caddy");
 const {isARecord, getHostName} = require("../utils/domains");
-const {generateTXTRecord} = require("../utils/generateSubdomain");
 
 
 const queues = {
@@ -46,7 +45,7 @@ class CaddyController {
         let hosts = []
 
         for(const host of env.hosts){
-            hosts.push(`${generateSubdomain(env.MARKETPLACE_ID, deal.id, network.network_id, network.chain_id)}.${host}`)
+            hosts.push(`${generateSubdomain(env.MARKETPLACE_ID, deal.id, network.id)}.${host}`)
         }
 
         let transport = res.protocol === "https" ?

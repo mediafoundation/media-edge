@@ -115,7 +115,7 @@ let checkCaddy = async () => {
         if(caddyNeedsUpdate){
             try{
                 console.log("Caddy failed, trying to restart")
-                await initCaddy()
+                await initCaddy() //todo: check why this is empty
                 caddyNeedsUpdate = false
             }catch (e) {
                 console.log("Error restarting caddy:", e)
