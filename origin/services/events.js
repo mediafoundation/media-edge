@@ -99,7 +99,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
 
     if (typeof createdDeals !== "undefined" && createdDeals.length > 0) {
         for (const createdDeal of createdDeals) {
-            await manageDealCreatedOrAccepted(createdDeal.args._marketplaceId, createdDeal.args._dealId, CURRENT_NETWORK)
+            await manageDealCreatedOrAccepted(createdDeal.args._dealId, CURRENT_NETWORK)
         }
     }
 
