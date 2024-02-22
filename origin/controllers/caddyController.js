@@ -155,16 +155,16 @@ class CaddyController {
         if (env.debug) if(destroyed) console.log("Removing CaddySources for:", item.deal.id)
 
         //Remove deal from queue
-        await this.deleteFromAllQueuesByDealAndResource(item.deal.id, item.resource.id)
+        await this.deleteFromAllQueuesByDealAndResource(item.deal.id, item.resource.dataValues.id)
 
         //create Caddy object required to be posted on caddyFile
-        let newCaddyData = await this.newObject(item.resource, item.deal, network)
+        let newCaddyData = await this.newObject(item.resource.dataValues, item.deal, network)
 
         //if the resource has a custom cname
         if(item.domains.length !== 0) {
             if (env.debug) console.log("Deal has domains:", item.domains)
             for (const domain of item.domains) {
-                await this.manageDomain(newCaddyData, {id: domain.dealId, item: domain.domain, owner: item.resource.owner})
+                await this.addToQueue(queues.Minutely, domain.id, domain, item.resource.dataValues.owner);
             }
         }
 
