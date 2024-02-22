@@ -416,6 +416,13 @@ class CaddyController {
         }
     }
 
+    static async deleteFromAllQueuesByDeal(dealId){
+        for (const queue of Object.values(queues)) {
+            const index = queue.findIndex(item => item.item.dealId === dealId);
+            if (index !== -1) queue.splice(index, 1);
+        }
+    }
+
     static async addToQueue(queue, id, item, owner){
         if (!await this.isInQueue(id)) {
             queue.push({id, item, owner});
