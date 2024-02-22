@@ -349,13 +349,15 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
                 let dealFromDB = await DealsController.getDealById(deal.id)
                 let caddyDomain = await ResourcesController.getResourceDomain(resourceId, dealFromDB.id)
                 console.log("Caddy domain", caddyDomain)
-                await CaddyController.upsertRecord(
+                let caddyFile = await CaddyController.getRecords()
+                await CaddyController.addRecords([
                     {
                         resource: upsertResourceResult.instance,
                         deal: dealFromDB,
                         domains: caddyDomain
-                    },
-                    CURRENT_NETWORK
+                    }
+                    ],
+                  caddyFile,CURRENT_NETWORK
                 )
             }
         }
