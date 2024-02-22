@@ -285,7 +285,7 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
     let domainsFromDbNotInFilteredDomains = []
 
     let deals = await ResourcesController.getResourcesDeals(
-        event.args._id,
+        resourceId,
     )
     if (deals.length > 0) {
         let resource = await ResourcesController.getResourceById(resourceId)
