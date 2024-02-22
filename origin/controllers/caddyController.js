@@ -363,7 +363,7 @@ class CaddyController {
                 if (item.retry <= limit) {
                     item.retry++;
                     console.log("Item on check queue", item)
-                    if (env.debug) console.log(`Retrying to apply custom domain ${item.item.domain} (${item.retry})`);
+                    if (env.debug) console.log(`Retrying to apply custom domain ${item.item.domain} (${item.retry})`, item);
                     try{
 
                         let hostValid = await this.isRecordPointingCorrectly(item.item.domain);
