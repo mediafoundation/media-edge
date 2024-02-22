@@ -113,20 +113,6 @@ class CaddyController {
                     for (const domain of item.domains) {
                       console.log("Domain", domain)
                       await this.addToQueue(queues.Minutely, domain.id, domain, item.resource.owner);
-                        //if domains is not already added and won't be added, patch it directly
-/*                         if(
-                            await this.isCustomDomainAlreadyAdded(domain.domain) 
-                            || domains.map(domain => domain.item).includes(domain.domain)
-                        ){
-                            await this.addToQueue(queues.Minutely, domain.id, domain);
-                        }
-                        else{
-                            //await this.patchRecord({id: item.deal.id, item: domain.domain})
-                            domains.push({id: item.deal.id, item: domain.domain})
-                            console.log("Deal resource item", item)
-                            await this.addToQueue(queues.Minutely, domain.id, domain);
-                            console.log("Queue", queues.Minutely)
-                        } */
                     }
                 }
                 payload.push(caddyData)
