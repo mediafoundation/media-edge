@@ -347,7 +347,7 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
 
             for (const deal of deals) {
                 let dealFromDB = await DealsController.getDealById(deal.id)
-                let caddyDomain = await ResourcesController.getResourceDomain(event.args._id, dealFromDB.id)
+                let caddyDomain = await ResourcesController.getResourceDomain(resourceId, dealFromDB.id)
                 console.log("Caddy domain", caddyDomain)
                 await CaddyController.upsertRecord(
                     {
