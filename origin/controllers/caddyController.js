@@ -144,6 +144,8 @@ class CaddyController {
 
     static async upsertRecord(item, network){
 
+        console.log("Item on upsert record", item)
+
         //Destroy previous custom domains records associated to deal id
         let destroyed = await CaddySource.destroy({
             where: {
@@ -153,7 +155,7 @@ class CaddyController {
         if (env.debug) if(destroyed) console.log("Removing CaddySources for:", item.deal.id)
 
         //Remove deal from queue
-        //await this.deletefromAllQueues(item.deal.id) //TODO: what to do now?
+        await this.deleteFromAllQueuesByDealAndResource(item.deal.id, item.resource.id)
 
         //create Caddy object required to be posted on caddyFile
         let newCaddyData = await this.newObject(item.resource, item.deal, network)
@@ -416,9 +418,9 @@ class CaddyController {
         }
     }
 
-    static async deleteFromAllQueuesByDeal(dealId){
+    static async deleteFromAllQueuesByDealAndResource(dealId, resourceId){
         for (const queue of Object.values(queues)) {
-            const index = queue.findIndex(item => item.item.dealId === dealId);
+            const index = queue.findIndex(item => item.item.dealId === dealId && item.item.resourceId === resourceId);
             if (index !== -1) queue.splice(index, 1);
         }
     }
