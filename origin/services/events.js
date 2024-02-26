@@ -313,7 +313,7 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
 
             let data = JSON.parse(decrypted)
 
-            let resourceForDb = { id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data }
+            let resourceForDb = { id: resourceFromEvm.id, owner: deal.client, ...data }
 
             if(data.domains) {
                 console.log("Domains from evm", data.domains, deals.map(deal => recoverOriginalDataFromUniqueDealId(deal.id).dealId.toString()))
