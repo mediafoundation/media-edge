@@ -340,7 +340,7 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
                 await ResourcesController.deleteResourceDomain(domainToBeDeleted.id)
             }
 
-            let upsertResourceResult = await ResourcesController.upsertResource({ id: resourceFromEvm.id, owner: resourceFromEvm.owner, ...data })
+            let upsertResourceResult = await ResourcesController.upsertResource({ id: resourceFromEvm.id, owner: deals[0].client, ...data })
 
             for (const resource of filteredDomains) {
                 for (const domain of resource.domains) {
