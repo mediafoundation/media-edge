@@ -370,10 +370,14 @@ class CaddyController {
 
                         console.log("Host valid item", item)
 
+                        let targetDomain = getHostName(item.item.domain)
+                        let expectedValue = generateTXTRecord(item.owner, getHostName(item.item.domain))
+
                         console.log(`checking txt record for ${getHostName(item.item.domain)}`)
+                        console.log("Expected value", expectedValue)
                         hostValid = await this.checkTxtRecord(
-                          getHostName(item.item.domain), 
-                          generateTXTRecord(item.owner, getHostName(item.item.domain))
+                          targetDomain,
+                          expectedValue
                         )
 
                         console.log("Host valid", hostValid)
