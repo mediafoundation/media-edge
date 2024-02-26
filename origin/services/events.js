@@ -10,6 +10,7 @@ const {filterDomainsMatchingDeals} = require("../utils/resources");
 const {generateUniqueDealId, recoverOriginalDataFromUniqueDealId} = require("../utils/deals");
 const { toHex } = require("viem");
 const {sleep} = require("../utils/sleep");
+const {Domains} = require("../models/resources/Domains");
 
 let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     //let blockNumber = lastReadBlock + 1
@@ -93,7 +94,8 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
 
     if (typeof removedResources !== "undefined" && removedResources.length > 0) {
         for (const event of removedResources) {
-            await ResourcesController.deleteResourceById(event.args._id)
+            await Domains.destroy({where:{resourceId: Number(event.args._id)}})
+            await ResourcesController.deleteResourceById(Number(event.args._id))
         }
     }
 
