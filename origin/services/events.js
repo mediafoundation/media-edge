@@ -176,6 +176,8 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
         return
     }
 
+    console.log("Deal", deal)
+
     const resource = await resourceInstance.getResource({ id: deal.resourceId, address: env.WALLET })
 
     console.log("Resource on event", resource)
@@ -205,7 +207,7 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
         );
 
         let data = JSON.parse(decrypted)
-        await ResourcesController.upsertResource({ id: resource.id, owner: resource.owner, ...data })
+        await ResourcesController.upsertResource({ id: resource.id, owner: deal.client, ...data })
 
         if(data.domains) filteredDomains = filterDomainsMatchingDeals(data.domains, [Number(deal.id)])
 
