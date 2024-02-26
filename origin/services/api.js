@@ -289,6 +289,9 @@ app.post('/getDNSConfig', async (req, res) => {
         if (psl.isValid(req.body.domain)) {
           const parsed = psl.parse(req.body.domain);
 
+          console.log("Owner", owner)
+          console.log("Domain", getHostName(req.body.domain))
+
           let generatedTxt = generateTXTRecord(owner, getHostName(req.body.domain))
 
           let txtValid = await CaddyController.checkTxtRecord(
