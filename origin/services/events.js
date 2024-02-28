@@ -376,7 +376,7 @@ let manageCancelledDeal = async (dealId, CURRENT_NETWORK) => {
     console.log("DealResource", dealResource)
     let dealsOfResource = await ResourcesController.getResourcesDeals(dealResource.resourceId)
 
-    await CaddyController.deleteRecord(uniqueId)
+    await CaddyController.deleteRecord(uniqueId, deal.resourceId)
     await DealsController.deleteDealById(uniqueId)
 
     if (dealsOfResource.length === 0) {

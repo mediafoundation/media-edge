@@ -234,11 +234,11 @@ class CaddyController {
         }
     }
 
-    static async deleteRecord(dealId){
+    static async deleteRecord(dealId, resourceId){
         try {
             await CaddySource.destroy({ where: { deal_id: dealId } })
 
-            await this.deleteFromAllQueues(dealId)
+            await this.deleteFromAllQueuesByDealAndResource(dealId, resourceId)
 
             await axios.delete(
                 caddyBaseUrl +'id/'+ dealId,

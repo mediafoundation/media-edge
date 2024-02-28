@@ -37,7 +37,7 @@ let initCaddy = async function(network){
     )
     
     for (const deal of difference) {
-        await CaddyController.deleteRecord(deal)
+        await CaddyController.deleteRecord(deal, deal.resourceId)
     }
 
     await CaddyController.checkQueue(queues.Minutely, "Minutely", 60)
@@ -73,7 +73,9 @@ let checkDealsShouldBeActive = async function(){
 
         //Delete deals from caddy
         for (const dealToDelete of dealsToDelete) {
-            await CaddyController.deleteRecord(dealToDelete)
+            let deal = deals.map(deal => deal.id === dealToDelete)
+            let resourceId = deal.resourceId
+            await CaddyController.deleteRecord(dealToDelete, resourceId)
             await DealsController.deleteDealById(dealToDelete.id)
         }
 
