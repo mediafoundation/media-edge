@@ -155,7 +155,7 @@ class CaddyController {
         if (env.debug) if(destroyed) console.log("Removing CaddySources for:", item.deal.id)
 
         //Remove deal from queue
-        await this.deleteFromAllQueuesByDealAndResource(item.deal.id, item.resource.dataValues.id)
+        await this.deleteFromAllQueuesByDeal(item.deal.id)
 
         //create Caddy object required to be posted on caddyFile
         let newCaddyData = await this.newObject(item.resource.dataValues, item.deal, network)
@@ -234,11 +234,11 @@ class CaddyController {
         }
     }
 
-    static async deleteRecord(dealId, resourceId){
+    static async deleteRecord(dealId){
         try {
             await CaddySource.destroy({ where: { deal_id: dealId } })
 
-            await this.deleteFromAllQueuesByDealAndResource(dealId, resourceId)
+            await this.deleteFromAllQueuesByDeal(dealId)
 
             await axios.delete(
                 caddyBaseUrl +'id/'+ dealId,
@@ -423,10 +423,14 @@ class CaddyController {
         }
     }
 
-    static async deleteFromAllQueuesByDealAndResource(dealId, resourceId){
+    static async deleteFromAllQueuesByDeal(dealId){
         for (const queue of Object.values(queues)) {
-            const index = queue.findIndex(item => item.item.dealId === dealId && item.item.resourceId === resourceId);
-            if (index !== -1) queue.splice(index, 1);
+            const index = queue.findIndex(item => item.item.dealId === dealId);
+            if (index !== -1) {
+                queue.splice(index, 1);
+                console.log("Deleted from queue dealId:", dealId)
+            }
+
         }
     }
 
