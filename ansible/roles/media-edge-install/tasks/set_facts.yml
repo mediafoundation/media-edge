@@ -74,12 +74,22 @@
     - name: Store origin ip if not defined
       block:
         - pause:
-            prompt: "\nEnter your origin ip address"
+            prompt: "\nEnter your origin ip to provide"
             echo: yes
           register: origin_ip_input
         - set_fact:
             origin_ip: "{{ origin_ip_input.user_input }}"
       when: origin_ip is not defined or origin_ip == "" or origin_ip == none
+
+    - name: Store cname if not defined
+      block:
+        - pause:
+            prompt: "\nEnter your cname to provide"
+            echo: yes
+          register: cname_input
+        - set_fact:
+            cname: "{{ cname_input.user_input }}"
+      when: cname is not defined or cname == "" or cname == none
 
     - name: Store testing if not defined
       block:
