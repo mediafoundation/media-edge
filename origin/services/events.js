@@ -30,7 +30,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     let toNumber = toHex(Number(blockNumber))
 
     try {
-        let eventsHandler = new EventHandler()
+        let eventsHandler = new EventHandler(sdk)
 
         if (env.debug && blockNumber !== lastReadBlock) {
             console.log("Last read block", lastReadBlock)
