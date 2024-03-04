@@ -52,7 +52,8 @@ const init = async (network) => {
 
     //Init database (get data from blockchain)
     try{
-        await initDatabase(network)
+        console.log("Sdk", sdk)
+        await initDatabase(network, sdk)
     } catch (e) {
         databaseInitStatus = false
         console.log("Error when init database:", e)
@@ -94,7 +95,7 @@ const init = async (network) => {
 }
 
 async function start(){
-    // let CURRENT_NETWORK = networks.bsc
+    //console.log(networks, networks.find(item => item.id === 11155111))
     for(const CURRENT_NETWORK of networks ){
 
         console.log(CURRENT_NETWORK)

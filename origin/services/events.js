@@ -1,5 +1,6 @@
 const env = require("../config/env")
-const { EventHandler, Resources, Encryption, Marketplace, Blockchain} = require("media-sdk");
+const { EventHandler, Resources, Encryption, validChains, Marketplace, Blockchain, Sdk} = require("media-sdk");
+const networks = require('./../config/networks')
 const { DealsController } = require("../controllers/dealsController");
 const { ResourcesController } = require("../controllers/resourcesController");
 const { CaddyController } = require("../controllers/caddyController");
@@ -11,6 +12,7 @@ const {generateUniqueDealId, recoverOriginalDataFromUniqueDealId} = require("../
 const { toHex } = require("viem");
 const {sleep} = require("../utils/sleep");
 const {Domains} = require("../models/resources/Domains");
+const {PRIVATE_KEY} = require("../config/env");
 
 let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     //let blockNumber = lastReadBlock + 1
@@ -149,8 +151,12 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
 
     console.log("Data from event", dealId, CURRENT_NETWORK)
 
-    let marketplace = new Marketplace()
-    let resourceInstance = new Resources()
+    const network = networks.find(network => network.id === CURRENT_NETWORK.id)
+
+    let sdk = new Sdk({privateKey: env.PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
+
+    let marketplace = new Marketplace(sdk)
+    let resourceInstance = new Resources(sdk)
     const deal = await marketplace.getDealById({ marketplaceId: env.MARKETPLACE_ID, dealId: Number(dealId) })
 
     //Parse deal metadata
@@ -295,7 +301,11 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
         let resource = await ResourcesController.getResourceById(resourceId)
         if (resource !== false) {
 
-            let resources = new Resources()
+            const network = networks.find(network => network.id === CURRENT_NETWORK.id)
+
+            let sdk = new Sdk({privateKey: env.PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
+
+            let resources = new Resources(sdk)
             let resourceFromEvm = await resources.getResource({ id: resourceId, address: env.WALLET })
 
             let attr = JSON.parse(resourceFromEvm.encryptedData)
@@ -386,7 +396,11 @@ let manageCancelledDeal = async (dealId, CURRENT_NETWORK) => {
 }
 
 let manageAddedBalance = async (dealId, chainId) => {
-    let marketplace = new Marketplace()
+    const network = networks.find(network => network.id === CURRENT_NETWORK.id)
+
+    let sdk = new Sdk({privateKey: env.PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
+
+    let marketplace = new Marketplace(sdk)
     let deal = await marketplace.getDealById({marketplaceId: env.MARKETPLACE_ID, dealId: dealId})
     await DealsController.parseDealMetadata(deal.terms.metadata)
     let formattedDeal = DealsController.formatDeal(deal)

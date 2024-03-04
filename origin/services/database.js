@@ -9,11 +9,11 @@ const {CaddyController} = require("../controllers/caddyController");
 const {generateUniqueDealId} = require("../utils/deals");
 const {generateTXTRecord} = require("../utils/generateSubdomain");
 const {getHostName} = require("../utils/domains");
-const initDatabase = async function (network) {
+const initDatabase = async function (network, sdkInstance) {
 
     // Fetch resources and deals
-    let marketplaceViewer = new MarketplaceViewer();
-    let resourcesInstance = new Resources();
+    let marketplaceViewer = new MarketplaceViewer(sdkInstance);
+    let resourcesInstance = new Resources(sdkInstance);
 
     let resources = await resourcesInstance.getAllResourcesPaginating({address: env.WALLET, start: 0, steps: 10})
     let deals = await marketplaceViewer.getAllDealsPaginating({
