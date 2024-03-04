@@ -12,7 +12,6 @@ const {generateUniqueDealId, recoverOriginalDataFromUniqueDealId} = require("../
 const { toHex } = require("viem");
 const {sleep} = require("../utils/sleep");
 const {Domains} = require("../models/resources/Domains");
-const {PRIVATE_KEY} = require("../config/env");
 
 let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     //let blockNumber = lastReadBlock + 1
