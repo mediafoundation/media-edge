@@ -42,7 +42,7 @@ app.use(cors({
 const port = 8080; // Change this to your desired port number
 //const networks = require("./../config/networks")
 
-const signer = new Signer()
+//const signer = new Signer()
 
 app.use(express.json())
 
@@ -150,7 +150,7 @@ app.post('/logout', async (req, res) => {
 });
 
 // Define the endpoint for your remote function
-app.post('/', async (req, res) => {
+/*app.post('/', async (req, res) => {
   const payload = req.body
 
   if (!await signer.checkSignature({
@@ -201,7 +201,7 @@ app.post('/', async (req, res) => {
   responseFailed && (_res["Failed"] = responseFailed)
   res.status(200).send(_res)
 
-});
+});*/
 
 app.post('/purge', async (req, res) => {
 

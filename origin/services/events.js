@@ -21,7 +21,11 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     let cancelledDeals = undefined
     let acceptedDeals = undefined
     let addedBalance = undefined
-    let blockchain = new Blockchain()
+    const network = networks.find(network => network.id === CURRENT_NETWORK.id)
+
+    let sdk = new Sdk({privateKey: env.PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
+
+    let blockchain = new Blockchain(sdk)
     let blockNumber = toHex(await blockchain.getBlockNumber())
     let toNumber = toHex(Number(blockNumber))
 

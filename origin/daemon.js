@@ -78,7 +78,7 @@ const init = async (network) => {
 
     //Read block to use in events
     try {
-        let blockchain = new Blockchain()
+        let blockchain = new Blockchain(sdk)
         let blockNumber = toHex(await blockchain.getBlockNumber())
         lastReadBlock[network.id] = toHex(Number(blockNumber))
     }catch (e){
