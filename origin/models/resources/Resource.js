@@ -4,7 +4,7 @@ const { array, boolean, number, object, string, z } = require("zod");
 
 const Resource= sequelize.define("Resources",
     {
-        id: {type: DataTypes.BIGINT, primaryKey: true},
+        id: {type: DataTypes.STRING, primaryKey: true},
         owner: DataTypes.STRING,
         label: DataTypes.STRING,
         protocol: DataTypes.STRING,

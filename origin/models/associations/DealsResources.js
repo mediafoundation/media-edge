@@ -14,7 +14,7 @@ const DealsResources = sequelize.define("DealsResources", {
         }
     },
     resourceId: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.STRING,
         references: {
             model: 'Resources',
             key: 'id'
