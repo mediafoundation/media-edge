@@ -8,7 +8,7 @@ const { z } = require("zod");
 const { DealsMetadataType } = require("../models/deals/DealsMetadata");
 const { BandwidthController } = require("../controllers/bandwidthController");
 const {filterDomainsMatchingDeals} = require("../utils/resources");
-const {generateUniqueDealId, recoverOriginalDataFromUniqueDealId} = require("../utils/deals");
+const {generateUniqueItemId, recoverOriginalDataFromUniqueDealId} = require("../utils/deals");
 const { toHex } = require("viem");
 const {sleep} = require("../utils/sleep");
 const {Domains} = require("../models/resources/Domains");
@@ -263,9 +263,9 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
 
     try{
         let caddyFile = await CaddyController.getRecords()
-        console.log("UniqueId",generateUniqueDealId(Number(dealId), CURRENT_NETWORK.id), dealId, CURRENT_NETWORK.id )
-        let deal = await DealsController.getDealById(generateUniqueDealId(Number(dealId), CURRENT_NETWORK.id))
-        let dealResource = await DealsController.getDealResource(generateUniqueDealId(Number(dealId), CURRENT_NETWORK.id))
+        console.log("UniqueId",generateUniqueItemId(Number(dealId), CURRENT_NETWORK.id), dealId, CURRENT_NETWORK.id )
+        let deal = await DealsController.getDealById(generateUniqueItemId(Number(dealId), CURRENT_NETWORK.id))
+        let dealResource = await DealsController.getDealResource(generateUniqueItemId(Number(dealId), CURRENT_NETWORK.id))
         let resource = await ResourcesController.getResourceById(dealResource.resourceId)
         console.log("Resource", resource)
         console.log("Deal", deal)
@@ -282,7 +282,7 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
 
     //Upsert bandwidth
     try {
-        let dealFromDb = await DealsController.getDealById(generateUniqueDealId(Number(dealId), CURRENT_NETWORK.id))
+        let dealFromDb = await DealsController.getDealById(generateUniqueItemId(Number(dealId), CURRENT_NETWORK.id))
         let dealForBandwidth = await BandwidthController.formatDataToDb(dealFromDb)
         await BandwidthController.upsertRecord(dealForBandwidth)
     }catch (e) {
@@ -357,7 +357,7 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
 
             for (const resource of filteredDomains) {
                 for (const domain of resource.domains) {
-                    await ResourcesController.upsertResourceDomain({resourceId: resource.resourceId, domain: domain.host, dealId: generateUniqueDealId(Number(domain.dealId), CURRENT_NETWORK.id)})
+                    await ResourcesController.upsertResourceDomain({resourceId: resource.resourceId, domain: domain.host, dealId: generateUniqueItemId(Number(domain.dealId), CURRENT_NETWORK.id)})
                 }
 
             }
@@ -379,7 +379,7 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
 }
 
 let manageCancelledDeal = async (dealId, CURRENT_NETWORK) => {
-    const uniqueId = generateUniqueDealId(Number(dealId), CURRENT_NETWORK.id);
+    const uniqueId = generateUniqueItemId(Number(dealId), CURRENT_NETWORK.id);
     let deal = await DealsController.getDealById(uniqueId)
     console.log("Deal cancelled", dealId, uniqueId, deal)
 

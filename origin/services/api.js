@@ -6,7 +6,7 @@ const {Signer} = require("media-sdk");
 const {DealsController} = require("../controllers/dealsController");
 const {PurgeLogsController} = require("../controllers/purgeLogsController");
 const {CaddyController} = require("../controllers/caddyController");
-const {generateUniqueDealId, recoverOriginalDataFromUniqueDealId} = require("../utils/deals");
+const {generateUniqueItemId, recoverOriginalDataFromUniqueDealId} = require("../utils/deals");
 const {generateNonce, SiweMessage, SiweErrorType} = require("siwe");
 const Session = require("express-session");
 const {
@@ -244,7 +244,7 @@ app.get('/getAllDealsEndpoints', async (req, res) => {
   try {
     const endpoints = {}
     for (const dealId of payload.dealIds) {
-      endpoints[dealId] = await CaddyController.getHosts(generateUniqueDealId(dealId, payload.chainId))
+      endpoints[dealId] = await CaddyController.getHosts(generateUniqueItemId(dealId, payload.chainId))
     }
     res.send(endpoints)
   } catch (error) {

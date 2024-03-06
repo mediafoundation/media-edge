@@ -1,6 +1,6 @@
 const env = require('../config/env');
 
-const generateUniqueDealId = (dealId, chainId) => {
+const generateUniqueItemId = (dealId, chainId) => {
     return dealId.toString() + "_" + chainId.toString() + "_" + env.MARKETPLACE_ID.toString();
 }
 
@@ -13,4 +13,4 @@ const recoverOriginalDataFromUniqueDealId = (uniqueDealId) => {
     }
 }
 
-module.exports = {generateUniqueDealId, recoverOriginalDataFromUniqueDealId};
+module.exports = {generateUniqueItemId, recoverOriginalDataFromUniqueDealId};

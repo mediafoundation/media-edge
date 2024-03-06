@@ -1,7 +1,7 @@
 const {ResourcesController} = require('../../controllers/resourcesController');
 const {resetDB} = require("../../utils/resetDB");
 const {DealsController} = require("../../controllers/dealsController");
-const {generateUniqueDealId} = require("../../utils/deals");
+const {generateUniqueItemId} = require("../../utils/deals");
 
 const mockResource = {
     id: 1,
@@ -42,7 +42,7 @@ const mockDeal = {
 const mockDomain = {
     domain: 'example.com',
     resourceId: 1,
-    dealId: generateUniqueDealId(1, 1)
+    dealId: generateUniqueItemId(1, 1)
 };
 describe('ResourcesController', () => {
     beforeAll(async () => {
@@ -91,7 +91,7 @@ describe('ResourcesController', () => {
         });
 
         it('should add new record for same combination of dealId and resourceId', async () => {
-            const newDomain = {resourceId: 1, domain: 'example2.com', dealId: generateUniqueDealId(1, 1)};
+            const newDomain = {resourceId: 1, domain: 'example2.com', dealId: generateUniqueItemId(1, 1)};
 
             let result = await ResourcesController.upsertResourceDomain(newDomain)
 
@@ -101,7 +101,7 @@ describe('ResourcesController', () => {
         });
 
         it("Should be two domains for the resource", async() => {
-            let domains = await ResourcesController.getResourceDomain(1, generateUniqueDealId(1, 1))
+            let domains = await ResourcesController.getResourceDomain(1, generateUniqueItemId(1, 1))
             expect(domains.length).toBe(2)
         })
     });

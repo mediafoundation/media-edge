@@ -6,7 +6,7 @@ const {z} = require("zod");
 const {DealsMetadataType} = require("../models/deals/DealsMetadata");
 const {ResourcesController} = require("../controllers/resourcesController");
 const {CaddyController} = require("../controllers/caddyController");
-const {generateUniqueDealId} = require("../utils/deals");
+const {generateUniqueItemId} = require("../utils/deals");
 const {generateTXTRecord} = require("../utils/generateSubdomain");
 const {getHostName} = require("../utils/domains");
 const initDatabase = async function (network, sdkInstance) {
@@ -115,15 +115,15 @@ const initDatabase = async function (network, sdkInstance) {
             let txtRecord = null
             if(existentDomain.length !== 0){
                 let dealIds = existentDomain.map((domain) => domain.dealId)
-                if(!dealIds.includes(generateUniqueDealId(Number(domain.dealId), network.id))){
+                if(!dealIds.includes(generateUniqueItemId(Number(domain.dealId), network.id))){
                     txtRecord = generateTXTRecord(resource.owner, getHostName(domain.host))
                 }
-                //txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueDealId(Number(domain.dealId), network.id), network.id, domain.host)
+                //txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueItemId(Number(domain.dealId), network.id), network.id, domain.host)
             }
             await ResourcesController.upsertResourceDomain({
                 resourceId: resource.resourceId,
                 domain: domain.host,
-                dealId: generateUniqueDealId(Number(domain.dealId), network.id),
+                dealId: generateUniqueItemId(Number(domain.dealId), network.id),
                 txtRecord: txtRecord
             })
         }

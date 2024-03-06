@@ -9,14 +9,14 @@ const {DealsResources} = require("../models/associations/DealsResources");
 const {DealsNodeLocations} = require("../models/deals/DealsNodeLocations");
 const {Domains} = require("../models/resources/Domains");
 const {BandwidthsLog} = require("../models/BandwidthsLog");
-const {generateUniqueDealId} = require("../utils/deals");
+const {generateUniqueItemId} = require("../utils/deals");
 
 class DealsController {
     constructor() {}
 
 
     static async upsertDeal(deal, chainId) {
-        deal.id = generateUniqueDealId(deal.id, chainId)
+        deal.id = generateUniqueItemId(deal.id, chainId)
         const resource = await Resource.findOne({
             where: {id: deal.resourceId}
         });
