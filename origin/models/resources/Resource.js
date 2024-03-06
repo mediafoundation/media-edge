@@ -1,6 +1,6 @@
 const {sequelize} = require("../index");
 const { DataTypes} = require("sequelize");
-const { array, boolean, number, object, string, z } = require("zod");
+const { array, object, string, z } = require("zod");
 
 const Resource= sequelize.define("Resources",
     {
