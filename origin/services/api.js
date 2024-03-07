@@ -1,8 +1,8 @@
 const express = require('express')
-const {purgeRecord} = require('./varnish')
+//const {purgeRecord} = require('./varnish')
 const cors = require('cors')
 const env = require("./../config/env")
-const {Signer} = require("media-sdk");
+//const {Signer} = require("media-sdk");
 const {DealsController} = require("../controllers/dealsController");
 const {PurgeLogsController} = require("../controllers/purgeLogsController");
 const {CaddyController} = require("../controllers/caddyController");
@@ -16,11 +16,11 @@ const {
   manageAddedBalance
 } = require("./events");
 const psl = require('psl');
-const {ResourcesController} = require("../controllers/resourcesController");
+//const {ResourcesController} = require("../controllers/resourcesController");
 const {generateTXTRecord} = require("../utils/generateSubdomain");
 const {getHostName} = require("../utils/domains");
 const {CaddySource} = require('../models/caddy');
-const {where, Op} = require("sequelize");
+//const {where, Op} = require("sequelize");
 const {createRelationsBetweenTables} = require("../utils/resetDB");
 
 /* const helmet = require('helmet'); */
@@ -86,8 +86,7 @@ async function checkSignature(req) {
   try {
     const {signature, message} = req.body;
     const siweMessage = new SiweMessage(message);
-    const data = await siweMessage.verify({signature, nonce: req.session.nonce});
-    return data;
+    return await siweMessage.verify({signature, nonce: req.session.nonce});
   } catch (e) {
     console.log(e)
     return false;
@@ -381,7 +380,6 @@ Following params for network should be and object on the following form:
 }
  */
 app.post("/dealCreated", async (req, res) => {
-  await createRelationsBetweenTables()
   const {dealId, network} = req.body
   try {
     await manageDealCreatedOrAccepted(BigInt(dealId), network)
@@ -429,3 +427,4 @@ app.post("/addedBalance", async (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+createRelationsBetweenTables().then(_ => console.log("Relations created"))
