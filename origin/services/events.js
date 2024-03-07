@@ -291,6 +291,9 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
 }
 
 let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
+
+    console.log("Resource updated", resourceId, CURRENT_NETWORK.id)
+
     let filteredDomains = []
 
     let domainsFromDb = await ResourcesController.getAllResourcesDomains(generateUniqueItemId(Number(resourceId), CURRENT_NETWORK.id))
