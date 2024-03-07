@@ -164,7 +164,7 @@ class CaddyController {
         if(item.domains.length !== 0) {
             if (env.debug) console.log("Deal has domains:", item.domains)
             for (const domain of item.domains) {
-                await this.addToQueue(queues.Minutely, domain.id, domain, item.resource.dataValues.owner);
+                await this.addToQueue(queues.Minutely, domain.id, domain, item.resource.owner);
             }
         }
 
