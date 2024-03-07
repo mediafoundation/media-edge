@@ -52,7 +52,6 @@ const init = async (network) => {
 
     //Init database (get data from blockchain)
     try{
-        console.log("Sdk", sdk)
         await initDatabase(network, sdk)
     } catch (e) {
         databaseInitStatus = false
