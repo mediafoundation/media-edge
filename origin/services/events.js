@@ -301,7 +301,7 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
       generateUniqueItemId(Number(resourceId), CURRENT_NETWORK.id),
     )
     if (deals.length > 0) {
-        let resource = await ResourcesController.getResourceById(resourceId)
+        let resource = await ResourcesController.getResourceById(generateUniqueItemId(Number(resourceId), CURRENT_NETWORK.id))
         if (resource !== false) {
 
             const network = networks.find(network => network.id === CURRENT_NETWORK.id)
@@ -364,7 +364,7 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
 
             for (const deal of deals) {
                 let dealFromDB = await DealsController.getDealById(deal.id)
-                let caddyDomain = await ResourcesController.getResourceDomain(resourceId, dealFromDB.id)
+                let caddyDomain = await ResourcesController.getResourceDomain(generateUniqueItemId(Number(resourceId), CURRENT_NETWORK.id), dealFromDB.id)
                 console.log("Caddy domain", caddyDomain)
                 await CaddyController.upsertRecord(
                     {
