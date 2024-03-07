@@ -4,7 +4,7 @@ const {DealsController} = require("../../controllers/dealsController");
 const {generateUniqueItemId} = require("../../utils/deals");
 
 const mockResource = {
-    id: 1,
+    id: "1_1_1",
     owner: 'owner1',
     label: 'label1',
     protocol: 'http',
@@ -41,7 +41,7 @@ const mockDeal = {
 
 const mockDomain = {
     domain: 'example.com',
-    resourceId: 1,
+    resourceId: generateUniqueItemId(1, 1),
     dealId: generateUniqueItemId(1, 1)
 };
 describe('ResourcesController', () => {
@@ -54,14 +54,14 @@ describe('ResourcesController', () => {
             let result = await ResourcesController.upsertResource(mockResource)
             await expect(result.originalResource).toBe(null)
 
-            let dataFromDb = await ResourcesController.getResourceById(1)
+            let dataFromDb = await ResourcesController.getResourceById("1_1_1")
 
             await expect(dataFromDb.owner).toBe(mockResource.owner)
         });
 
         it('should update an existing resource if it exists', async () => {
             const newResource = {
-                id: 1,
+                id: "1_1_1",
                 owner: 'owner2',
                 label: 'label1',
                 protocol: 'https',
@@ -91,7 +91,7 @@ describe('ResourcesController', () => {
         });
 
         it('should add new record for same combination of dealId and resourceId', async () => {
-            const newDomain = {resourceId: 1, domain: 'example2.com', dealId: generateUniqueItemId(1, 1)};
+            const newDomain = {resourceId: generateUniqueItemId(1, 1), domain: 'example2.com', dealId: generateUniqueItemId(1, 1)};
 
             let result = await ResourcesController.upsertResourceDomain(newDomain)
 
@@ -101,7 +101,7 @@ describe('ResourcesController', () => {
         });
 
         it("Should be two domains for the resource", async() => {
-            let domains = await ResourcesController.getResourceDomain(1, generateUniqueItemId(1, 1))
+            let domains = await ResourcesController.getResourceDomain(generateUniqueItemId(1, 1), generateUniqueItemId(1, 1))
             expect(domains.length).toBe(2)
         })
     });

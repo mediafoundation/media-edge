@@ -59,7 +59,7 @@ const initDatabase = async function (network, sdkInstance) {
 
             let data = JSON.parse(decrypted)
 
-            let resourceForDb = {id: resource.id, owner: resource.owner, ...data}
+            let resourceForDb = {id: generateUniqueItemId(Number(resource.id), network.id), owner: resource.owner, ...data}
 
             await ResourcesController.parseResource(resourceForDb)
 
@@ -121,7 +121,7 @@ const initDatabase = async function (network, sdkInstance) {
                 //txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueItemId(Number(domain.dealId), network.id), network.id, domain.host)
             }
             await ResourcesController.upsertResourceDomain({
-                resourceId: resource.resourceId,
+                resourceId: generateUniqueItemId(Number(resource.resourceId), network.id),
                 domain: domain.host,
                 dealId: generateUniqueItemId(Number(domain.dealId), network.id),
                 txtRecord: txtRecord

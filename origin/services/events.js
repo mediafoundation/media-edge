@@ -216,7 +216,7 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
         );
 
         let data = JSON.parse(decrypted)
-        await ResourcesController.upsertResource({ id: resource.id, owner: deal.client, ...data })
+        await ResourcesController.upsertResource({ id: generateUniqueItemId(Number(resource.id), CURRENT_NETWORK.id), owner: deal.client, ...data })
 
         if(data.domains) filteredDomains = filterDomainsMatchingDeals(data.domains, [Number(deal.id)])
 
@@ -249,7 +249,7 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
             let resourceId = formattedDeal.resourceId
             let dealId = formattedDeal.id
             for (const domain of domains) {
-                await ResourcesController.upsertResourceDomain({resourceId: resourceId, domain: domain, dealId: Number(dealId)})
+                await ResourcesController.upsertResourceDomain({resourceId: generateUniqueItemId(resourceId, CURRENT_NETWORK.id), domain: domain, dealId: Number(dealId)})
             }
         }
     }catch (e) {
@@ -353,11 +353,11 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
                 await ResourcesController.deleteResourceDomain(domainToBeDeleted.id)
             }
 
-            let upsertResourceResult = await ResourcesController.upsertResource({ id: resourceFromEvm.id, owner: deals[0].client, ...data })
+            let upsertResourceResult = await ResourcesController.upsertResource({ id: generateUniqueItemId(Number(resourceFromEvm.id), CURRENT_NETWORK.id), owner: deals[0].client, ...data })
 
             for (const resource of filteredDomains) {
                 for (const domain of resource.domains) {
-                    await ResourcesController.upsertResourceDomain({resourceId: resource.resourceId, domain: domain.host, dealId: generateUniqueItemId(Number(domain.dealId), CURRENT_NETWORK.id)})
+                    await ResourcesController.upsertResourceDomain({resourceId: generateUniqueItemId(Number(resource.resourceId), CURRENT_NETWORK.id), domain: domain.host, dealId: generateUniqueItemId(Number(domain.dealId), CURRENT_NETWORK.id)})
                 }
 
             }

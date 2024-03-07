@@ -10,7 +10,6 @@ const {DealsNodeLocations} = require("../models/deals/DealsNodeLocations");
 const {Domains} = require("../models/resources/Domains");
 const {BandwidthsLog} = require("../models/BandwidthsLog");
 const {generateUniqueItemId} = require("../utils/deals");
-
 class DealsController {
     constructor() {}
 
@@ -18,7 +17,7 @@ class DealsController {
     static async upsertDeal(deal, chainId) {
         deal.id = generateUniqueItemId(deal.id, chainId)
         const resource = await Resource.findOne({
-            where: {id: deal.resourceId}
+            where: {id: generateUniqueItemId(Number(deal.resourceId), chainId)}
         });
 
         if (!resource) {
