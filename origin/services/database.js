@@ -98,7 +98,6 @@ const initDatabase = async function (network, sdkInstance) {
             }
         }
         let formattedDeal = DealsController.formatDeal(deal)
-        console.log("FormattedDeal", formattedDeal, deal)
         if(DealsController.dealIsActive(formattedDeal)){
             try {
                 await DealsController.upsertDeal(formattedDeal, network.id)

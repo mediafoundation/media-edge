@@ -102,13 +102,13 @@ class CaddyController {
 
     static async addRecords (dealsResources, caddyFile, network){
         let payload = []
-        let domains = []
+        //let domains = []
         for(const item of dealsResources) {
             let caddyData = await this.newObject(item.resource, item.deal, network)
             let dealInFile = caddyFile.find(o => o["@id"] === item.deal.id);
             //if resource is not on caddyfile already, add to payload
             if(!dealInFile) {
-                console.log("Item", item)
+                //console.log("Item", item)
                 if(item.domains && item.domains.length !== 0) {
                     for (const domain of item.domains) {
                       console.log("Domain", domain)
@@ -122,8 +122,8 @@ class CaddyController {
         }
 
         //Add to caddy file
-        console.log("Payload", payload.length, payload)
-        console.log("Domains", domains.length, domains)
+        //console.log("Payload", payload.length, payload)
+        //console.log("Domains", domains.length, domains)
         try {
             await axios.post(
                 caddyRoutesUrl+"/...",
@@ -131,9 +131,9 @@ class CaddyController {
                 caddyReqCfg
             )
             if (env.debug) console.log('Added to caddy:', payload.length, "deals")
-            for (const domain of domains) {
+            /*for (const domain of domains) {
                 await this.patchRecord(domain)
-            }
+            }*/
         } catch (e){
             console.log("axios error", e)
             return false
@@ -144,7 +144,7 @@ class CaddyController {
 
     static async upsertRecord(item, network){
 
-        console.log("Item on upsert record", item)
+        //console.log("Item on upsert record", item)
 
         //Destroy previous custom domains records associated to deal id
         let destroyed = await CaddySource.destroy({
