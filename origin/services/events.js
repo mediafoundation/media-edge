@@ -293,7 +293,7 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
 let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
     let filteredDomains = []
 
-    let domainsFromDb = await ResourcesController.getAllResourcesDomains(resourceId)
+    let domainsFromDb = await ResourcesController.getAllResourcesDomains(generateUniqueItemId(Number(resourceId), CURRENT_NETWORK.id))
 
     let domainsFromDbNotInFilteredDomains = []
 
@@ -326,13 +326,13 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
 
             let data = JSON.parse(decrypted)
 
-            let resourceForDb = { id: resourceFromEvm.id, owner: deals[0].client, ...data }
+            let resourceForDb = { id: generateUniqueItemId(Number(resourceFromEvm.id), network.id), owner: deals[0].client, ...data }
 
             if(data.domains) {
                 console.log("Domains from evm", data.domains, deals.map(deal => recoverOriginalDataFromUniqueDealId(deal.id).dealId.toString()))
                 let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => recoverOriginalDataFromUniqueDealId(deal.id).dealId.toString()))
                 console.log("Filtered domains", filteredDomainsForDeal)
-                filteredDomains.push({resourceId: Number(resource.id), domains: filteredDomainsForDeal})
+                filteredDomains.push({resourceId: generateUniqueItemId(Number(resource.id), network.id), domains: filteredDomainsForDeal})
             }
 
             console.log("Domains from db before filter", domainsFromDb)
