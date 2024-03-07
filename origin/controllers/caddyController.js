@@ -45,8 +45,7 @@ class CaddyController {
         let hosts = []
 
         for(const host of env.hosts){
-            console.log("###########################", env.MARKETPLACE_ID, deal.id, network.id, host)
-            hosts.push(`${generateSubdomain(env.MARKETPLACE_ID, deal.id, network.id)}.${host}`)
+            hosts.push(`${generateSubdomain(env.MARKETPLACE_ID, deal.id)}.${host}`)
         }
 
         let transport = res.protocol === "https" ?

@@ -1,9 +1,10 @@
 const crypto = require('crypto');
 const env = require("./../config/env")
+const {recoverOriginalDataFromUniqueDealId} = require("./deals");
 
-function generateSubdomain(marketplaceId, dealId, chainId) {
+function generateSubdomain(marketplaceId, dealId) {
     let hash = crypto.createHash('sha256');
-    hash.update(marketplaceId + dealId + chainId + env.PRIVATE_KEY);
+    hash.update(marketplaceId + dealId + recoverOriginalDataFromUniqueDealId(dealId).chainId + env.PRIVATE_KEY);
 
     let result = hash.digest('base64').replace(/[^a-z0-9]/gi, '0'); // replace invalid characters with '0'
 
