@@ -158,7 +158,7 @@ class CaddyController {
         await this.deleteFromAllQueuesByDeal(item.deal.id)
 
         //create Caddy object required to be posted on caddyFile
-        let newCaddyData = await this.newObject(item.resource.dataValues, item.deal, network)
+        let newCaddyData = await this.newObject(item.resource, item.deal, network)
 
         //if the resource has a custom cname
         if(item.domains.length !== 0) {
