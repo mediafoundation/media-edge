@@ -1,20 +1,20 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../index");
+const { sequelize, DECIMALS_DIGITS} = require("../index");
 const { array, boolean, number, object, string, z } = require("zod");
-const {DealsBandwidthLimit} = require("./DealsBandwidthLimit");
 
 const DealsMetadata = sequelize.define("DealsMetadata", {
     id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
     dealId: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.STRING,
         references: {
             model: 'Deals',
-            key: 'id'
+            key: 'id',
+            type: DataTypes.STRING
         }
     },
     label: DataTypes.STRING,
     autoSsl: DataTypes.BOOLEAN,
-    burstSpeed: DataTypes.BIGINT,
+    burstSpeed: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
     apiEndpoint: DataTypes.STRING,
     customCnames: DataTypes.STRING,
 }, {

@@ -5,10 +5,11 @@ const {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy} = require(".
 const {checkBandwidth, initBandwidth} = require("./services/bandwidth");
 const { resetPurgeLog } = require('./services/varnish');
 const {resetDB} = require("./utils/resetDB");
-const {initSdk, Blockchain, validChains} = require("media-sdk");
+const {Sdk, Blockchain, validChains} = require("media-sdk");
 const {PRIVATE_KEY} = require("./config/env");
 const {CaddyController} = require("./controllers/caddyController");
 const {checkEvents} = require("./services/events");
+const { toHex } = require("viem");
 
 // Initialize the lastReadBlock variable to 0
 let lastReadBlock = {};
@@ -29,7 +30,8 @@ const init = async (network) => {
     //Check if daemon needs to run a full reset
     const resetIndex = process.argv.indexOf('--reset');
 
-    initSdk({privateKey: PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
+    //initSdk({privateKey: PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
+    let sdk = new Sdk({privateKey: PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
 
     if(resetIndex !== -1){
         try{
@@ -50,7 +52,7 @@ const init = async (network) => {
 
     //Init database (get data from blockchain)
     try{
-        await initDatabase(network)
+        await initDatabase(network, sdk)
     } catch (e) {
         databaseInitStatus = false
         console.log("Error when init database:", e)
@@ -75,11 +77,11 @@ const init = async (network) => {
 
     //Read block to use in events
     try {
-        let blockchain = new Blockchain()
-        let blockNumber = await blockchain.getBlockNumber()
-        lastReadBlock[network.id] = Number(blockNumber)
+        let blockchain = new Blockchain(sdk)
+        let blockNumber = toHex(await blockchain.getBlockNumber())
+        lastReadBlock[network.id] = toHex(Number(blockNumber))
     }catch (e){
-        lastReadBlock[network.id] = 0
+        lastReadBlock[network.id] = toHex(0)
         console.log("Error when getting last block", e)
         blockReadStatus = false
     }
@@ -92,7 +94,7 @@ const init = async (network) => {
 }
 
 async function start(){
-    // let CURRENT_NETWORK = networks.bsc
+    //console.log(networks, networks.find(item => item.id === 11155111))
     for(const CURRENT_NETWORK of networks ){
 
         console.log(CURRENT_NETWORK)

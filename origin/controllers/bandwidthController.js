@@ -23,9 +23,9 @@ class BandwidthController {
         };
 
         if(env.debug) {
-            console.log("BandwidthTimeStamp:", bandwidthTimeStamp)
+            /*console.log("BandwidthTimeStamp:", bandwidthTimeStamp)
             console.log("Bandwidht from db:", bandwidthLog.last_read)
-            console.log("Range:", range)
+            console.log("Range:", range)*/
         }
         // Elasticsearch query to fetch the bandwidth usage for the specific deal
         const query = {
@@ -48,7 +48,7 @@ class BandwidthController {
 
         try {
             const response = await client.search(query);
-            console.log("Response from elastic:", response)
+            //console.log("Response from elastic:", response)
             const totalBytes = parseInt(response.aggregations.total_bytes.value);
             return { totalBytes, range };
         } catch (error) {
@@ -88,18 +88,18 @@ class BandwidthController {
         for (const bandwidthsLog of bandwidthsLogs) {
 
             // Fetch the bandwidth usage from Elasticsearch
-            if(env.debug) console.log("Bandwidth before all:", bandwidthsLog)
+            //if(env.debug) console.log("Bandwidth before all:", bandwidthsLog)
             const { totalBytes, range } = await this.getBandwidthFromElastic(bandwidthsLog);
 
-            if(env.debug) console.log("Total bytes for deal", bandwidthsLog.dealId, ":", totalBytes)
+            //if(env.debug) console.log("Total bytes for deal", bandwidthsLog.dealId, ":", totalBytes)
 
             let bandwidthUsage = parseInt(bandwidthsLog.bytes_sent) + totalBytes
 
             // Update the resource with the new bandwidth usage
-            if(env.debug) console.log("Updating bandwidth:", bandwidthUsage)
-            if(env.debug) console.log("Updating last_read:", range.lte, new Date(range.lte).getTime())
+            //if(env.debug) console.log("Updating bandwidth:", bandwidthUsage)
+            //if(env.debug) console.log("Updating last_read:", range.lte, new Date(range.lte).getTime())
             let newDatetime = new Date(range.lte)
-            if(env.debug) console.log("last read new value:", Math.floor(newDatetime.getTime() / 1000))
+           // if(env.debug) console.log("last read new value:", Math.floor(newDatetime.getTime() / 1000))
 
             await bandwidthsLog.update({
                 bytes_sent: bandwidthUsage,
@@ -111,7 +111,7 @@ class BandwidthController {
             let deal = await DealsController.getDealById(bandwidthsLog.dealId)
 
             const bandwidthLimit = deal.BandwidthLimit;
-            if(env.debug) console.log("Bandwidth limit:", bandwidthLimit)
+            //if(env.debug) console.log("Bandwidth limit:", bandwidthLimit)
 
             // Calculate the bandwidth limit in bytes
             let limitInBytes = this.convertToBytes(bandwidthLimit);

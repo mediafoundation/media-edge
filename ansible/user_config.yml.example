@@ -22,6 +22,12 @@ networks:
 # Select the marketplace ID where you are providing services.
 marketplace_id: 1
 
+# Please specify the ip address to provide on your origin
+origin_ip: xxxx.xxxx.xxxx.xxxx
+
+# Please specify cname to provide on your origin
+cname: cname.example.com
+
 # DNS Configuration: This allows caddy to create TXT records to pass acme challenges. Leave lego and env_vars commented to disable.
 # Domain is required, otherwise installation will fail!
 # Check https://go-acme.github.io/lego/dns/#dns-providers for providers and env variables settings.

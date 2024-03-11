@@ -9,14 +9,15 @@ const {DealsResources} = require("../models/associations/DealsResources");
 const {DealsNodeLocations} = require("../models/deals/DealsNodeLocations");
 const {Domains} = require("../models/resources/Domains");
 const {BandwidthsLog} = require("../models/BandwidthsLog");
-
+const {generateUniqueItemId} = require("../utils/deals");
 class DealsController {
     constructor() {}
 
 
-    static async upsertDeal(deal) {
+    static async upsertDeal(deal, chainId) {
+        deal.id = generateUniqueItemId(deal.id, chainId)
         const resource = await Resource.findOne({
-            where: {id: deal.resourceId}
+            where: {id: generateUniqueItemId(Number(deal.resourceId), chainId)}
         });
 
         if (!resource) {
@@ -121,6 +122,21 @@ class DealsController {
         }
     };
 
+    static async getDealOwner(id) {
+
+        try {
+            const deal = await Deal.findByPk(id, {attributes: ['clientId'], raw: true});
+            if (!deal) {
+                return null;
+            }
+            const client = await Client.findByPk(deal.clientId, {attributes: ['account'], raw: true});
+            return client.account;
+        } catch (error) {
+            throw error;
+        }
+    };
+    
+
     static async getDealResource(dealId){
         try {
             return await DealsResources.findOne({
@@ -188,9 +204,9 @@ class DealsController {
         const pad2 = (n) => {
             return (n < 10 ? "0" : "") + n;
         };
-        let formattedCalculatedEnd = `${pad2(d.getDate())}/${pad2(
+        let formattedCalculatedEnd = `${pad2(
             d.getMonth() + 1
-        )}/${pad2(d.getFullYear())} · ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+        )}/${pad2(d.getDate())}/${pad2(d.getFullYear())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
 
         return Date.parse(formattedCalculatedEnd) > Date.now()
     }

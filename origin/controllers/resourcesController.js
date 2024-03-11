@@ -1,5 +1,7 @@
-const {Resource} = require("../models/resources/Resource");
+const {Resource, ResourceType} = require("../models/resources/Resource");
 const {Domains} = require("../models/resources/Domains");
+const {DealsResources} = require("../models/associations/DealsResources");
+const {DealsController} = require("./dealsController");
 
 class ResourcesController {
     static upsertResource = async (resource) => {
@@ -31,12 +33,15 @@ class ResourcesController {
                 where: {
                     resourceId: resourceDomain.resourceId,
                     dealId: resourceDomain.dealId,
-                    domain: resourceDomain.domain
+                    domain: resourceDomain.domain,
+                    //txtRecord: resourceDomain.txtRecord || null
                 },
                 defaults: resourceDomain
             });
 
             let originalDomain = null;
+
+            // todo: record might be always created, so originalDomain will be always null
 
             if (!created) {
                 // If the record already existed, update it
@@ -45,7 +50,8 @@ class ResourcesController {
                 domain = await Domains.findOne({
                     where: {
                         resourceId: resourceDomain.resourceId,
-                        dealId: resourceDomain.dealId
+                        dealId: resourceDomain.dealId,
+                        domain: resourceDomain.domain
                     },
                     attributes: {
                         exclude: ['createdAt', 'updatedAt', 'deletedAt']
@@ -66,8 +72,7 @@ class ResourcesController {
 
     static async getResourceDomain(resourceId, dealId) {
         try {
-            //todo: should be a find All
-            return await Domains.findOne({
+            return await Domains.findAll({
                 where: {
                     resourceId: resourceId,
                     dealId: dealId
@@ -78,6 +83,35 @@ class ResourcesController {
                 raw: true
             });
         } catch (error) {
+            throw error;
+        }
+    }
+
+    static async getAllResourcesDomains(resourceId) {
+        try {
+            return await Domains.findAll({
+                where: {
+                    resourceId: resourceId
+                },
+                attributes: {
+                    exclude: ['createdAt', 'updatedAt', 'deletedAt']
+                },
+                raw: true
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async getDomainByHost(domain) {
+        try {
+            return await Domains.findAll({
+                where: {
+                    domain: domain
+                }
+            });
+        }
+        catch (error) {
             throw error;
         }
     }
@@ -111,14 +145,9 @@ class ResourcesController {
         }
     };
 
-    static deleteResourceDomain = async (resourceId, dealId) => {
+    static deleteResourceDomain = async (domainId) => {
         try {
-            const domain = await Domains.findOne({
-                where: {
-                    resourceId: resourceId,
-                    dealId: dealId
-                }
-            });
+            const domain = await Domains.findByPk(domainId)
             if (!domain) {
                 return null;
             }
@@ -129,14 +158,25 @@ class ResourcesController {
         }
     }
 
-    static getNumberOfMatchingDeals = async (resourceId) => {
-        const resource = await Resource.findByPk(resourceId);
+    static getResourcesDeals = async (resourceId) => {
+        const dealsResources = await DealsResources.findAll({where: {resourceId: resourceId}, raw: true});
 
-        if (resource) {
-            return await resource.getDeals()
+        let deals = []
+
+        if (dealsResources) {
+            //return await dealsResources.getDeals()
+            for (const dealsResource of dealsResources) {
+                let deal = await DealsController.getDealById(dealsResource.dealId)
+                deals.push(deal)
+            }
+            return deals
         } else {
             throw new Error("Resource not found")
         }
+    }
+
+    static parseResource = (resource) => {
+        ResourceType.parse(resource)
     }
 }
 

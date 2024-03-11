@@ -6,10 +6,14 @@ const {z} = require("zod");
 const {DealsMetadataType} = require("../models/deals/DealsMetadata");
 const {ResourcesController} = require("../controllers/resourcesController");
 const {CaddyController} = require("../controllers/caddyController");
-const initDatabase = async function (network) {
-    //fetch resources and deals
-    let marketplaceViewer = new MarketplaceViewer();
-    let resourcesInstance = new Resources();
+const {generateUniqueItemId} = require("../utils/deals");
+const {generateTXTRecord} = require("../utils/generateSubdomain");
+const {getHostName} = require("../utils/domains");
+const initDatabase = async function (network, sdkInstance) {
+
+    // Fetch resources and deals
+    let marketplaceViewer = new MarketplaceViewer(sdkInstance);
+    let resourcesInstance = new Resources(sdkInstance);
 
     let resources = await resourcesInstance.getAllResourcesPaginating({address: env.WALLET, start: 0, steps: 10})
     let deals = await marketplaceViewer.getAllDealsPaginating({
@@ -19,9 +23,14 @@ const initDatabase = async function (network) {
         start: 0,
         steps: 20
     })
+
     let resourcesToBeUpdatedInCaddy = []
 
+    // Check deals and resources are not undefined
+
     if(deals === undefined || resources === undefined) return
+
+    // Filter resources and deals
 
     deals = deals.filter((deal) => deal.status.active === true)
 
@@ -29,34 +38,51 @@ const initDatabase = async function (network) {
 
     resources = resources.filter((resource) => !resourcesWithoutDeal.includes(resource.id))
 
+    // Upsert resources
+
     let filteredDomains = []
 
     for (const resource of resources) {
-        let attr = JSON.parse(resource.encryptedData)
-        let decryptedSharedKey = await Encryption.ethSigDecrypt(
-            resource.encryptedSharedKey,
-            env.PRIVATE_KEY
-        );
+        try {
+            let attr = JSON.parse(resource.encryptedData)
+            let decryptedSharedKey = await Encryption.ethSigDecrypt(
+                resource.encryptedSharedKey,
+                env.PRIVATE_KEY
+            );
 
-        let decrypted = await Encryption.decrypt(
-            decryptedSharedKey,
-            attr.iv,
-            attr.tag,
-            attr.encryptedData
-        );
+            let decrypted = Encryption.decrypt(
+                decryptedSharedKey,
+                attr.iv,
+                attr.tag,
+                attr.encryptedData
+            );
 
-        let data = JSON.parse(decrypted)
+            let data = JSON.parse(decrypted)
 
-        //console.log("Domains", filterDomainsMatchingDeals(data.domains, deals[0].map((deal) => Number(deal.id))))
+            let resourceForDb = {id: generateUniqueItemId(Number(resource.id), network.id), owner: resource.owner, ...data}
 
-        if(data.domains) filteredDomains.push(filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id))))
+            await ResourcesController.parseResource(resourceForDb)
 
-        const upsertResult = await ResourcesController.upsertResource({id: resource.id, owner: resource.owner, ...data})
-        if (upsertResult.originalResource) {
-            let resourceNeedsToBeUpdated = compareOldAndNewResourceOnDB(upsertResult.instance.dataValues, upsertResult.originalResource.dataValues)
-            if (resourceNeedsToBeUpdated) resourcesToBeUpdatedInCaddy.push(upsertResult.instance.dataValues)
+            if(data.domains) {
+                let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id).toString()))
+                filteredDomains.push({resourceId: Number(resource.id), owner: resource.owner, domains: filteredDomainsForDeal})
+            }
+
+            const upsertResult = await ResourcesController.upsertResource(resourceForDb)
+            if (upsertResult.originalResource) {
+                let resourceNeedsToBeUpdated = compareOldAndNewResourceOnDB(upsertResult.instance.dataValues, upsertResult.originalResource.dataValues)
+                if (resourceNeedsToBeUpdated) resourcesToBeUpdatedInCaddy.push(upsertResult.instance.dataValues)
+            }
+        } catch (e) {
+            if (e instanceof z.ZodError) {
+                console.error("Resource Validation failed on resource", resource.id);
+            } else {
+                console.error("Unknown error when upsert resource:", resource.id, e);
+            }
         }
     }
+
+    // Upsert deals
 
     for (const deal of deals) {
         //Parse deal metadata
@@ -74,7 +100,7 @@ const initDatabase = async function (network) {
         let formattedDeal = DealsController.formatDeal(deal)
         if(DealsController.dealIsActive(formattedDeal)){
             try {
-                await DealsController.upsertDeal(formattedDeal)
+                await DealsController.upsertDeal(formattedDeal, network.id)
             } catch (e) {
                 console.log("Deal Id: ", deal.id)
                 console.error("Error when upsert to db:", e);
@@ -82,18 +108,32 @@ const initDatabase = async function (network) {
         }
     }
 
-    console.log("Filtered domains", filteredDomains)
-    //Update domains in resources
-    for (const domainObject of filteredDomains) {
-        for(const key of Object.keys(domainObject)){
-            for (const domain of domainObject[key]) {
-                let dealsForDomains = deals.filter((deal) => Number(deal.id).toString() === key)
-                await ResourcesController.upsertResourceDomain({resourceId: dealsForDomains[0].resourceId, domain: domain, dealId: parseInt(key)})
+    // Upsert resource domains
+    for (const resource of filteredDomains) {
+        for (const domain of resource.domains) {
+            let existentDomain = await ResourcesController.getDomainByHost(domain.host)
+            let txtRecord = null
+            if(existentDomain.length !== 0){
+                let dealIds = existentDomain.map((domain) => domain.dealId)
+                if(!dealIds.includes(generateUniqueItemId(Number(domain.dealId), network.id))){
+                    txtRecord = generateTXTRecord(resource.owner, getHostName(domain.host))
+                }
+                //txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueItemId(Number(domain.dealId), network.id), network.id, domain.host)
             }
+            await ResourcesController.upsertResourceDomain({
+                resourceId: generateUniqueItemId(Number(resource.resourceId), network.id),
+                domain: domain.host,
+                dealId: generateUniqueItemId(Number(domain.dealId), network.id),
+                txtRecord: txtRecord
+            })
         }
+
     }
 
-    //Update records in caddy if needed
+     //FOR TESTING!!!
+
+
+    // Update records in caddy if needed
     for (const resource of resourcesToBeUpdatedInCaddy) {
         for (const deal of deals) {
             await CaddyController.upsertRecord({resource: resource, deal: deal}, network)

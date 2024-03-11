@@ -1,9 +1,9 @@
 const {DataTypes} = require("sequelize");
-const {sequelize} = require("../index");
+const {sequelize, DECIMALS_DIGITS} = require("../index");
 
 const Deal = sequelize.define("Deals",
     {
-        id: {type: DataTypes.BIGINT, primaryKey: true},
+        id: {type: DataTypes.STRING, primaryKey: true},
         offerId: DataTypes.BIGINT,
         clientId: {
             type: DataTypes.BIGINT,
@@ -19,18 +19,18 @@ const Deal = sequelize.define("Deals",
                 key: 'id'
             }
         },
-        totalPayment: DataTypes.BIGINT,
-        blockedBalance: DataTypes.BIGINT,
-        pricePerSecond: DataTypes.BIGINT,
-        minDuration: DataTypes.BIGINT,
+        totalPayment: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
+        blockedBalance: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
+        pricePerSecond: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
+        minDealDuration: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
         billFullPeriods: DataTypes.BOOLEAN,
         singlePeriodOnly: DataTypes.BOOLEAN,
-        createdAt: DataTypes.BIGINT,
-        acceptedAt: DataTypes.BIGINT,
-        billingStart: DataTypes.BIGINT,
+        createdAt: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
+        acceptedAt: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
+        billingStart: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
         active: DataTypes.BOOLEAN,
         cancelled: DataTypes.BOOLEAN,
-        cancelledAt: DataTypes.BIGINT,
+        cancelledAt: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
         network: DataTypes.STRING
     },
     {

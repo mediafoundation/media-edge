@@ -8,6 +8,12 @@ const querystring = require('querystring');
 const challengesPath = "/var/www/challenges";
 const certsPath = "/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory";
 
+const certStatus = {
+  VALID: "valid",
+  FAILED: "failed",
+  OBTAINED: "obtained"
+}
+
 const issuers = [
   { name: 'Let\'s Encrypt', url: acme.directory.letsencrypt.production },
   { name: 'ZeroSSL', url: 'https://acme.zerossl.com/v2/DV90' },
@@ -103,7 +109,7 @@ async function obtainAndRenewCertificate(domain) {
       if (!validCert) {
         console.log(`Renewing certificate for ${domain.host}`);
       } else {
-        return false;
+        return certStatus.VALID;
       }
     }
 
@@ -148,7 +154,7 @@ async function obtainAndRenewCertificate(domain) {
         fs.writeFileSync(keyPath, key);
         fs.writeFileSync(jsonPath, json);
         console.log(`Certificate for ${domain.host} obtained and saved.`);
-        break;
+        return certStatus.OBTAINED
       } catch (error) {
         console.error(`Failed to obtain certificate from ${issuer.name}:`, error);
         // Try the next ACME endpoint...
@@ -156,7 +162,10 @@ async function obtainAndRenewCertificate(domain) {
     }
   } catch (error) {
     console.error(`Failed to obtain certificate for ${domain.host}:`, error);
+    return certStatus.FAILED
   }
+
+  return certStatus.FAILED
 }
 
-module.exports = {obtainAndRenewCertificates, obtainAndRenewCertificate, challengesPath}
+module.exports = {obtainAndRenewCertificates, obtainAndRenewCertificate, challengesPath, certStatus}

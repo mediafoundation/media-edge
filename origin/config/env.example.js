@@ -7,4 +7,6 @@ module.exports = {
     caddyUrl: "",
     hosts: [""], // dev
     hns: "", // dev
+    cname: "",
+    a_record: "",
 }

@@ -6,14 +6,15 @@ const { DataTypes } = require("sequelize");
 const DealsResources = sequelize.define("DealsResources", {
     id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
     dealId: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.STRING,
         references: {
             model: 'Deals',
-            key: 'id'
+            key: 'id',
+            type: DataTypes.STRING
         }
     },
     resourceId: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.STRING,
         references: {
             model: 'Resources',
             key: 'id'

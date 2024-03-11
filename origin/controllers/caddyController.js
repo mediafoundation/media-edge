@@ -1,11 +1,13 @@
 const env = require("../config/env");
-const {generateSubdomain} = require("../utils/generateSubdomain");
+const {generateSubdomain, generateTXTRecord} = require("../utils/generateSubdomain");
 const axios = require("axios");
-const {obtainAndRenewCertificate} = require("../utils/certs");
+const {obtainAndRenewCertificate, certStatus} = require("../utils/certs");
 const doh = require('dohjs')
 const resolver = new doh.DohResolver('https://1.1.1.1/dns-query')
 const config = require("../config/app");
 const {CaddySource} = require("../models/caddy");
+const {isARecord, getHostName} = require("../utils/domains");
+
 
 const queues = {
     Minutely: [],
@@ -43,7 +45,7 @@ class CaddyController {
         let hosts = []
 
         for(const host of env.hosts){
-            hosts.push(`${generateSubdomain(env.MARKETPLACE_ID, deal.id, network.network_id, network.chain_id)}.${host}`)
+            hosts.push(`${generateSubdomain(env.MARKETPLACE_ID, deal.id)}.${host}`)
         }
 
         let transport = res.protocol === "https" ?
@@ -100,20 +102,28 @@ class CaddyController {
 
     static async addRecords (dealsResources, caddyFile, network){
         let payload = []
+        //let domains = []
         for(const item of dealsResources) {
             let caddyData = await this.newObject(item.resource, item.deal, network)
             let dealInFile = caddyFile.find(o => o["@id"] === item.deal.id);
             //if resource is not on caddyfile already, add to payload
             if(!dealInFile) {
-                if(item.domains) {
-                    await this.addToQueue(queues.Minutely, item.deal.id, item)
+                //console.log("Item", item)
+                if(item.domains && item.domains.length !== 0) {
+                    for (const domain of item.domains) {
+                      console.log("Domain", domain)
+                      await this.addToQueue(queues.Minutely, domain.id, domain, item.resource.owner);
+                    }
                 }
                 payload.push(caddyData)
             } else {
                 await this.upsertRecord(item, /* dealInFile, */ network)
             }
         }
+
         //Add to caddy file
+        //console.log("Payload", payload.length, payload)
+        //console.log("Domains", domains.length, domains)
         try {
             await axios.post(
                 caddyRoutesUrl+"/...",
@@ -121,15 +131,22 @@ class CaddyController {
                 caddyReqCfg
             )
             if (env.debug) console.log('Added to caddy:', payload.length, "deals")
+            /*for (const domain of domains) {
+                await this.patchRecord(domain)
+            }*/
         } catch (e){
             console.log("axios error", e)
             return false
         }
+
+
     }
 
     static async upsertRecord(item, network){
 
-        //Destroy previous custom cnames records associated to deal id
+        //console.log("Item on upsert record", item)
+
+        //Destroy previous custom domains records associated to deal id
         let destroyed = await CaddySource.destroy({
             where: {
                 deal_id: item.deal.id
@@ -138,15 +155,17 @@ class CaddyController {
         if (env.debug) if(destroyed) console.log("Removing CaddySources for:", item.deal.id)
 
         //Remove deal from queue
-        await this.deletefromAllQueues(item.deal.id)
+        await this.deleteFromAllQueuesByDeal(item.deal.id)
 
         //create Caddy object required to be posted on caddyFile
         let newCaddyData = await this.newObject(item.resource, item.deal, network)
 
         //if the resource has a custom cname
-        if(item.resource.domain) {
-            if (env.debug) console.log("Deal has domain:", item.resource.domain)
-            await this.manageDomain(newCaddyData, item)
+        if(item.domains.length !== 0) {
+            if (env.debug) console.log("Deal has domains:", item.domains)
+            for (const domain of item.domains) {
+                await this.addToQueue(queues.Minutely, domain.id, domain, item.resource.owner);
+            }
         }
 
         let recordId = caddyBaseUrl+"id/"+item.deal.id
@@ -219,7 +238,7 @@ class CaddyController {
         try {
             await CaddySource.destroy({ where: { deal_id: dealId } })
 
-            await this.deletefromAllQueues(dealId)
+            await this.deleteFromAllQueuesByDeal(dealId)
 
             await axios.delete(
                 caddyBaseUrl +'id/'+ dealId,
@@ -244,51 +263,60 @@ class CaddyController {
 
 
     static async updateCaddyHost(host, item){
-        let cname_is_valid = await this.checkCname(item.domains.domain, host[0]);
-        if (cname_is_valid) {
-            await this.cleanUpCname(item.deal.id, item.domains.domain);
-            host.push(item.domains.domain);
+        //let cname_is_valid = await this.checkCname(item.domains.domain, host[0]);
+        try {
+            console.log("Update caddy host", host, item)
+            await this.cleanUpCustomDomain(item.dealId, item.domain);
+
+            //this modifies the host array that is passed by reference
+            host.push(item.domain);
+
             await CaddySource.findOrCreate({
                 where: {
-                    host: item.domains.domain,
-                    deal_id: item.deal.id
+                    host: item.domain,
+                    deal_id: item.dealId
                 }
             });
-            await obtainAndRenewCertificate({host: item.domains.domain});
+            //await obtainAndRenewCertificate({host: item.domains.domain});
             return true;
+        } catch (e) {
+            console.log("Error updating caddy host", e)
+            return false
         }
-        return false;
     }
 
     static async manageDomain(caddyData, item){
         let host = caddyData.match[0].host;
         let hostUpdated = await this.updateCaddyHost(host, item);
         if (hostUpdated) {
-            if (env.debug) console.log("Added CaddySources for domain:", item.domains.domain, item.resource.id);
+            if (env.debug) console.log("Added CaddySources for domain:", item);
         } else {
-            if (env.debug) console.log("Adding domain to check queue.", item.domains.domain, item.resource.id);
-            await this.addToQueue(queues.Minutely, item.deal.id, item);
+            if (env.debug) console.log("Adding domain to check queue.", item);
+            await this.addToQueue(queues.Minutely, item.id, item.item, item.owner);
         }
     }
 
     static async patchRecord(item){
-        if (item.domains.length !== 0) {
-            let host = await this.getHosts(item.deal.id);
-            let hostUpdated = await this.updateCaddyHost(host, item);
-            if (hostUpdated) {
-                try {
-                    if (env.debug) console.log('Patching caddy domain', host);
-                    await axios.patch(
-                        caddyBaseUrl + 'id/' + item.deal.id + '/match/0/host',
-                        JSON.stringify(host),
-                        caddyReqCfg
-                    );
-                    return true;
-                } catch(_) {
-                    console.log("Error patching", item.deal.id);
-                    return false;
-                }
-            } else {
+        console.log("Item on patch record", item)
+        /*if (item.domains.length !== 0) {
+
+        } else {
+            return false;
+        }*/
+
+        let host = await this.getHosts(item.item.dealId);
+        let hostUpdated = await this.updateCaddyHost(host, item.item);
+        if (hostUpdated) {
+            try {
+                if (env.debug) console.log('Patching caddy domain', host);
+                await axios.patch(
+                    caddyBaseUrl + 'id/' + item.item.dealId + '/match/0/host',
+                    JSON.stringify(host),
+                    caddyReqCfg
+                );
+                return true;
+            } catch(_) {
+                console.log("Error patching", item.item.dealId);
                 return false;
             }
         } else {
@@ -314,6 +342,7 @@ class CaddyController {
     }
 
     static async checkQueue(queue, current, limit){
+        console.log("Queue", queue)
         if (queue.length > 0) {
             if (env.debug) console.log(`Checking pending domains ${current} started. On queue: ${queue.length}`);
             for (let i = queue.length - 1; i >= 0; i--) {
@@ -321,18 +350,61 @@ class CaddyController {
                 if (!item.retry) item.retry = 0;
                 if (item.retry <= limit) {
                     item.retry++;
-                    if (env.debug) console.log(`Retrying to apply custom domain ${item.domains.domain} (${item.retry})`);
-                    const patched = await this.patchRecord(item);
-                    if (patched) {
-                        if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.domains.domain}`);
-                        queue.splice(i, 1);
-                    } else if (item.retry === limit) {
-                        if (env.debug) console.log(`Domain exceeded retry limits, sending to next stage: ${item.domains.domain}`);
-                        if (current === "Minutely") queues.Hourly.push(item);
-                        else if (current === "Hourly") queues.Daily.push(item);
-                        else if (current === "Daily") queues.Monthly.push(item);
-                        else console.log(`Domain exceeded retry limits, checked for 12 months without restart: ${item.domains.domain}`);
-                        queue.splice(i, 1);
+                    console.log("Item on check queue", item)
+                    if (env.debug) console.log(`Retrying to apply custom domain ${item.item.domain} (${item.retry})`, item);
+                    try{
+
+                        let hostValid = await this.isRecordPointingCorrectly(item.item.domain);
+ /*                        let isA = isARecord(item.item.domain)
+
+                        let hostValid = false
+
+                        if(isA) {
+                            for (const aElement of env.a_record) {
+                                hostValid = await this.checkARecord(item.item.domain, aElement)
+                                if(hostValid) break;
+                            }
+                        } else {
+                            hostValid = await this.checkCname(item.item.domain, env.cname)
+                        }*/
+
+                        console.log("Host valid item", item)
+
+                        let targetDomain = getHostName(item.item.domain)
+                        let expectedValue = generateTXTRecord(item.owner, getHostName(item.item.domain))
+
+                        console.log("Params on generate txt record", item.owner, getHostName(item.item.domain))
+                        console.log(`checking txt record for ${getHostName(item.item.domain)}`)
+                        console.log("Expected value", expectedValue)
+                        hostValid = await this.checkTxtRecord(
+                          targetDomain,
+                          expectedValue
+                        )
+
+                        console.log("Host valid", hostValid)
+
+                        if(hostValid){
+
+                            await this.patchRecord(item);
+                            //todo: following function should return a boolean
+                            let certificateObtainedStatus = await obtainAndRenewCertificate({host: item.item.domain});
+
+                            if (certificateObtainedStatus === certStatus.OBTAINED || certificateObtainedStatus === certStatus.VALID) {
+                                if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.item.domain}`);
+                                //queue.splice(i, 1);
+                                await this.deleteFromAllQueues(item.item.domain)
+                                console.log("Queue after clean", queue)
+                            } else if (item.retry === limit) {
+                                if (env.debug) console.log(`Domain exceeded retry limits, sending to next stage: ${item.item}`);
+                                if (current === "Minutely") queues.Hourly.push(item);
+                                else if (current === "Hourly") queues.Daily.push(item);
+                                else if (current === "Daily") queues.Monthly.push(item);
+                                else console.log(`Domain exceeded retry limits, checked for 12 months without restart: ${item.item}`);
+                                queue.splice(i, 1);
+                            }
+                        }
+                    } catch (e) {
+                        console.log("Error checking queue for item:", item, e)
                     }
                 }
             }
@@ -344,16 +416,27 @@ class CaddyController {
         return Object.values(queues).some(queue => queue.some(item => item.id === id));
     }
 
-    static async deletefromAllQueues(id){
+    static async deleteFromAllQueues(domain){
         for (const queue of Object.values(queues)) {
-            const index = queue.findIndex(item => item.id === id);
+            const index = queue.findIndex(item => item.item.domain === domain);
             if (index !== -1) queue.splice(index, 1);
         }
     }
 
-    static async addToQueue(queue, id, item){
+    static async deleteFromAllQueuesByDeal(dealId){
+        for (const queue of Object.values(queues)) {
+            const index = queue.findIndex(item => item.item.dealId === dealId);
+            if (index !== -1) {
+                queue.splice(index, 1);
+                console.log("Deleted from queue dealId:", dealId)
+            }
+
+        }
+    }
+
+    static async addToQueue(queue, id, item, owner){
         if (!await this.isInQueue(id)) {
-            queue.push({...item, id});
+            queue.push({id, item, owner});
         }
     }
 
@@ -373,18 +456,70 @@ class CaddyController {
         }
     }
 
-    static async cleanUpCname(deal_id, cname){
-        let added = await this.isCnameAlreadyAdded(cname)
-        if(added && added !== deal_id) await this.removeCname(added, cname)
+    static async checkARecord(targetDomain,expectedDomain){
+        try {
+            let response = await resolver.query(targetDomain, 'A')
+            if(response.answers.length > 0){
+                let answers = [];
+                response.answers.forEach(ans => answers.push(ans.data))
+                return answers.includes(expectedDomain);
+            }
+            return false
+        } catch (e) {
+            console.log(e)
+            return false
+        }
+    }
+
+    static async checkTxtRecord(targetDomain, expectedTxtRecord){
+        try {
+            let response = await resolver.query("_medianetwork."+targetDomain, 'TXT')
+            console.log(`checking txt record for _medianetwork.${targetDomain}`)
+            if(response.answers.length > 0){
+                let answers = [];
+                for (const answer of response.answers) {
+                  answers.push(answer.data.toString())
+                }
+                console.log(`Answers for _medianetwork.${targetDomain}`, answers)
+                return answers.includes(expectedTxtRecord);
+            }
+            return false
+        } catch (e) {
+            console.log(e)
+            return false
+        }
+    }
+
+    static async isRecordPointingCorrectly(targetDomain){
+      let isA = isARecord(targetDomain)
+
+      let hostValid = false
+
+      if(isA) {
+          for (const aElement of env.a_record) {
+              hostValid = await this.checkARecord(targetDomain, aElement)
+              if(hostValid) break;
+          }
+      } else {
+          hostValid = await this.checkCname(targetDomain, env.cname)
+      }
+
+      return hostValid;
+    }
+
+    static async cleanUpCustomDomain(deal_id, cname){
+        let added = await this.isCustomDomainAlreadyAdded(cname)
+        if(added && added !== deal_id) await this.removeCustomDomain(added, cname)
         return true
     }
 
-    static async isCnameAlreadyAdded(cname){
+    static async isCustomDomainAlreadyAdded(host){
         try {
             let response = await axios.get(caddyRoutesUrl)
             for (const resource of response.data) {
-                if (resource.match[0].host.includes(cname)) {
-                    if (env.debug) console.log("Cname already added to another deal: "+resource["@id"])
+                //console.log("Response for cnameAlreadyAdded", resource)
+                if (resource.match[0].host.includes(host)) {
+                    if (env.debug) console.log(`Domain ${host} already added to another deal: ${resource["@id"]}`)
                     return resource["@id"]
                 }
             }
@@ -395,20 +530,21 @@ class CaddyController {
         }
     }
 
-    static async removeCname(id, cname){
+    static async removeCustomDomain(id, host){
         try {
             //get all current domains for a given resource
             const hosts = await this.getHosts(id)
-            const hostToRemove = hosts.indexOf(cname)
-            //remove cname from resource
+            const hostToRemove = hosts.indexOf(host)
+            //remove host from resource
             hosts.splice(hostToRemove, 1)
             axios.patch(
                 caddyBaseUrl + 'id/' + id + '/match/0/host',
                 JSON.stringify(hosts),
                 caddyReqCfg
             )
-            //remove cname from CaddySources
-            await CaddySource.destroy({ where: { host:cname } })
+            //remove host from CaddySources
+            await CaddySource.destroy({ where: { host } })
+            if (env.debug) console.log(`Removed domain ${host} from deal ${id}`)
             return true
         } catch (e){
             console.log(e)

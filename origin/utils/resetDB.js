@@ -11,6 +11,7 @@ const {DealsResources} = require("../models/associations/DealsResources");
 const {DealsNodeLocations} = require("../models/deals/DealsNodeLocations");
 const {Domains} = require("../models/resources/Domains");
 const {sequelize} = require("../models");
+const { PurgeLog } = require("../models/purgeLog");
 const resetDB = async () => {
 
     // Drop tables
@@ -37,10 +38,22 @@ const resetDB = async () => {
     await Domains.sync({force: true})
 
     await CaddySource.sync({force: true})
+    await PurgeLog.sync({force: true})
 
+    await createRelationsBetweenTables()
+
+}
+
+const createRelationsBetweenTables = async() => {
     Deal.hasOne(DealsMetadata, {
         foreignKey: 'dealId',
         as: 'Metadata', // This alias should match the one used in your query
+        onDelete: 'cascade'
+    });
+
+    DealsMetadata.belongsTo(Deal, {
+        foreignKey: 'dealId',
+        as: 'Deal',
         onDelete: 'cascade'
     });
 
@@ -61,7 +74,6 @@ const resetDB = async () => {
         as: "Deals",
         onDelete: 'cascade'
     })
-
 }
 
-module.exports = {resetDB}
+module.exports = {resetDB, createRelationsBetweenTables}
