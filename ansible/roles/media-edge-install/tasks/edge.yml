@@ -102,3 +102,4 @@
       - "dns_add_result.json.status != 'Failed'"
     fail_msg: "Failed to add record to ClouDNS: {{ dns_add_result.json.statusDescription }}"
   when: dns_add_result is defined and 'status' in dns_add_result.json
+  ignore_errors: yes

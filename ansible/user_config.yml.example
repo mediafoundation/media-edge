@@ -43,7 +43,7 @@ dns_config:
 db_host: localhost
 db_port: 5432
 db_user: origin
-db_password:
+db_password: 1234
 db_name: origin
 
 # Testing server, set to true to provision the server with ganache
