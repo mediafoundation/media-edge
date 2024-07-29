@@ -31,7 +31,7 @@ const init = async (network) => {
     const resetIndex = process.argv.indexOf('--reset');
 
     //initSdk({privateKey: PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
-    let sdk = new Sdk({privateKey: PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
+    let sdk = new Sdk({privateKey: PRIVATE_KEY, transport: network.URL !== "undefined" ? [network.URL] : undefined, chain: validChains[network.id]})
 
     if(resetIndex !== -1){
         try{
