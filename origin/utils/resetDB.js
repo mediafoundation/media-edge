@@ -40,7 +40,7 @@ const resetDB = async () => {
     await CaddySource.sync({force: true})
     await PurgeLog.sync({force: true})
 
-    await createRelationsBetweenTables()
+    //await createRelationsBetweenTables()
 
 }
 

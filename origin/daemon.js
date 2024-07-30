@@ -4,7 +4,7 @@ const {initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy} = require(".
 //const {checkEvents} = require("./services/events");
 const {checkBandwidth, initBandwidth} = require("./services/bandwidth");
 const { resetPurgeLog } = require('./services/varnish');
-const {resetDB} = require("./utils/resetDB");
+const {resetDB, createRelationsBetweenTables} = require("./utils/resetDB");
 const {Sdk, Blockchain, validChains} = require("media-sdk");
 const {PRIVATE_KEY} = require("./config/env");
 const {CaddyController} = require("./controllers/caddyController");
@@ -31,7 +31,7 @@ const init = async (network) => {
     const resetIndex = process.argv.indexOf('--reset');
 
     //initSdk({privateKey: PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
-    let sdk = new Sdk({privateKey: PRIVATE_KEY, transport: network.URL !== "undefined" ? [network.URL] : undefined, chain: validChains[network.id]})
+    let sdk = new Sdk({privateKey: PRIVATE_KEY, chain: validChains[network.id]})
 
     if(resetIndex !== -1){
         try{
@@ -95,6 +95,7 @@ const init = async (network) => {
 
 async function start(){
     //console.log(networks, networks.find(item => item.id === 11155111))
+    await createRelationsBetweenTables()
     for(const CURRENT_NETWORK of networks ){
 
         console.log(CURRENT_NETWORK)
