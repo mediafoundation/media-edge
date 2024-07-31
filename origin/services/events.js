@@ -1,5 +1,5 @@
 const env = require("../config/env")
-const { EventHandler, Resources, Encryption, validChains, Marketplace, Blockchain, Sdk} = require("media-sdk");
+const { Resources, Encryption, validChains, Marketplace, Blockchain, Sdk, EventsHandler} = require("media-sdk");
 const networks = require('./../config/networks')
 const { DealsController } = require("../controllers/dealsController");
 const { ResourcesController } = require("../controllers/resourcesController");
@@ -30,7 +30,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     let toNumber = toHex(Number(blockNumber))
 
     try {
-        let eventsHandler = new EventHandler(sdk)
+        let eventsHandler = new EventsHandler(sdk)
 
         if (env.debug && blockNumber !== lastReadBlock) {
             console.log("Last read block", lastReadBlock)
