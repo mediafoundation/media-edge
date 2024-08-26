@@ -16,14 +16,14 @@ const resetDB = async () => {
 
     // Drop tables
 
-    await sequelize.drop({cascade: true})
-
+    //await sequelize.drop({cascade: true})
+    await sequelize.sync({force: true})
 
 
     // Recreate tables
 
     // Recreate tables
-    await Resource.sync({force: true});
+    /*await Resource.sync({force: true});
 
     await Provider.sync({force: true});
     await Client.sync({force: true});
@@ -38,7 +38,7 @@ const resetDB = async () => {
     await Domains.sync({force: true})
 
     await CaddySource.sync({force: true})
-    await PurgeLog.sync({force: true})
+    await PurgeLog.sync({force: true})*/
 
     //await createRelationsBetweenTables()
 
@@ -48,32 +48,50 @@ const createRelationsBetweenTables = async() => {
     Deal.hasOne(DealsMetadata, {
         foreignKey: 'dealId',
         as: 'Metadata', // This alias should match the one used in your query
-        onDelete: 'cascade'
+        onDelete: 'CASCADE'
     });
 
     DealsMetadata.belongsTo(Deal, {
         foreignKey: 'dealId',
         as: 'Deal',
-        onDelete: 'cascade'
+        onDelete: 'CASCADE'
     });
 
     Deal.hasOne(DealsBandwidthLimit, {
         foreignKey: 'dealId',
         as: 'BandwidthLimit', // This alias should match the one used in your query
-        onDelete: 'cascade'
+        onDelete: 'CASCADE'
     });
 
     Resource.hasMany(Domains, {
         foreignKey: 'resourceId',
         as: 'Domains', // This alias should match the one used in your query
-        onDelete: 'cascade'
+        onDelete: 'CASCADE'
     });
 
     Deal.hasOne(Domains, {
         foreignKey: "dealId",
         as: "Deals",
-        onDelete: 'cascade'
+        onDelete: 'CASCADE'
     })
+
+    DealsNodeLocations.belongsToMany(Deal, {
+        through: DealsLocations,
+        foreignKey: 'nodeId'
+    })
+    Deal.belongsToMany(DealsNodeLocations, {
+        through: DealsLocations,
+        foreignKey: "dealId"
+    });
+
+    Resource.belongsToMany(Deal, {
+        through: DealsResources,
+        foreignKey: 'resourceId'
+    })
+    Deal.belongsToMany(Resource, {
+        through: DealsResources,
+        foreignKey: "dealId"
+    });
 }
 
 module.exports = {resetDB, createRelationsBetweenTables}

@@ -24,7 +24,4 @@ const DealsLocations = sequelize.define("DealsLocations", {
     freezeTableName: true
 });
 
-DealsNodeLocations.belongsToMany(Deal, {through: DealsLocations, foreignKey: 'nodeId'})
-Deal.belongsToMany(DealsNodeLocations, {through: DealsLocations, foreignKey: "dealId"});
-
 module.exports = {DealsLocations};
