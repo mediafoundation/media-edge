@@ -1,16 +1,19 @@
-const { DataTypes } = require("sequelize");
-const { sequelize, DECIMALS_DIGITS} = require("../index");
-const { array, boolean, number, object, string, z } = require("zod");
+import {DECIMALS_DIGITS, sequelize} from "../index";
+
+import {array, boolean, number, object, string, z} from "zod";
+
+import {DataTypes} from "sequelize";
+
 
 const DealsMetadata = sequelize.define("DealsMetadata", {
     id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
     dealId: {
         type: DataTypes.STRING,
-        references: {
+        /*references: {
             model: 'Deals',
             key: 'id',
             type: DataTypes.STRING
-        }
+        }*/
     },
     label: DataTypes.STRING,
     autoSsl: DataTypes.BOOLEAN,
@@ -36,4 +39,5 @@ const DealsMetadataType = z.object({
     customCnames: boolean()
 })
 
-module.exports = {DealsMetadata, DealsMetadataType};
+export {DealsMetadata}
+export {DealsMetadataType}

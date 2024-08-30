@@ -1,5 +1,8 @@
-const {sequelize} = require("../index");
-const { DataTypes} = require("sequelize");
+import {sequelize} from "../index";
+
+import {DataTypes} from "sequelize";
+
+//Todo: check defaults
 
 const Domains = sequelize.define("Domains",
     {
@@ -14,16 +17,17 @@ const Domains = sequelize.define("Domains",
         },
         dealId: {
             type: DataTypes.STRING,
-            references: {
+            /*references: {
                 model: "Deals",
                 key: "id",
                 type: DataTypes.STRING
-            }
+            }*/
         },
 
         txtRecord: {
             type: DataTypes.STRING,
-            default: null
+            allowNull: true,
+            //default: null
         },
     },
     {
@@ -32,4 +36,4 @@ const Domains = sequelize.define("Domains",
     }
 );
 
-module.exports = {Domains};
+export {Domains}

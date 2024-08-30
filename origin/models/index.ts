@@ -1,9 +1,9 @@
-const Sequelize = require('sequelize')
-const env = require("../config/env")
+import {Sequelize} from "sequelize";
 
+const env = require("../config/env")
 //Instance of sequelize according to the data in env.js
 
-let sequelize;
+let sequelize: Sequelize;
 
 if (process.env.NODE_ENV === "testing") {
     sequelize = new Sequelize('sqlite::memory', {logging: false})
@@ -16,7 +16,7 @@ if (process.env.NODE_ENV === "testing") {
     });
 }
 
-const DECIMALS_DIGITS = 50
+export const DECIMALS_DIGITS = 50
 
 sequelize.authenticate().then(() => {
     console.log('[+] Database connection has been established successfully.')
@@ -24,4 +24,4 @@ sequelize.authenticate().then(() => {
     console.error('[-] Unable to connect to the database.')
 });
 
-module.exports = {sequelize, DECIMALS_DIGITS}
+export {sequelize}

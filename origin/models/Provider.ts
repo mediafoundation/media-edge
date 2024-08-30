@@ -1,5 +1,7 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("./index");
+import {DataTypes} from "sequelize";
+
+import {sequelize} from "./index";
+
 
 const Provider = sequelize.define("Providers", {
     id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
@@ -9,4 +11,4 @@ const Provider = sequelize.define("Providers", {
     freezeTableName: true
 });
 
-module.exports = {Provider};
+export {Provider}

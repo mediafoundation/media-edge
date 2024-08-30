@@ -7,17 +7,17 @@ const Deal = sequelize.define("Deals",
         offerId: DataTypes.BIGINT,
         clientId: {
             type: DataTypes.BIGINT,
-            references: {
+            /*references: {
                 model: 'Clients',
                 key: 'id'
-            }
+            }*/
         },
         providerId: {
             type: DataTypes.BIGINT,
-            references: {
+            /*references: {
                 model: 'Providers',
                 key: 'id'
-            }
+            }*/
         },
         totalPayment: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
         blockedBalance: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
@@ -38,5 +38,4 @@ const Deal = sequelize.define("Deals",
         freezeTableName: true
     }
 );
-
-module.exports = {Deal};
+export {Deal}

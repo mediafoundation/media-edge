@@ -14,4 +14,4 @@ const PurgeLog = sequelize.define('PurgeLog', {
     updatedAt: false,
 });
 
-module.exports = {PurgeLog}
+export {PurgeLog}

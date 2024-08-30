@@ -1,5 +1,6 @@
-const {sequelize} = require("./index");
-const {DataTypes} = require("sequelize");
+import {sequelize} from "./index";
+
+import {DataTypes} from "sequelize";
 
 const CaddySource = sequelize.define('CaddySource', {
     id: {
@@ -14,12 +15,12 @@ const CaddySource = sequelize.define('CaddySource', {
     },
     deal_id: {
         type: DataTypes.STRING,
-        references: {
+        /*references: {
             model: 'Deals',
             key: 'id',
             type: DataTypes.STRING
-        }
+        }*/
     }
 })
 
-module.exports = {CaddySource};
+export {CaddySource}

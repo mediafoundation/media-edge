@@ -1,6 +1,7 @@
-const {sequelize, DECIMALS_DIGITS} = require("./index");
-const { DataTypes } = require("sequelize");
-const {Deal} = require("./deals/Deal");
+//import {sequelize, DECIMALS_DIGITS} from "./index";
+import {DataTypes} from "sequelize";
+import {Deal} from "./deals/Deal";
+import {DECIMALS_DIGITS, sequelize} from "./index";
 
 const BandwidthsLog = sequelize.define('BandwidthsLogs', {
     id: {
@@ -11,11 +12,11 @@ const BandwidthsLog = sequelize.define('BandwidthsLogs', {
     dealId: {
         type: DataTypes.STRING,
         allowNull: false,
-        references: {
+        /*references: {
             model: 'Deals',
             key: 'id',
             type: DataTypes.STRING
-        }
+        }*/
     },
     bytes_sent: {
         type: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
@@ -51,4 +52,4 @@ BandwidthsLog.belongsTo(Deal, {
     as: "Deal"
 })
 
-module.exports = {BandwidthsLog};
+export {BandwidthsLog}

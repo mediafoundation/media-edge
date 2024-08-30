@@ -1,16 +1,16 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../index");
-const {DealsNodeLocations} = require("./DealsNodeLocations");
-const {Deal} = require("./Deal");
+import {DataTypes} from "sequelize";
+
+import {sequelize} from "../index";
+
 const DealsLocations = sequelize.define("DealsLocations", {
     id: {type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true},
     dealId: {
         type: DataTypes.STRING,
-        references: {
+        /*references: {
             model: 'Deal',
             key: 'id',
             type: DataTypes.STRING
-        }
+        }*/
     },
     nodeId: {
         type: DataTypes.BIGINT,
@@ -24,4 +24,4 @@ const DealsLocations = sequelize.define("DealsLocations", {
     freezeTableName: true
 });
 
-module.exports = {DealsLocations};
+export {DealsLocations}

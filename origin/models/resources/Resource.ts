@@ -1,6 +1,8 @@
-const {sequelize} = require("../index");
-const { DataTypes} = require("sequelize");
-const { array, object, string, z } = require("zod");
+import {sequelize} from "../index";
+
+import {DataTypes} from "sequelize";
+
+import {array, object, string, z} from "zod";
 
 const Resource= sequelize.define("Resources",
     {
@@ -29,4 +31,4 @@ const ResourceType = z.object({
     })).optional()
 })
 
-module.exports = {Resource, ResourceType};
+export {Resource}
