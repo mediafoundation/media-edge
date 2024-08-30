@@ -70,7 +70,7 @@ const initDatabase = async function (network, sdkInstance) {
 
             const upsertResult = await ResourcesController.upsertResource(resourceForDb)
             if (upsertResult.originalResource) {
-                let resourceNeedsToBeUpdated = compareOldAndNewResourceOnDB(upsertResult.instance.dataValues, upsertResult.originalResource.dataValues)
+                let resourceNeedsToBeUpdated = compareOldAndNewResourceOnDB(upsertResult.instance.dataValues, upsertResult.originalResource)
                 if (resourceNeedsToBeUpdated) resourcesToBeUpdatedInCaddy.push(upsertResult.instance.dataValues)
             }
         } catch (e) {

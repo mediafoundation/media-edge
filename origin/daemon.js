@@ -6,7 +6,7 @@ const {checkBandwidth, initBandwidth} = require("./services/bandwidth");
 const { resetPurgeLog } = require('./services/varnish');
 const {resetDB, createRelationsBetweenTables} = require("./utils/resetDB");
 const {Sdk, Blockchain, validChains} = require("media-sdk");
-const {PRIVATE_KEY} = require("./config/env");
+const {PRIVATE_KEY, providers} = require("./config/env");
 const {CaddyController} = require("./controllers/caddyController");
 const {checkEvents} = require("./services/events");
 const { toHex } = require("viem");
@@ -93,52 +93,61 @@ const init = async (network) => {
     return edgeStatus && rpcStatus*/
 }
 
+const filteredNetworks = (ids, networks) => {
+    return networks.filter(element => ids.includes(element.id))
+}
+
 async function start(){
     //console.log(networks, networks.find(item => item.id === 11155111))
     await createRelationsBetweenTables()
-    for(const CURRENT_NETWORK of networks ){
+    for (let i = 0; i < providers.length; i++) {
+        const networksFiltered = filteredNetworks(providers[i].supportedChains, networks);
+        for(const CURRENT_NETWORK of networksFiltered ){
 
-        console.log(CURRENT_NETWORK)
+            console.log(CURRENT_NETWORK)
 
-        let initResult = init(CURRENT_NETWORK)
-        //should set an interval and then cancel it when init is successful
-        if(initResult){
-            console.log("Edge started correctly")
-        }
+            let initResult = init(CURRENT_NETWORK)
+            //should set an interval and then cancel it when init is successful
+            if(initResult){
+                console.log("Edge started correctly")
+            }
 
-        if(lastReadBlock[CURRENT_NETWORK.id] !== 0){
-            console.log("Start to check events")
+            if(lastReadBlock[CURRENT_NETWORK.id] !== 0){
+                console.log("Start to check events")
+                setInterval(async () => {
+                    try {
+                        let getLastBlock = await checkEvents(lastReadBlock[CURRENT_NETWORK.id], CURRENT_NETWORK)
+                        lastReadBlock[CURRENT_NETWORK.id] = getLastBlock ? getLastBlock : lastReadBlock[CURRENT_NETWORK.id];
+                    } catch(e){
+                        console.log("Something failed while checking events", e)
+                    }
+                }, 60000)
+            }
+
+            //Check if deals has balance to remain
+            /*setInterval(async () => {
+                await checkDealsShouldBeActive()
+            }, 10000)*/
+
+            checkQueue()
+
             setInterval(async () => {
-                try { 
-                    let getLastBlock = await checkEvents(lastReadBlock[CURRENT_NETWORK.id], CURRENT_NETWORK)
-                    lastReadBlock[CURRENT_NETWORK.id] = getLastBlock ? getLastBlock : lastReadBlock[CURRENT_NETWORK.id];
-                } catch(e){
-                    console.log("Something failed while checking events", e)
-                }
+                await checkCaddy(CURRENT_NETWORK)
             }, 60000)
+
+            setInterval(async () => {
+                console.log("Start checking bandwidth")
+                await checkBandwidth()
+            }, 60000)
+
+            //reset varnish every 1 week
+            setInterval(async() => {
+                await resetPurgeLog()
+            }, 24 * 7 * 60 * 60 * 1000)
         }
-
-        //Check if deals has balance to remain
-        setInterval(async () => {
-            await checkDealsShouldBeActive()
-        }, 10000)
-
-        checkQueue()
-
-        setInterval(async () => {
-            await checkCaddy(CURRENT_NETWORK)
-        }, 60000)
-
-        setInterval(async () => {
-            console.log("Start checking bandwidth")
-            await checkBandwidth()
-        }, 60000)
-
-        //reset varnish every 1 week
-        setInterval(async() => {
-            await resetPurgeLog()
-        }, 24 * 7 * 60 * 60 * 1000)
     }
+
 }
+
 
 start()

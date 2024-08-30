@@ -51,26 +51,57 @@
         - inventory_hostname in groups["origin"]
 
 
-    - name: Store wallet address if not defined
-      block:
-        - pause:
-            prompt: "\nEnter your provider wallet address. (The one with the staking)"
-            echo: yes
-          register: wallet_address_input
-        - set_fact:
-            wallet_address: "{{ wallet_address_input.user_input }}"
-      when: wallet_address is not defined or wallet_address == "" or wallet_address == none
+    #- name: Store wallet address if not defined
+    #  block:
+    #    - pause:
+    #        prompt: "\nEnter your provider wallet address. (The one with the staking)"
+    #        echo: yes
+    #      register: wallet_address_input
+    #    - set_fact:
+    #        wallet_address: "{{ wallet_address_input.user_input }}"
+    #  when: wallet_address is not defined or wallet_address == "" or wallet_address == none
+    #
+    #- name: Store private key if not defined
+    #  block:
+    #    - pause:
+    #        prompt: "\nEnter your wallet private key for resource(s) decrypt. This should match the public encryption key provided on the app. (It may or may not be the same as the staking one for security reasons)."
+    #        echo: no
+    #      register: private_key_input
+    #    - set_fact:
+    #        private_key: "{{ private_key_input.user_input }}"
+    #  when: private_key is not defined or private_key == "" or private_key == none
 
-    - name: Store private key if not defined
-      block:
-        - pause:
-            prompt: "\nEnter your wallet private key for resource(s) decrypt. This should match the public encryption key provided on the app. (It may or may not be the same as the staking one for security reasons)."
-            echo: no
-          register: private_key_input
-        - set_fact:
-            private_key: "{{ private_key_input.user_input }}"
-      when: private_key is not defined or private_key == "" or private_key == none
+    - name: Check if any wallet configuration is present and valid
+      set_fact:
+        has_valid_wallet: "{{ (wallets is defined and wallets | length > 0 and not wallets | selectattr('wallet_address', 'equalto', '') | list | length > 0 and not wallets | selectattr('private_key', 'equalto', '') | list | length > 0 and not wallets | selectattr('networks', 'length', 0) | select('equalto', 0) | list | length > 0) }}"
 
+    - name: Prompt for wallet configuration if none are valid
+      block:
+      - name: Enter wallet address
+        pause:
+          prompt: "\nEnter your provider wallet address."
+          echo: yes
+        register: wallet_address_input
+
+      - name: Enter private key
+        pause:
+          prompt: "\nEnter your wallet private key for resource(s) decrypt."
+          echo: no
+        register: private_key_input
+
+      - name: Enter supported networks
+        pause:
+          prompt: "\nEnter the supported networks for this wallet (comma-separated, e.g., 'network1,network2')."
+          echo: yes
+        register: networks_input
+
+      - name: Set default wallet configuration
+        set_fact:
+          wallets:
+            - wallet_address: "{{ wallet_address_input.user_input }}"
+              private_key: "{{ private_key_input.user_input }}"
+              networks: "{{ networks_input.user_input.split(',') | map('trim') | list }}"
+      when: not has_valid_wallet
     - name: Store origin ip if not defined
       block:
         - pause:
