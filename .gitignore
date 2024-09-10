@@ -1,4 +1,4 @@
-origin/config/env.js
+origin/config/env.ts
 node_modules/
 evm-contract/node_modules/
 evm-contract/test/node_modules
