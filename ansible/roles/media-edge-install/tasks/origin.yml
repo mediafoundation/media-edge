@@ -17,10 +17,10 @@
       - "--exclude=yarn.lock"
       - "--exclude=.git"
 
-- name: Create env.js file
+- name: Create env.ts file
   template:
-    src: files/origin/config/env.js.j2
-    dest: /root/origin/config/env.js
+    src: files/origin/config/env.ts.j2
+    dest: /root/origin/config/env.ts
 
 - name: Create networks.js file
   template:

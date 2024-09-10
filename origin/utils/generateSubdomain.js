@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const env = require("./../config/env")
+const env = require("../config/env")
 const {recoverOriginalDataFromUniqueDealId} = require("./deals");
 
 function generateSubdomain(marketplaceId, dealId) {

@@ -1,7 +1,7 @@
 import {Sequelize} from "sequelize";
 
 const env = require("../config/env")
-//Instance of sequelize according to the data in env.js
+//Instance of sequelize according to the data in env.ts
 
 let sequelize: Sequelize;
 

@@ -1,75 +1,73 @@
-const acme = require("acme-client");
-const fs = require("fs");
-const path = require("path");
-const crypto = require('crypto');
-//const fetch = require('node-fetch');
-const querystring = require('querystring');
+import acme from "acme-client";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
+import querystring from "querystring";
 
 const challengesPath = "/var/www/challenges";
 const certsPath = "/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory";
 
-const certStatus = {
-  VALID: "valid",
-  FAILED: "failed",
-  OBTAINED: "obtained"
+enum CertStatus {
+  VALID = "valid",
+  FAILED = "failed",
+  OBTAINED = "obtained"
 }
 
-const issuers = [
-  { name: 'Let\'s Encrypt', url: acme.directory.letsencrypt.production },
-  { name: 'ZeroSSL', url: 'https://acme.zerossl.com/v2/DV90' },
-  { name: 'Buypass Go SSL', url: 'https://api.buypass.com/acme/directory' },
+interface Issuer {
+  name: string;
+  url: string;
+}
+
+const issuers: Issuer[] = [
+  { name: "Let's Encrypt", url: acme.directory.letsencrypt.production },
+  { name: "ZeroSSL", url: "https://acme.zerossl.com/v2/DV90" },
+  { name: "Buypass Go SSL", url: "https://api.buypass.com/acme/directory" },
   // Add more ACME endpoints as needed...
 ];
 
-
-function checkCertificateValidity(certificatePath, host) {
+function checkCertificateValidity(certificatePath: string, host: string): boolean {
   try {
-    // Read the certificate file
-    const certData = fs.readFileSync(certificatePath, 'utf-8');
-    // Create a certificate object
+    const certData = fs.readFileSync(certificatePath, "utf-8");
     const cert = new crypto.X509Certificate(certData);
-    // Get the current date
     const currentDate = new Date();
 
-    // Check the certificate's validity period
-    // Check if the certificate is one week away from expiring
     const oneWeekAway = new Date();
     oneWeekAway.setDate(oneWeekAway.getDate() + 7);
     if (currentDate >= new Date(cert.validFrom) && new Date(cert.validTo) <= oneWeekAway) {
-      console.log('The SSL certificate is less than one week away from expiring. Time to issue a new certificate.');
+      console.log("The SSL certificate is less than one week away from expiring. Time to issue a new certificate.");
       return false;
-    } else if(currentDate >= new Date(cert.validFrom) && currentDate <= new Date(cert.validTo)) {
+    } else if (currentDate >= new Date(cert.validFrom) && currentDate <= new Date(cert.validTo)) {
       console.log(`The SSL certificate for ${host} is valid.`);
       return true;
     } else {
       console.log(`The SSL certificate for ${host} has expired or is not yet valid. Current date: ${currentDate} - Certificate Valid from ${cert.validFrom} to ${cert.validTo}`);
       return false;
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error while checking ${host}'s SSL certificate:`, error.message);
     return false;
   }
 }
 
-async function generateEABCredentials(email, apiKey) {
-  const zerosslAPIBase = 'https://api.zerossl.com/acme';
-  const endpoint  = apiKey
-                  ? `${zerosslAPIBase}/eab-credentials?${querystring.stringify({ access_key: apiKey })}`
-                  : `${zerosslAPIBase}/eab-credentials-email`;
-  const headers = {
-    'User-Agent': 'CertMagic'
+async function generateEABCredentials(email?: string, apiKey?: string): Promise<{ kid: string; hmacKey: string }> {
+  const zerosslAPIBase = "https://api.zerossl.com/acme";
+  const endpoint = apiKey
+    ? `${zerosslAPIBase}/eab-credentials?${querystring.stringify({ access_key: apiKey })}`
+    : `${zerosslAPIBase}/eab-credentials-email`;
+  const headers: Record<string, string> = {
+    "User-Agent": "CertMagic"
   };
 
   if (!apiKey) {
     if (!email) {
-      console.warn('Missing email address for ZeroSSL; it is strongly recommended to set one for next time');
-      email = 'caddy@zerossl.com';
+      console.warn("Missing email address for ZeroSSL; it is strongly recommended to set one for next time");
+      email = "caddy@zerossl.com";
     }
-    headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    headers["Content-Type"] = "application/x-www-form-urlencoded";
   }
 
-  const requestOptions = {
-    method: 'POST',
+  const requestOptions: RequestInit = {
+    method: "POST",
     headers: headers,
     body: apiKey ? null : querystring.stringify({ email })
   };
@@ -91,14 +89,17 @@ async function generateEABCredentials(email, apiKey) {
   }
 }
 
-async function obtainAndRenewCertificates(domains) {
+interface Domain {
+  host: string;
+}
 
+async function obtainAndRenewCertificates(domains: Domain[]): Promise<void> {
   for (const domain of domains) {
-    obtainAndRenewCertificate(domain)
+    await obtainAndRenewCertificate(domain);
   }
 }
 
-async function obtainAndRenewCertificate(domain) {
+async function obtainAndRenewCertificate(domain: Domain): Promise<CertStatus> {
   const certPath = path.join(certsPath, `${domain.host}`, `${domain.host}.crt`);
   const keyPath = path.join(certsPath, `${domain.host}`, `${domain.host}.key`);
   const jsonPath = path.join(certsPath, `${domain.host}`, `${domain.host}.json`);
@@ -109,7 +110,7 @@ async function obtainAndRenewCertificate(domain) {
       if (!validCert) {
         console.log(`Renewing certificate for ${domain.host}`);
       } else {
-        return certStatus.VALID;
+        return CertStatus.VALID;
       }
     }
 
@@ -119,14 +120,14 @@ async function obtainAndRenewCertificate(domain) {
         const client = new acme.Client({
           directoryUrl: issuer.url,
           accountKey: await acme.crypto.createPrivateKey(),
-          externalAccountBinding: issuer.name === 'ZeroSSL' ? await generateEABCredentials() : undefined,
+          externalAccountBinding: issuer.name === "ZeroSSL" ? await generateEABCredentials() : undefined,
         });
         const [key, csr] = await acme.crypto.createCsr({
           commonName: String(domain.host),
         });
         const cert = await client.auto({
           csr,
-          email: 'caddy@zerossl.com',
+          email: "caddy@zerossl.com",
           termsOfServiceAgreed: true,
           challengePriority: ["http-01"],
           challengeCreateFn: async (authz, challenge, keyAuthorization) => {
@@ -135,7 +136,7 @@ async function obtainAndRenewCertificate(domain) {
               challenge.token
             );
             fs.writeFileSync(filePath, keyAuthorization);
-            console.log("Written challenge")
+            console.log("Written challenge");
           },
           challengeRemoveFn: async (authz, challenge) => {
             const filePath = path.join(
@@ -145,27 +146,25 @@ async function obtainAndRenewCertificate(domain) {
             fs.unlinkSync(filePath);
           },
         });
-        // Certificate obtained successfully!
-        if (!fs.existsSync(path.join(certsPath, `${domain.host}`))){
-            fs.mkdirSync(path.join(certsPath, `${domain.host}`), { recursive: true });
+        if (!fs.existsSync(path.join(certsPath, `${domain.host}`))) {
+          fs.mkdirSync(path.join(certsPath, `${domain.host}`), { recursive: true });
         }
         const json = `{"sans": ["${domain.host}"],"issuer_data": {"url": "https://media.network/"}}`;
         fs.writeFileSync(certPath, cert);
         fs.writeFileSync(keyPath, key);
         fs.writeFileSync(jsonPath, json);
         console.log(`Certificate for ${domain.host} obtained and saved.`);
-        return certStatus.OBTAINED
+        return CertStatus.OBTAINED;
       } catch (error) {
         console.error(`Failed to obtain certificate from ${issuer.name}:`, error);
-        // Try the next ACME endpoint...
       }
     }
   } catch (error) {
     console.error(`Failed to obtain certificate for ${domain.host}:`, error);
-    return certStatus.FAILED
+    return CertStatus.FAILED;
   }
 
-  return certStatus.FAILED
+  return CertStatus.FAILED;
 }
 
-module.exports = {obtainAndRenewCertificates, obtainAndRenewCertificate, challengesPath, certStatus}
+export { obtainAndRenewCertificates, obtainAndRenewCertificate, challengesPath, CertStatus };
