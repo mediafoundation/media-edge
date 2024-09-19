@@ -1,8 +1,11 @@
-const crypto = require('crypto');
-const env = require("../config/env")
-const {recoverOriginalDataFromUniqueDealId} = require("./deals");
+import crypto from "crypto";
 
-function generateSubdomain(marketplaceId, dealId) {
+import {env} from "../config/env";
+
+import {recoverOriginalDataFromUniqueDealId} from "./deals";
+
+
+export function generateSubdomain(marketplaceId, dealId) {
     let hash = crypto.createHash('sha256');
     hash.update(marketplaceId + dealId + recoverOriginalDataFromUniqueDealId(dealId).chainId + env.PRIVATE_KEY);
 
@@ -11,7 +14,7 @@ function generateSubdomain(marketplaceId, dealId) {
     return result.toLocaleLowerCase().slice(0, 6);  // Only take first 6 characters
 }
 
-function generateTXTRecord(owner, domain) {
+export function generateTXTRecord(owner, domain) {
     let hash = crypto.createHash('sha256');
     hash.update(owner + domain + env.PRIVATE_KEY);
 
@@ -23,6 +26,3 @@ function generateTXTRecord(owner, domain) {
 //Following an example of usage
 //let subdomain = generateSubdomain('1','1', '1', '5db5ce9b809700f12b1990a44a82a5fc223dd023efb0723f771fb38d3e4ffd5b');
 //console.log(subdomain);  // e.g., 'abc123'
-
-module.exports = {generateSubdomain, generateTXTRecord}
-

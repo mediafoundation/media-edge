@@ -1,15 +1,20 @@
-const {Client} = require("@elastic/elasticsearch");
-const env = require("../config/env");
-const axios = require("axios");
-const {BandwidthsLog} = require("../models/BandwidthsLog");
-const {DealsController} = require("./dealsController");
+import {Client} from "@elastic/elasticsearch";
+
+import {env} from "../config/env";
+
+import axios from "axios";
+
+import {BandwidthsLog} from "../models/BandwidthsLog";
+
+import {DealsController} from "./dealsController";
+
 
 const caddyApiHeaders = {
     headers: {
         'Content-Type': 'application/json'
     }
 }
-class BandwidthController {
+export class BandwidthController {
 
     static async getBandwidthFromElastic(bandwidthLog)  {
         const client = new Client({ node: env.elasticSearchUrl });
@@ -47,7 +52,7 @@ class BandwidthController {
         };
 
         try {
-            const response = await client.search(query);
+            const response: any = await client.search(query);
             //console.log("Response from elastic:", response)
             const totalBytes = parseInt(response.aggregations.total_bytes.value);
             return { totalBytes, range };
@@ -83,7 +88,7 @@ class BandwidthController {
     // This function checks the bandwidth of all deals using elasticsearch,
     // updates the db and applies the header to the Caddyfile
     static async updateBandwidthUsage () {
-        let bandwidthsLogs = await BandwidthsLog.findAll()
+        let bandwidthsLogs: any = await BandwidthsLog.findAll()
         let dealsToBeUpdated = []
         for (const bandwidthsLog of bandwidthsLogs) {
 
@@ -114,14 +119,14 @@ class BandwidthController {
             //if(env.debug) console.log("Bandwidth limit:", bandwidthLimit)
 
             // Calculate the bandwidth limit in bytes
-            let limitInBytes = this.convertToBytes(bandwidthLimit);
+            let limitInBytes = await this.convertToBytes(bandwidthLimit);
 
             // Check if the bandwidth limit has been reached
             if (bandwidthUsage >= limitInBytes && bandwidthsLog.is_limited === false) {
                 // Update the Caddy resource configuration to apply the bandwidth limiter
                 await this.applyBandwidthLimiter(bandwidthsLog, true);
-                await BandwidthsLog.update({
-                    is_limited: true
+                await bandwidthsLog.update({
+                    is_limited: true,
                 })
                 dealsToBeUpdated.push(bandwidthsLog)
             }
@@ -226,14 +231,14 @@ class BandwidthController {
     // This function retrieves all deals from bandwidth db and resets the bandwidth if required
     static async resetBandwidthLimitPeriods(){
         let now = new Date().getTime()
-        let bandwidthRecords = await BandwidthsLog.findAll({ raw:true })
+        let bandwidthRecords: any = await BandwidthsLog.findAll({ raw:true })
         let dealsToBeUpdated = []
         for (const record of bandwidthRecords) {
             if(now >= record.period_end && record.is_limited === true){
                 if(env.debug) console.log("Resetting bandwidth record:", record.id)
                 await BandwidthsLog.update({
                     bytes_sent: 0,
-                    period_end: parseInt((record.period_end / record.periods) * record.periods + 1),
+                    period_end: parseInt(String((record.period_end / record.periods) * record.periods + 1)),
                     periods: record.periods + 1,
                     is_limited: false
                 }, {
@@ -298,5 +303,3 @@ class BandwidthController {
         }
     }
 }
-
-module.exports = {BandwidthController};

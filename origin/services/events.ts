@@ -1,19 +1,33 @@
-const env = require("../config/env")
-const { Resources, Encryption, validChains, Marketplace, Blockchain, Sdk, EventsHandler} = require("media-sdk");
-const networks = require('./../config/networks')
-const { DealsController } = require("../controllers/dealsController");
-const { ResourcesController } = require("../controllers/resourcesController");
-const { CaddyController } = require("../controllers/caddyController");
-const { z } = require("zod");
-const { DealsMetadataType } = require("../models/deals/DealsMetadata");
-const { BandwidthController } = require("../controllers/bandwidthController");
-const {filterDomainsMatchingDeals} = require("../utils/resources");
-const {generateUniqueItemId, recoverOriginalDataFromUniqueDealId} = require("../utils/deals");
-const { toHex } = require("viem");
-const {sleep} = require("../utils/sleep");
-const {Domains} = require("../models/resources/Domains");
+import {env} from "../config/env";
 
-let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
+import networks from "./../config/networks";
+
+import {DealsController} from "../controllers/dealsController";
+
+import {ResourcesController} from "../controllers/resourcesController";
+
+import {CaddyController} from "../controllers/caddyController";
+
+import {z} from "zod";
+
+import {DealsMetadataType} from "../models/deals/DealsMetadata";
+
+import {BandwidthController} from "../controllers/bandwidthController";
+
+import {filterDomainsMatchingDeals} from "../utils/resources";
+
+import {generateUniqueItemId, recoverOriginalDataFromUniqueDealId} from "../utils/deals";
+
+import {toHex} from "viem";
+
+import {sleep} from "../utils/sleep";
+
+import {Domains} from "../models/resources/Domains";
+
+const { Resources, Encryption, validChains, Marketplace, Blockchain, Sdk, EventsHandler} = require("media-sdk");
+
+
+export const checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     //let blockNumber = lastReadBlock + 1
     let updatedResources = undefined
     let removedResources = undefined
@@ -150,7 +164,7 @@ let checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     return blockNumber
 }
 
-let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
+export const manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
 
     console.log("Data from event", dealId, CURRENT_NETWORK)
 
@@ -179,7 +193,7 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
     }
 
     //Check if deal is active
-    let formattedDeal = DealsController.formatDeal(deal)
+    let formattedDeal: {[index: string | number]: any} = DealsController.formatDeal(deal)
     if (DealsController.dealIsActive(formattedDeal) === false || formattedDeal.active === false){
         console.log("Deal is not active: ", formattedDeal.id)
         return
@@ -265,7 +279,7 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
         let caddyFile = await CaddyController.getRecords()
         console.log("UniqueId",generateUniqueItemId(Number(dealId), CURRENT_NETWORK.id), dealId, CURRENT_NETWORK.id )
         let deal = await DealsController.getDealById(generateUniqueItemId(Number(dealId), CURRENT_NETWORK.id))
-        let dealResource = await DealsController.getDealResource(generateUniqueItemId(Number(dealId), CURRENT_NETWORK.id))
+        let dealResource: any = await DealsController.getDealResource(generateUniqueItemId(Number(dealId), CURRENT_NETWORK.id))
         let resource = await ResourcesController.getResourceById(dealResource.resourceId)
         console.log("Resource", resource)
         console.log("Deal", deal)
@@ -290,7 +304,7 @@ let manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
     }
 }
 
-let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
+export const manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
 
     console.log("Resource updated", resourceId, CURRENT_NETWORK.id)
 
@@ -304,7 +318,7 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
       generateUniqueItemId(Number(resourceId), CURRENT_NETWORK.id),
     )
     if (deals.length > 0) {
-        let resource = await ResourcesController.getResourceById(generateUniqueItemId(Number(resourceId), CURRENT_NETWORK.id))
+        let resource: any = await ResourcesController.getResourceById(generateUniqueItemId(Number(resourceId), CURRENT_NETWORK.id))
         if (resource !== false) {
 
             const network = networks.find(network => network.id === CURRENT_NETWORK.id)
@@ -341,7 +355,7 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
             console.log("Domains from db before filter", domainsFromDb)
 
             if(domainsFromDb.length > 0){
-                domainsFromDbNotInFilteredDomains = domainsFromDb.filter(dbDomain => {
+                domainsFromDbNotInFilteredDomains = domainsFromDb.filter((dbDomain: any )=> {
                     return !filteredDomains.some(filteredDomain =>
                         filteredDomain.host === dbDomain.domain && filteredDomain.dealId === dbDomain.dealId
                     );
@@ -381,14 +395,14 @@ let manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
     }
 }
 
-let manageCancelledDeal = async (dealId, CURRENT_NETWORK) => {
+export const manageCancelledDeal = async (dealId, CURRENT_NETWORK) => {
     const uniqueId = generateUniqueItemId(Number(dealId), CURRENT_NETWORK.id);
     let deal = await DealsController.getDealById(uniqueId)
     console.log("Deal cancelled", dealId, uniqueId, deal)
 
 
     //Check if the resource associated to that deal has any other deals or need to be removed
-    let dealResource = await DealsController.getDealResource(uniqueId)
+    let dealResource: any = await DealsController.getDealResource(uniqueId)
     console.log("DealResource", dealResource)
     let dealsOfResource = await ResourcesController.getResourcesDeals(dealResource.resourceId)
 
@@ -401,8 +415,8 @@ let manageCancelledDeal = async (dealId, CURRENT_NETWORK) => {
     }
 }
 
-let manageAddedBalance = async (dealId, chainId) => {
-    const network = networks.find(network => network.id === CURRENT_NETWORK.id)
+export const manageAddedBalance = async (dealId, chainId) => {
+    const network = networks.find(network => network.id === chainId)
 
     let sdk = new Sdk({privateKey: env.PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
 
@@ -416,5 +430,3 @@ let manageAddedBalance = async (dealId, chainId) => {
 /*let getId = (id, network) => {
     return id + "_" + network.network_id + "_" + network.chain_id + "_" + env.MARKETPLACE_ID
 }*/
-
-module.exports = { checkEvents, manageDealCreatedOrAccepted, manageResourceUpdated, manageCancelledDeal, manageAddedBalance }

@@ -1,16 +1,28 @@
-const { Deal } = require("../models/deals/Deal");
-const { DealsMetadata, DealsMetadataType } = require("../models/deals/DealsMetadata");
-const { Resource } = require("../models/resources/Resource");
-const { Provider } = require("../models/Provider");
-const { Client } = require("../models/Client");
-const { DealsBandwidthLimit } = require("../models/deals/DealsBandwidthLimit");
-const { DealsLocations} = require("../models/deals/DealsLocations");
-const {DealsResources} = require("../models/associations/DealsResources");
-const {DealsNodeLocations} = require("../models/deals/DealsNodeLocations");
-const {Domains} = require("../models/resources/Domains");
-const {BandwidthsLog} = require("../models/BandwidthsLog");
-const {generateUniqueItemId} = require("../utils/deals");
-class DealsController {
+import {Deal} from "../models/deals/Deal";
+
+import {DealsMetadata, DealsMetadataType} from "../models/deals/DealsMetadata";
+
+import {Resource} from "../models/resources/Resource";
+
+import {Provider} from "../models/Provider";
+
+import {Client} from "../models/Client";
+
+import {DealsBandwidthLimit} from "../models/deals/DealsBandwidthLimit";
+
+import {DealsLocations} from "../models/deals/DealsLocations";
+
+import {DealsResources} from "../models/associations/DealsResources";
+
+import {DealsNodeLocations} from "../models/deals/DealsNodeLocations";
+
+import {Domains} from "../models/resources/Domains";
+
+import {BandwidthsLog} from "../models/BandwidthsLog";
+
+import {generateUniqueItemId} from "../utils/deals";
+
+export class DealsController {
     constructor() {}
 
 
@@ -129,7 +141,7 @@ class DealsController {
             if (!deal) {
                 return null;
             }
-            const client = await Client.findByPk(deal.clientId, {attributes: ['account'], raw: true});
+            const client: any = await Client.findByPk(deal.clientId, {attributes: ['account'], raw: true});
             return client.account;
         } catch (error) {
             throw error;
@@ -211,5 +223,3 @@ class DealsController {
         return Date.parse(formattedCalculatedEnd) > Date.now()
     }
 }
-
-module.exports = {DealsController}

@@ -1,15 +1,25 @@
-const env = require("../config/env");
-const {generateSubdomain, generateTXTRecord} = require("../utils/generateSubdomain");
-const axios = require("axios");
-const {obtainAndRenewCertificate, certStatus} = require("../utils/certs");
-const doh = require('dohjs')
+import {env} from "../config/env";
+
+import {generateSubdomain, generateTXTRecord} from "../utils/generateSubdomain";
+
+import axios from "axios";
+
+import {CertStatus, obtainAndRenewCertificate} from "../utils/certs";
+
+import doh from "dohjs";
+
+import config from "../config/app";
+
+import {CaddySource} from "../models/caddy";
+
+import {getHostName, isARecord} from "../utils/domains";
+
 const resolver = new doh.DohResolver('https://1.1.1.1/dns-query')
-const config = require("../config/app");
-const {CaddySource} = require("../models/caddy");
-const {isARecord, getHostName} = require("../utils/domains");
 
 
-const queues = {
+
+
+export const queues = {
     Minutely: [],
     Hourly: [],
     Daily: [],
@@ -24,7 +34,7 @@ const caddyReqCfg = {
     }
 }
 
-class CaddyController {
+export class CaddyController {
     static async checkDomain(host){
         let domain = await CaddySource.findOne({
             where: { host: host },
@@ -56,7 +66,7 @@ class CaddyController {
                 "protocol": "http"
             }
 
-        let routes = [{
+        let routes: {[index:string]: any}[] = [{
             "handle": [{
                 "handler": "reverse_proxy",
                 "headers": {
@@ -389,7 +399,7 @@ class CaddyController {
                             //todo: following function should return a boolean
                             let certificateObtainedStatus = await obtainAndRenewCertificate({host: item.item.domain});
 
-                            if (certificateObtainedStatus === certStatus.OBTAINED || certificateObtainedStatus === certStatus.VALID) {
+                            if (certificateObtainedStatus === CertStatus.OBTAINED || certificateObtainedStatus === CertStatus.VALID) {
                                 if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.item.domain}`);
                                 //queue.splice(i, 1);
                                 await this.deleteFromAllQueues(item.item.domain)
@@ -587,4 +597,4 @@ class CaddyController {
     }
 }
 
-module.exports = {CaddyController, queues}
+//module.exports = {CaddyController, queues}

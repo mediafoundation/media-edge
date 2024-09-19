@@ -1,9 +1,13 @@
-const {Resource, ResourceType} = require("../models/resources/Resource");
-const {Domains} = require("../models/resources/Domains");
-const {DealsResources} = require("../models/associations/DealsResources");
-const {DealsController} = require("./dealsController");
+import {Resource, ResourceType} from "../models/resources/Resource";
 
-class ResourcesController {
+import {Domains} from "../models/resources/Domains";
+
+import {DealsResources} from "../models/associations/DealsResources";
+
+import {DealsController} from "./dealsController";
+
+
+export class ResourcesController {
     static upsertResource = async (resource) => {
         try {
             const originalResource = await Resource.findByPk(resource.id, {
@@ -159,7 +163,7 @@ class ResourcesController {
     }
 
     static getResourcesDeals = async (resourceId) => {
-        const dealsResources = await DealsResources.findAll({where: {resourceId: resourceId}, raw: true});
+        const dealsResources: any = await DealsResources.findAll({where: {resourceId: resourceId}, raw: true});
 
         let deals = []
 
@@ -179,5 +183,3 @@ class ResourcesController {
         ResourceType.parse(resource)
     }
 }
-
-module.exports = {ResourcesController}

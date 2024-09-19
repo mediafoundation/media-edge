@@ -1,7 +1,9 @@
-const {PurgeLogsController} = require("../controllers/purgeLogsController");
-const {CaddyController} = require("../controllers/caddyController");
+import {PurgeLogsController} from "../controllers/purgeLogsController";
 
-const resetPurgeLog = async () => {
+import {CaddyController} from "../controllers/caddyController";
+
+
+export const resetPurgeLog = async () => {
     await PurgeLogsController.deleteAllRecords()
 }
 
@@ -29,7 +31,7 @@ const resetPurgeLog = async () => {
     }
 }*/
 
-const purgeRecord = async (deal, path) => {
+export const purgeRecord = async (deal, path) => {
     
     let caddyHosts = await CaddyController.getHosts(deal.id)
     for (const host of caddyHosts) {
@@ -46,5 +48,3 @@ const purgeRecord = async (deal, path) => {
     // let resource = await models.Resources.getResourceById(deal.resourceId)
     // console.log(resource);
 }
-
-module.exports = {resetPurgeLog, purgeRecord}

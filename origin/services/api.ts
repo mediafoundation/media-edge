@@ -1,27 +1,35 @@
-const express = require('express')
+//@ts-nocheck
+import express from "express";
 //const {purgeRecord} = require('./varnish')
-const cors = require('cors')
-const env = require("../config/env")
+import cors from "cors";
+
+import {env} from "../config/env";
 //const {Signer} = require("media-sdk");
-const {DealsController} = require("../controllers/dealsController");
-const {PurgeLogsController} = require("../controllers/purgeLogsController");
-const {CaddyController} = require("../controllers/caddyController");
-const {generateUniqueItemId, recoverOriginalDataFromUniqueDealId} = require("../utils/deals");
-const {generateNonce, SiweMessage, SiweErrorType} = require("siwe");
-const Session = require("express-session");
-const {
-  manageDealCreatedOrAccepted,
-  manageResourceUpdated,
-  manageCancelledDeal,
-  manageAddedBalance
-} = require("./events");
-const psl = require('psl');
+import {DealsController} from "../controllers/dealsController";
+
+import {PurgeLogsController} from "../controllers/purgeLogsController";
+
+import {CaddyController} from "../controllers/caddyController";
+
+import {generateUniqueItemId, recoverOriginalDataFromUniqueDealId} from "../utils/deals";
+
+import {generateNonce, SiweErrorType, SiweMessage} from "siwe";
+
+import Session from "express-session";
+
+import {manageAddedBalance, manageCancelledDeal, manageDealCreatedOrAccepted, manageResourceUpdated} from "./events";
+
+import psl from "psl";
 //const {ResourcesController} = require("../controllers/resourcesController");
-const {generateTXTRecord} = require("../utils/generateSubdomain");
-const {getHostName} = require("../utils/domains");
-const {CaddySource} = require('../models/caddy');
+import {generateTXTRecord} from "../utils/generateSubdomain";
+
+import {getHostName} from "../utils/domains";
+
+import {CaddySource} from "../models/caddy";
+
 //const {where, Op} = require("sequelize");
-const {createRelationsBetweenTables} = require("../utils/resetDB");
+import {createRelationsBetweenTables} from "../utils/resetDB";
+
 
 /* const helmet = require('helmet'); */
 
@@ -63,7 +71,9 @@ app.use(Session({
 }));
 
 app.get('/nonce', async (req, res) => {
+  // @ts-ignore
   req.session.nonce = generateNonce();
+  // @ts-ignore
   req.session.save(() => res.status(200).send(req.session.nonce).end());
 });
 

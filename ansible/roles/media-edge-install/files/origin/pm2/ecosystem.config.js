@@ -13,7 +13,7 @@ module.exports = {
         },
         {
             name : "api",
-            script: "/root/origin/services/api.js",
+            script: "/root/origin/services/api.ts",
             instances: 1
         },
     ]

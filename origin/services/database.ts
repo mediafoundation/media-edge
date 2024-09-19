@@ -1,15 +1,26 @@
-const env = require("../config/env")
-const {Resources, MarketplaceViewer, Encryption} = require("media-sdk");
-const {resourcesNotMatchingDeal, filterDomainsMatchingDeals} = require("../utils/resources");
-const {DealsController} = require("../controllers/dealsController");
-const {z} = require("zod");
-const {DealsMetadataType} = require("../models/deals/DealsMetadata");
-const {ResourcesController} = require("../controllers/resourcesController");
-const {CaddyController} = require("../controllers/caddyController");
-const {generateUniqueItemId} = require("../utils/deals");
-const {generateTXTRecord} = require("../utils/generateSubdomain");
-const {getHostName} = require("../utils/domains");
-const initDatabase = async function (network, sdkInstance) {
+import {env} from "../config/env";
+
+import {Encryption, MarketplaceViewer, Resources} from "media-sdk";
+
+import {filterDomainsMatchingDeals, resourcesNotMatchingDeal} from "../utils/resources";
+
+import {DealsController} from "../controllers/dealsController";
+
+import {z} from "zod";
+
+import {DealsMetadataType} from "../models/deals/DealsMetadata";
+
+import {ResourcesController} from "../controllers/resourcesController";
+
+import {CaddyController} from "../controllers/caddyController";
+
+import {generateUniqueItemId} from "../utils/deals";
+
+import {generateTXTRecord} from "../utils/generateSubdomain";
+
+import {getHostName} from "../utils/domains";
+
+export const initDatabase = async function (network, sdkInstance) {
 
     // Fetch resources and deals
     let marketplaceViewer = new MarketplaceViewer(sdkInstance);
@@ -114,7 +125,7 @@ const initDatabase = async function (network, sdkInstance) {
             let existentDomain = await ResourcesController.getDomainByHost(domain.host)
             let txtRecord = null
             if(existentDomain.length !== 0){
-                let dealIds = existentDomain.map((domain) => domain.dealId)
+                let dealIds = existentDomain.map((domain: any) => domain.dealId)
                 if(!dealIds.includes(generateUniqueItemId(Number(domain.dealId), network.id))){
                     txtRecord = generateTXTRecord(resource.owner, getHostName(domain.host))
                 }
@@ -152,5 +163,3 @@ function compareOldAndNewResourceOnDB(obj1, obj2) {
 
     return false;
 }
-
-module.exports = {initDatabase}

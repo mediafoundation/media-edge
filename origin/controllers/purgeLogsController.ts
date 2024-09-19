@@ -1,10 +1,12 @@
-const axios = require("axios");
-const fs = require("fs");
-const {PurgeLog} = require("../models/purgeLog");
+import axios from "axios";
+
+import fs from "fs";
+
+import {PurgeLog} from "../models/purgeLog";
 
 
 const queueFile = '/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/varnish_queue.json';
-class PurgeLogsController {
+export class PurgeLogsController {
 
     static async addRecord (url)  {
         try {
@@ -96,5 +98,3 @@ class PurgeLogsController {
         });
     }
 }
-
-module.exports = {PurgeLogsController}

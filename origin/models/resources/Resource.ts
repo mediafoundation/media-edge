@@ -31,4 +31,4 @@ const ResourceType = z.object({
     })).optional()
 })
 
-export {Resource}
+export {Resource, ResourceType}
