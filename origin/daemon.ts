@@ -108,7 +108,7 @@ async function start() {
             checkQueue();
 
             setInterval(async () => {
-                await checkCaddy(CURRENT_NETWORK);
+                await checkCaddy();
             }, 60000);
 
             setInterval(async () => {

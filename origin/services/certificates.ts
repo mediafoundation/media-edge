@@ -26,7 +26,7 @@ app.listen(7878, () => {
 });
 
 const checkCerts = async (): Promise<void> => {
-  let domains = await CaddyController.getCaddySources(['host']);
+  let domains: any = await CaddyController.getCaddySources(['host']);
   await obtainAndRenewCertificates(domains);
 };
 
