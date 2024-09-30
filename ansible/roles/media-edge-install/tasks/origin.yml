@@ -22,10 +22,10 @@
     src: files/origin/config/env.ts.j2
     dest: /root/origin/config/env.ts
 
-- name: Create networks.js file
+- name: Create networks.ts file
   template:
-    src: files/origin/config/networks.js.j2
-    dest: /root/origin/config/networks.js
+    src: files/origin/config/networks.ts.j2
+    dest: /root/origin/config/networks.ts
 
 - name: Run yarn install in program folder
   command: yarn install

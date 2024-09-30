@@ -1,6 +1,5 @@
 import {env} from "../config/env";
 
-import networks from "./../config/networks";
 
 import {DealsController} from "../controllers/dealsController";
 
@@ -23,6 +22,7 @@ import {toHex} from "viem";
 import {sleep} from "../utils/sleep";
 
 import {Domains} from "../models/resources/Domains";
+import {networks} from "../config/networks";
 
 const { Resources, Encryption, validChains, Marketplace, Blockchain, Sdk, EventsHandler} = require("media-sdk");
 

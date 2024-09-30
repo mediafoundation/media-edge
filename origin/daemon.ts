@@ -1,6 +1,5 @@
-import networks from './config/networks';
 import { initDatabase } from "./services/database";
-import { initCaddy, checkDealsShouldBeActive, checkQueue, checkCaddy } from "./services/caddy";
+import { initCaddy, checkQueue, checkCaddy } from "./services/caddy";
 import { checkBandwidth, initBandwidth } from "./services/bandwidth";
 import { resetPurgeLog } from './services/varnish';
 import { resetDB, createRelationsBetweenTables } from "./utils/resetDB";
@@ -9,6 +8,7 @@ import { CaddyController } from "./controllers/caddyController";
 import { checkEvents } from "./services/events";
 import { toHex } from "viem";
 import {env} from "./config/env";
+import {networks} from "./config/networks";
 
 let lastReadBlock: { [key: string]: string } = {};
 
