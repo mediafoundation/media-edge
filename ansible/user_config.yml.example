@@ -12,7 +12,14 @@ wallet_address: "0x81974B05Dc9C1E744CD509b2E11F84897373af7d"
 
 # *** CAUTION *** To prevent hacking and fund loss, use a public key from a wallet without funds. Avoid using your main wallet address (staking wallet). 
 
-private_key: 
+private_key:
+
+# Please specify the mnemonic for the wallet(s) you are using to stake your tokens following the following example
+# Also account index can be provided
+wallets:
+  - mnemonic: "some mnemonic example"
+    supportedChains: [1, 2, 3] # The id of chains where this providers is going to run
+    accountIndex: 1 # The index of the account in the mnemonic. If non provided defaults to 0
 
 # Please specify the networks you are providing services (where you are staking your tokens). 
 networks:

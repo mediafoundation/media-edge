@@ -46,7 +46,7 @@
           register: postgres_password_input
         - set_fact:
             postgres_password: "{{ postgres_password_input.user_input }}"
-      when: 
+      when:
         - (db_password is not defined or db_password == "" or db_password == none)
         - inventory_hostname in groups["origin"]
 
@@ -71,37 +71,111 @@
     #        private_key: "{{ private_key_input.user_input }}"
     #  when: private_key is not defined or private_key == "" or private_key == none
 
-    - name: Check if any wallet configuration is present and valid
+    - name: Ensure wallets are defined
       set_fact:
-        has_valid_wallet: "{{ (wallets is defined and wallets | length > 0 and not wallets | selectattr('wallet_address', 'equalto', '') | list | length > 0 and not wallets | selectattr('private_key', 'equalto', '') | list | length > 0 and not wallets | selectattr('networks', 'length', 0) | select('equalto', 0) | list | length > 0) }}"
+        wallets: "{{ user_config.wallets | default([]) }}"
 
-    - name: Prompt for wallet configuration if none are valid
+    - name: Ensure at least one wallet is defined
       block:
-      - name: Enter wallet address
-        pause:
-          prompt: "\nEnter your provider wallet address."
-          echo: yes
-        register: wallet_address_input
+        - name: Prompt to add a wallet if none are defined
+          pause:
+            prompt: "No wallets defined. Do you want to add a wallet? (yes/no):"
+            echo: yes
+          register: add_first_wallet
+          when: wallets | length == 0
 
-      - name: Enter private key
-        pause:
-          prompt: "\nEnter your wallet private key for resource(s) decrypt."
-          echo: no
-        register: private_key_input
+        - name: Add first wallet
+          block:
+            - name: Prompt for new wallet mnemonic
+              pause:
+                prompt: "Enter mnemonic for new wallet:"
+                echo: yes
+              register: new_mnemonic
 
-      - name: Enter supported networks
-        pause:
-          prompt: "\nEnter the supported networks for this wallet (comma-separated, e.g., 'network1,network2')."
-          echo: yes
-        register: networks_input
+            - name: Prompt for new wallet supported chains
+              pause:
+                prompt: "Enter supported chains for new wallet (comma-separated):"
+                echo: yes
+              register: new_chains
 
-      - name: Set default wallet configuration
-        set_fact:
-          wallets:
-            - wallet_address: "{{ wallet_address_input.user_input }}"
-              private_key: "{{ private_key_input.user_input }}"
-              networks: "{{ networks_input.user_input.split(',') | map('trim') | list }}"
-      when: not has_valid_wallet
+            - name: Prompt for new wallet account index
+              pause:
+                prompt: "Enter account index for new wallet (optional):"
+                echo: yes
+              register: new_account_index
+
+            - name: Append new wallet to wallets list
+              set_fact:
+                wallets: "{{ wallets + [ { 'mnemonic': new_mnemonic.user_input, 'supportedChains': new_chains.user_input.split(',') | map('int') | list, 'accountIndex': (new_account_index.user_input | int) | default(omit, true) } ] }}"
+          when: add_first_wallet.user_input == 'yes'
+
+    - name: Prompt for missing wallet details
+      block:
+        - name: Check each wallet for required fields
+          set_fact:
+            incomplete_wallets: "{{ wallets | selectattr('mnemonic', 'undefined') | list + wallets | selectattr('supportedChains', 'undefined') | list }}"
+
+        - name: Prompt for wallet details if missing
+          block:
+            - name: Prompt for mnemonic
+              pause:
+                prompt: "Enter mnemonic for wallet {{ item.index + 1 }}:"
+                echo: yes
+              register: mnemonic_input
+              with_indexed_items: "{{ incomplete_wallets }}"
+              when: item.mnemonic is not defined
+
+            - name: Set mnemonic fact
+              set_fact:
+                wallets: "{{ wallets | map('combine', { 'mnemonic': mnemonic_input.results[item.index].user_input }) | list }}"
+              with_indexed_items: "{{ incomplete_wallets }}"
+              when: item.mnemonic is not defined
+
+            - name: Prompt for supported chains
+              pause:
+                prompt: "Enter supported chains for wallet {{ item.index + 1 }} (comma-separated):"
+                echo: yes
+              register: chains_input
+              with_indexed_items: "{{ incomplete_wallets }}"
+              when: item.supportedChains is not defined
+
+            - name: Set supported chains fact
+              set_fact:
+                wallets: "{{ wallets | map('combine', { 'supportedChains': chains_input.results[item.index].user_input.split(',') | map('int') | list }) | list }}"
+              with_indexed_items: "{{ incomplete_wallets }}"
+              when: item.supportedChains is not defined
+
+    - name: Prompt to add more wallets
+      pause:
+        prompt: "Do you want to add more wallets? (yes/no):"
+        echo: yes
+      register: add_more_wallets
+
+    - name: Add more wallets
+      block:
+        - name: Prompt for new wallet mnemonic
+          pause:
+            prompt: "Enter mnemonic for new wallet:"
+            echo: yes
+          register: new_mnemonic
+
+        - name: Prompt for new wallet supported chains
+          pause:
+            prompt: "Enter supported chains for new wallet (comma-separated):"
+            echo: yes
+          register: new_chains
+
+        - name: Prompt for new wallet account index
+          pause:
+            prompt: "Enter account index for new wallet (optional):"
+            echo: yes
+          register: new_account_index
+
+        - name: Append new wallet to wallets list
+          set_fact:
+            wallets: "{{ wallets + [ { 'mnemonic': new_mnemonic.user_input, 'supportedChains': new_chains.user_input.split(',') | map('int') | list, 'accountIndex': (new_account_index.user_input | int) | default(omit, true) } ] }}"
+      when: add_more_wallets.user_input == 'yes'
+
     - name: Store origin ip if not defined
       block:
         - pause:
