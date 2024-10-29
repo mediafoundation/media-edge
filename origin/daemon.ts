@@ -3,7 +3,7 @@ import { initCaddy, checkQueue, checkCaddy } from "./services/caddy";
 import { checkBandwidth, initBandwidth } from "./services/bandwidth";
 import { resetPurgeLog } from './services/varnish';
 import { resetDB, createRelationsBetweenTables } from "./utils/resetDB";
-import { Sdk, Blockchain, validChains } from "media-sdk";
+import {Sdk, Blockchain, validChains, WalletUtils} from "media-sdk";
 import { CaddyController } from "./controllers/caddyController";
 import { checkEvents } from "./services/events";
 import { toHex } from "viem";
@@ -17,14 +17,14 @@ interface Network {
     URL?: string;
 }
 
-const init = async (network: Network): Promise<boolean> => {
+const init = async (network: Network, address: string, privateKey: string): Promise<boolean> => {
     let databaseInitStatus = true;
     let caddyInitStatus = true;
     let bandwidthInitStatus = true;
     let blockReadStatus = true;
 
     const resetIndex = process.argv.indexOf('--reset');
-    // @ts-ignore
+
     let sdk = new Sdk({ chain: validChains[network.id] });
 
     if (resetIndex !== -1) {
@@ -44,7 +44,7 @@ const init = async (network: Network): Promise<boolean> => {
     }
 
     try {
-        await initDatabase(network, sdk);
+        await initDatabase(network, sdk, address, privateKey);
     } catch (e) {
         databaseInitStatus = false;
         console.log("Error when init database:", e);
@@ -77,18 +77,25 @@ const init = async (network: Network): Promise<boolean> => {
     return databaseInitStatus && caddyInitStatus && bandwidthInitStatus && blockReadStatus;
 }
 
-const filteredNetworks = (ids: string[], networks: any[]): any[] => {
+const filteredNetworks = (ids: number[], networks: any[]): any[] => {
     return networks.filter(element => ids.includes(element.id));
 }
 
 async function start() {
     await createRelationsBetweenTables();
     for (let i = 0; i < env.providers.length; i++) {
+        const hdKey = await WalletUtils.mnemonicToHDAccount(env.providers[i].mnemonic);
+        const address = hdKey.address
+        const privateKeyUnformatted = hdKey.getHdKey().privateKey
+        if(!privateKeyUnformatted) {
+            throw new Error("Private key not available, check your config/env.ts file and make sure you have a valid mnemonic");
+        }
+        const privateKey = Buffer.from(privateKeyUnformatted).toString("hex")
         const networksFiltered = filteredNetworks(env.providers[i].supportedChains, networks);
         for (const CURRENT_NETWORK of networksFiltered) {
             console.log(CURRENT_NETWORK);
 
-            let initResult = await init(CURRENT_NETWORK);
+            let initResult = await init(CURRENT_NETWORK, address, privateKey);
             if (initResult) {
                 console.log("Edge started correctly");
             }
@@ -97,7 +104,7 @@ async function start() {
                 console.log("Start to check events");
                 setInterval(async () => {
                     try {
-                        let getLastBlock = await checkEvents(lastReadBlock[CURRENT_NETWORK.id], CURRENT_NETWORK);
+                        let getLastBlock = await checkEvents(lastReadBlock[CURRENT_NETWORK.id], CURRENT_NETWORK, privateKey, address);
                         lastReadBlock[CURRENT_NETWORK.id] = getLastBlock ? getLastBlock : lastReadBlock[CURRENT_NETWORK.id];
                     } catch (e) {
                         console.log("Something failed while checking events", e);

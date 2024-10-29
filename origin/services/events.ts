@@ -17,17 +17,15 @@ import {filterDomainsMatchingDeals} from "../utils/resources";
 
 import {generateUniqueItemId, recoverOriginalDataFromUniqueDealId} from "../utils/deals";
 
-import {toHex} from "viem";
-
 import {sleep} from "../utils/sleep";
 
 import {Domains} from "../models/resources/Domains";
 import {networks} from "../config/networks";
 
-const { Resources, Encryption, validChains, Marketplace, Blockchain, Sdk, EventsHandler} = require("media-sdk");
+import {Blockchain, Encryption, EventsHandler, Marketplace, Resources, Sdk, validChains} from "media-sdk"
 
 
-export const checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
+export const checkEvents = async (lastReadBlock, CURRENT_NETWORK, privateKey: string, address: string) => {
     //let blockNumber = lastReadBlock + 1
     let updatedResources = undefined
     let removedResources = undefined
@@ -37,11 +35,11 @@ export const checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     let addedBalance = undefined
     const network = networks.find(network => network.id === CURRENT_NETWORK.id)
 
-    let sdk = new Sdk({privateKey: env.PRIVATE_KEY, chain: validChains[network.id]})
+    let sdk = new Sdk({privateKey: privateKey, chain: validChains[network.id]})
 
     let blockchain = new Blockchain(sdk)
-    let blockNumber = toHex(await blockchain.getBlockNumber())
-    let toNumber = toHex(Number(blockNumber))
+    let blockNumber = await blockchain.getBlockNumber()
+    //let toNumber = toHex(Number(blockNumber))
 
     try {
         let eventsHandler = new EventsHandler(sdk)
@@ -53,37 +51,37 @@ export const checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
         updatedResources = await eventsHandler.getResourcesPastEvents({
             eventName: 'UpdatedResource',
             fromBlock: lastReadBlock,
-            toBlock: toNumber
+            toBlock: blockNumber
         })
 
         removedResources = await eventsHandler.getResourcesPastEvents({
             eventName: 'RemovedResource',
             fromBlock: lastReadBlock,
-            toBlock: toNumber
+            toBlock: blockNumber
         })
 
         createdDeals = await eventsHandler.getMarketplacePastEvents({
             eventName: 'DealCreated',
             fromBlock: lastReadBlock,
-            toBlock: toNumber
+            toBlock: blockNumber
         })
 
         cancelledDeals = await eventsHandler.getMarketplacePastEvents({
             eventName: 'DealCancelled',
             fromBlock: lastReadBlock,
-            toBlock: toNumber
+            toBlock: blockNumber
         })
 
         acceptedDeals = await eventsHandler.getMarketplacePastEvents({
             eventName: 'DealAccepted',
             fromBlock: lastReadBlock,
-            toBlock: toNumber
+            toBlock: blockNumber
         })
 
         addedBalance = await eventsHandler.getMarketplacePastEvents({
             eventName: 'AddedBalance',
             fromBlock: lastReadBlock,
-            toBlock: toNumber
+            toBlock: blockNumber
         })
 
         console.log("Updated resources", updatedResources.length)
@@ -100,7 +98,7 @@ export const checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     if (typeof updatedResources !== "undefined" && updatedResources.length > 0) {
         for (const event of updatedResources) {
             try {
-                await manageResourceUpdated(event.args._id, CURRENT_NETWORK)
+                await manageResourceUpdated(event.args._id, CURRENT_NETWORK, privateKey, address)
             } catch (e) {
                 if (e instanceof z.ZodError) {
                     console.error("Resource Validation failed on resource", event.args._id);
@@ -120,7 +118,7 @@ export const checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
 
     if (typeof createdDeals !== "undefined" && createdDeals.length > 0) {
         for (const createdDeal of createdDeals) {
-            await manageDealCreatedOrAccepted(createdDeal.args._dealId, CURRENT_NETWORK)
+            await manageDealCreatedOrAccepted(createdDeal.args._dealId, CURRENT_NETWORK, privateKey, address)
         }
     }
 
@@ -142,14 +140,14 @@ export const checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     if (typeof acceptedDeals !== "undefined" && acceptedDeals.length > 0) {
         //await manageDealCreatedOrAccepted(acceptedDeals, CURRENT_NETWORK)
         for (const acceptedDeal of acceptedDeals) {
-            await manageDealCreatedOrAccepted(acceptedDeal.args._dealId, CURRENT_NETWORK)
+            await manageDealCreatedOrAccepted(acceptedDeal.args._dealId, CURRENT_NETWORK, privateKey, address)
         }
     }
 
     if(typeof addedBalance !== "undefined" && addedBalance.length > 0){
         for (const event of addedBalance) {
             try{
-                await manageAddedBalance(event.args._dealId, CURRENT_NETWORK.id)
+                await manageAddedBalance(event.args._dealId, CURRENT_NETWORK.id, privateKey)
             }catch (e) {
                 if (e instanceof z.ZodError) {
                     console.error("Zod Metadata Validation failed on deal", event.args._dealId);
@@ -164,13 +162,13 @@ export const checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     return blockNumber
 }
 
-export const manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
+export const manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK, privateKey: string, address: string) => {
 
     console.log("Data from event", dealId, CURRENT_NETWORK)
 
     const network = networks.find(network => network.id === CURRENT_NETWORK.id)
 
-    let sdk = new Sdk({privateKey: env.PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
+    let sdk = new Sdk({privateKey: privateKey, chain: validChains[network.id]})
 
     let marketplace = new Marketplace(sdk)
     let resourceInstance = new Resources(sdk)
@@ -182,7 +180,7 @@ export const manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
     } catch (e) {
         if (e instanceof z.ZodError) {
             console.log("Deal Id: ", deal.id)
-            console.error("Metadata Validation failed!\n", "Expected: ", DealsMetadataType.keyof()._def.values, " Got: ", deal.metadata);
+            console.error("Metadata Validation failed!\n", "Expected: ", DealsMetadataType.keyof()._def.values, " Got: ", deal.terms.metadata);
         }
 
         else {
@@ -201,7 +199,7 @@ export const manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
 
     console.log("Deal", deal)
 
-    const resource = await resourceInstance.getResource({ id: deal.resourceId, address: env.WALLET })
+    const resource = await resourceInstance.getResource({ id: deal.resourceId, address: address })
 
     console.log("Resource on event", resource)
 
@@ -219,7 +217,7 @@ export const manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
         let attr = JSON.parse(resource.encryptedData)
         let decryptedSharedKey = await Encryption.ethSigDecrypt(
             resource.encryptedSharedKey,
-            env.PRIVATE_KEY
+            privateKey
         );
 
         let decrypted = Encryption.decrypt(
@@ -304,7 +302,7 @@ export const manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
     }
 }
 
-export const manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
+export const manageResourceUpdated = async(resourceId, CURRENT_NETWORK, privateKey: string, address: string) => {
 
     console.log("Resource updated", resourceId, CURRENT_NETWORK.id)
 
@@ -323,15 +321,15 @@ export const manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
 
             const network = networks.find(network => network.id === CURRENT_NETWORK.id)
 
-            let sdk = new Sdk({privateKey: env.PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
+            let sdk = new Sdk({privateKey: privateKey, chain: validChains[network.id]})
 
             let resources = new Resources(sdk)
-            let resourceFromEvm = await resources.getResource({ id: resourceId, address: env.WALLET })
+            let resourceFromEvm = await resources.getResource({ id: resourceId, address: address })
 
             let attr = JSON.parse(resourceFromEvm.encryptedData)
             let decryptedSharedKey = await Encryption.ethSigDecrypt(
                 resourceFromEvm.encryptedSharedKey,
-                env.PRIVATE_KEY
+                privateKey
             );
 
             let decrypted = Encryption.decrypt(
@@ -364,7 +362,7 @@ export const manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
 
             console.log("Domains from db after filter", domainsFromDbNotInFilteredDomains)
 
-            await ResourcesController.parseResource(resourceForDb)
+            ResourcesController.parseResource(resourceForDb)
 
             for (const domainToBeDeleted of domainsFromDbNotInFilteredDomains) {
                 await ResourcesController.deleteResourceDomain(domainToBeDeleted.id)
@@ -415,14 +413,14 @@ export const manageCancelledDeal = async (dealId, CURRENT_NETWORK) => {
     }
 }
 
-export const manageAddedBalance = async (dealId, chainId) => {
+export const manageAddedBalance = async (dealId, chainId, privateKey: string) => {
     const network = networks.find(network => network.id === chainId)
 
-    let sdk = new Sdk({privateKey: env.PRIVATE_KEY, transport: network.URL !== "undefined" ? network.URL : undefined, chain: validChains[network.id]})
+    let sdk = new Sdk({privateKey: privateKey, chain: validChains[network.id]})
 
     let marketplace = new Marketplace(sdk)
     let deal = await marketplace.getDealById({marketplaceId: env.MARKETPLACE_ID, dealId: dealId})
-    await DealsController.parseDealMetadata(deal.terms.metadata)
+    DealsController.parseDealMetadata(deal.terms.metadata)
     let formattedDeal = DealsController.formatDeal(deal)
     await DealsController.upsertDeal(formattedDeal, chainId)
 }

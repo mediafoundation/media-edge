@@ -1,6 +1,6 @@
 import {env} from "../config/env";
 
-import {Encryption, MarketplaceViewer, Resources} from "media-sdk";
+import {Encryption, MarketplaceViewer, Resources, Sdk} from "media-sdk";
 
 import {filterDomainsMatchingDeals, resourcesNotMatchingDeal} from "../utils/resources";
 
@@ -20,16 +20,16 @@ import {generateTXTRecord} from "../utils/generateSubdomain";
 
 import {getHostName} from "../utils/domains";
 
-export const initDatabase = async function (network, sdkInstance) {
+export const initDatabase = async function (network, sdkInstance: Sdk, address: string, privateKey: string) {
 
     // Fetch resources and deals
     let marketplaceViewer = new MarketplaceViewer(sdkInstance);
     let resourcesInstance = new Resources(sdkInstance);
 
-    let resources = await resourcesInstance.getAllResourcesPaginating({address: env.WALLET, start: 0, steps: 10})
+    let resources = await resourcesInstance.getAllResourcesPaginating({address: address, start: 0, steps: 10})
     let deals = await marketplaceViewer.getAllDealsPaginating({
         marketplaceId: env.MARKETPLACE_ID,
-        address: env.WALLET,
+        address: address,
         isProvider: true,
         start: 0,
         steps: 20
@@ -56,9 +56,9 @@ export const initDatabase = async function (network, sdkInstance) {
     for (const resource of resources) {
         try {
             let attr = JSON.parse(resource.encryptedData)
-            let decryptedSharedKey = await Encryption.ethSigDecrypt(
+            let decryptedSharedKey = Encryption.ethSigDecrypt(
                 resource.encryptedSharedKey,
-                env.PRIVATE_KEY
+                privateKey
             );
 
             let decrypted = Encryption.decrypt(
