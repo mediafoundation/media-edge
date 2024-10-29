@@ -8,11 +8,10 @@ import {CertStatus, obtainAndRenewCertificate} from "../utils/certs";
 
 import doh from "dohjs";
 
-import config from "../config/app";
-
 import {CaddySource} from "../models/caddy";
 
 import {getHostName, isARecord} from "../utils/domains";
+import {appConfig} from "../config/app"
 
 const resolver = new doh.DohResolver('https://1.1.1.1/dns-query')
 
@@ -339,7 +338,7 @@ export class CaddyController {
         try {
             await axios.post(
                 caddyBaseUrl+"config/apps",
-                config.caddyInitialApps,
+                appConfig.caddyInitialApps,
                 caddyReqCfg
             )
             await CaddySource.destroy({where: {}})

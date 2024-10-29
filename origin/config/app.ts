@@ -1,4 +1,4 @@
-const env = require("./env");
+import {env} from "./env"
 
 const getHosts = (subdomain) => {
   console.log(env.hosts)
@@ -59,9 +59,9 @@ let caddyInitialApps = {
   }
 };
 
-module.exports = {
+export const appConfig = {
   media: {
-    minimum_amount: env.minimum_amount
+    //minimum_amount: env.minimum_amount
   },
   server: {
     env: "development",
