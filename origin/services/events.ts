@@ -286,7 +286,7 @@ export const manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK, priva
             resource: resource.dataValues,
             deal: deal,
             domains: domainsForCaddy
-        }], caddyFile, CURRENT_NETWORK)
+        }], caddyFile, CURRENT_NETWORK, privateKey)
     }catch (e) {
         console.log("Error upserting caddy", e)
         return
@@ -386,7 +386,7 @@ export const manageResourceUpdated = async(resourceId, CURRENT_NETWORK, privateK
                         resource: upsertResourceResult.instance,
                         deal: dealFromDB,
                         domains: caddyDomain
-                    },CURRENT_NETWORK
+                    },CURRENT_NETWORK, privateKey
                 )
             }
         }

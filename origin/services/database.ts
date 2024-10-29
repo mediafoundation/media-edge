@@ -127,7 +127,7 @@ export const initDatabase = async function (network, sdkInstance: Sdk, address: 
             if(existentDomain.length !== 0){
                 let dealIds = existentDomain.map((domain: any) => domain.dealId)
                 if(!dealIds.includes(generateUniqueItemId(Number(domain.dealId), network.id))){
-                    txtRecord = generateTXTRecord(resource.owner, getHostName(domain.host))
+                    txtRecord = generateTXTRecord(resource.owner, getHostName(domain.host), privateKey)
                 }
                 //txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueItemId(Number(domain.dealId), network.id), network.id, domain.host)
             }
@@ -147,7 +147,7 @@ export const initDatabase = async function (network, sdkInstance: Sdk, address: 
     // Update records in caddy if needed
     for (const resource of resourcesToBeUpdatedInCaddy) {
         for (const deal of deals) {
-            await CaddyController.upsertRecord({resource: resource, deal: deal}, network)
+            await CaddyController.upsertRecord({resource: resource, deal: deal}, network, privateKey)
         }
     }
 }

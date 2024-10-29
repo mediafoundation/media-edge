@@ -1,6 +1,6 @@
 import {Sequelize} from "sequelize";
 
-const env = require("../config/env")
+import {env} from "../config/env";
 //Instance of sequelize according to the data in env.ts
 
 let sequelize: Sequelize;
@@ -11,7 +11,7 @@ if (process.env.NODE_ENV === "testing") {
     sequelize = new Sequelize(env.dbName, env.dbUser, env.dbPassword, {
         host: env.dbHost,
         dialect: env.dbDialect,
-        port: parseInt(env.dbPort),
+        port: env.dbPort,
         logging: false
     });
 }

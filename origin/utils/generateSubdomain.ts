@@ -5,18 +5,18 @@ import {env} from "../config/env";
 import {recoverOriginalDataFromUniqueDealId} from "./deals";
 
 
-export function generateSubdomain(marketplaceId, dealId) {
+export function generateSubdomain(marketplaceId, dealId, privateKey: string) {
     let hash = crypto.createHash('sha256');
-    hash.update(marketplaceId + dealId + recoverOriginalDataFromUniqueDealId(dealId).chainId + env.PRIVATE_KEY);
+    hash.update(marketplaceId + dealId + recoverOriginalDataFromUniqueDealId(dealId).chainId + privateKey);
 
     let result = hash.digest('base64').replace(/[^a-z0-9]/gi, '0'); // replace invalid characters with '0'
 
     return result.toLocaleLowerCase().slice(0, 6);  // Only take first 6 characters
 }
 
-export function generateTXTRecord(owner, domain) {
+export function generateTXTRecord(owner, domain, privateKey: string) {
     let hash = crypto.createHash('sha256');
-    hash.update(owner + domain + env.PRIVATE_KEY);
+    hash.update(owner + domain + privateKey);
 
     let result = hash.digest('base64').replace(/[^a-z0-9]/gi, '0'); // replace invalid characters with '0'
 

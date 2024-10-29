@@ -51,7 +51,7 @@ const init = async (network: Network, address: string, privateKey: string): Prom
     }
 
     try {
-        await initCaddy(network);
+        await initCaddy(network, privateKey);
     } catch (e) {
         console.log("Error when init caddy", e);
         caddyInitStatus = false;
@@ -112,10 +112,10 @@ async function start() {
                 }, 60000);
             }
 
-            checkQueue();
+            checkQueue(privateKey);
 
             setInterval(async () => {
-                await checkCaddy();
+                await checkCaddy(privateKey);
             }, 60000);
 
             setInterval(async () => {

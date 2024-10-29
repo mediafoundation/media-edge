@@ -40,7 +40,7 @@ export class CaddyController {
             where: { host: host },
             raw: true
         })
-        if(env.debug==="requests") console.log(`Checking if domain ${host} is added to Caddy Database -> ${!!domain}`)
+        if(env.debug) console.log(`Checking if domain ${host} is added to Caddy Database -> ${!!domain}`)
         return !!domain;
     }
 
@@ -51,11 +51,11 @@ export class CaddyController {
         })
     }
 
-    static async newObject(res, deal, network){
+    static async newObject(res, deal, network, privateKey: string){
         let hosts = []
 
         for(const host of env.hosts){
-            hosts.push(`${generateSubdomain(env.MARKETPLACE_ID, deal.id)}.${host}`)
+            hosts.push(`${generateSubdomain(env.MARKETPLACE_ID, deal.id, privateKey)}.${host}`)
         }
 
         let transport = res.protocol === "https" ?
@@ -110,11 +110,11 @@ export class CaddyController {
         }
     }
 
-    static async addRecords (dealsResources, caddyFile, network){
+    static async addRecords (dealsResources, caddyFile, network, privateKey: string){
         let payload = []
         //let domains = []
         for(const item of dealsResources) {
-            let caddyData = await this.newObject(item.resource, item.deal, network)
+            let caddyData = await this.newObject(item.resource, item.deal, network, privateKey)
             let dealInFile = caddyFile.find(o => o["@id"] === item.deal.id);
             //if resource is not on caddyfile already, add to payload
             if(!dealInFile) {
@@ -127,7 +127,7 @@ export class CaddyController {
                 }
                 payload.push(caddyData)
             } else {
-                await this.upsertRecord(item, /* dealInFile, */ network)
+                await this.upsertRecord(item, /* dealInFile, */ network, privateKey)
             }
         }
 
@@ -152,7 +152,7 @@ export class CaddyController {
 
     }
 
-    static async upsertRecord(item, network){
+    static async upsertRecord(item, network, privateKey){
 
         //console.log("Item on upsert record", item)
 
@@ -168,7 +168,7 @@ export class CaddyController {
         await this.deleteFromAllQueuesByDeal(item.deal.id)
 
         //create Caddy object required to be posted on caddyFile
-        let newCaddyData = await this.newObject(item.resource, item.deal, network)
+        let newCaddyData = await this.newObject(item.resource, item.deal, network, privateKey)
 
         //if the resource has a custom cname
         if(item.domains.length !== 0) {
@@ -351,7 +351,7 @@ export class CaddyController {
         }
     }
 
-    static async checkQueue(queue, current, limit){
+    static async checkQueue(queue, current, limit, privateKey: string){
         console.log("Queue", queue)
         if (queue.length > 0) {
             if (env.debug) console.log(`Checking pending domains ${current} started. On queue: ${queue.length}`);
@@ -381,7 +381,7 @@ export class CaddyController {
                         console.log("Host valid item", item)
 
                         let targetDomain = getHostName(item.item.domain)
-                        let expectedValue = generateTXTRecord(item.owner, getHostName(item.item.domain))
+                        let expectedValue = generateTXTRecord(item.owner, getHostName(item.item.domain), privateKey)
 
                         console.log("Params on generate txt record", item.owner, getHostName(item.item.domain))
                         console.log(`checking txt record for ${getHostName(item.item.domain)}`)

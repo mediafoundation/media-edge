@@ -11,7 +11,7 @@ import {ResourcesController} from "../controllers/resourcesController";
 
 let caddyNeedsUpdate = false;
 
-let initCaddy = async function (network: any) {
+let initCaddy = async function (network: any, privateKey: string) {
     let caddyRecords = await CaddyController.getRecords();
     if (!caddyRecords) {
         await CaddyController.initApps();
@@ -32,7 +32,7 @@ let initCaddy = async function (network: any) {
         matchDealResources.push(matchDealResource);
     }
 
-    await CaddyController.addRecords(matchDealResources, caddyRecords, network);
+    await CaddyController.addRecords(matchDealResources, caddyRecords, network, privateKey);
 
     let caddyFile = await CaddyController.getRecords();
 
@@ -45,7 +45,7 @@ let initCaddy = async function (network: any) {
         await CaddyController.deleteRecord(deal);
     }
 
-    await CaddyController.checkQueue(queues.Minutely, "Minutely", 60);
+    await CaddyController.checkQueue(queues.Minutely, "Minutely", 60, privateKey);
 };
 
 let checkDealsShouldBeActive = async function () {
@@ -77,14 +77,14 @@ let checkDealsShouldBeActive = async function () {
     }
 };
 
-let checkQueue = () => {
-    setInterval(() => CaddyController.checkQueue(queues.Minutely, "Minutely", 60), 60000);
-    setInterval(() => CaddyController.checkQueue(queues.Hourly, "Hourly", 24), 3600000);
-    setInterval(() => CaddyController.checkQueue(queues.Daily, "Daily", 30), 86400 * 1000);
-    setInterval(() => CaddyController.checkQueue(queues.Monthly, "Monthly", 12), 259200 * 1000);
+let checkQueue = (privateKey: string) => {
+    setInterval(() => CaddyController.checkQueue(queues.Minutely, "Minutely", 60, privateKey), 60000);
+    setInterval(() => CaddyController.checkQueue(queues.Hourly, "Hourly", 24, privateKey), 3600000);
+    setInterval(() => CaddyController.checkQueue(queues.Daily, "Daily", 30, privateKey), 86400 * 1000);
+    setInterval(() => CaddyController.checkQueue(queues.Monthly, "Monthly", 12, privateKey), 259200 * 1000);
 };
 
-let checkCaddy = async () => {
+let checkCaddy = async (privateKey: string) => {
     let url = new URL(env.caddyUrl);
     let host = url.hostname;
     let port = url.port;
@@ -109,7 +109,7 @@ let checkCaddy = async () => {
             try {
                 console.log("Caddy failed, trying to restart");
                 //todo: Check what pass over network param
-                await initCaddy("NETWORK");
+                await initCaddy("NETWORK", privateKey);
                 caddyNeedsUpdate = false;
             } catch (e) {
                 console.log("Error restarting caddy:", e);
