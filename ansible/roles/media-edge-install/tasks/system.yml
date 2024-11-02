@@ -12,17 +12,15 @@
   loop: "{{ found_files.files }}"
   when: found_files.matched > 0
 
-- name: Reset main sources.list to default for Debian 10
+- name: Reset main sources.list to default for Debian 11
   copy:
     content: |
-      deb http://deb.debian.org/debian/ buster main
-      deb-src http://deb.debian.org/debian/ buster main
-
-      deb http://deb.debian.org/debian/ buster-updates main
-      deb-src http://deb.debian.org/debian/ buster-updates main
-
-      deb http://security.debian.org/debian-security buster/updates main
-      deb-src http://security.debian.org/debian-security buster/updates main
+      deb http://httpredir.debian.org/debian/ bullseye main
+      deb-src http://httpredir.debian.org/debian/ bullseye main
+      deb http://security.debian.org/debian-security bullseye-security main contrib
+      deb-src http://security.debian.org/debian-security bullseye-security main contrib
+      deb http://httpredir.debian.org/debian/ bullseye-updates main contrib
+      deb-src http://httpredir.debian.org/debian/ bullseye-updates main contrib
     dest: /etc/apt/sources.list
 
 # Adjust APT configurations to allow release info changes
