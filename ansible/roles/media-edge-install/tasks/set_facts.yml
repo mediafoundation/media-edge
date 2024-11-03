@@ -71,10 +71,6 @@
     #        private_key: "{{ private_key_input.user_input }}"
     #  when: private_key is not defined or private_key == "" or private_key == none
 
-    - name: Ensure wallets are defined
-      set_fact:
-        wallets: "{{ user_config.wallets | default([]) }}"
-
     - name: Ensure at least one wallet is defined
       block:
         - name: Prompt to add a wallet if none are defined
@@ -82,7 +78,6 @@
             prompt: "No wallets defined. Do you want to add a wallet? (yes/no):"
             echo: yes
           register: add_first_wallet
-          when: wallets | length == 0
 
         - name: Add first wallet
           block:
@@ -108,42 +103,18 @@
               set_fact:
                 wallets: "{{ wallets + [ { 'mnemonic': new_mnemonic.user_input, 'supportedChains': new_chains.user_input.split(',') | map('int') | list, 'accountIndex': (new_account_index.user_input | int) | default(omit, true) } ] }}"
           when: add_first_wallet.user_input == 'yes'
+      when: wallets is not defined or wallets | length == 0
 
-    - name: Prompt for missing wallet details
+    - name: Validate wallets format
       block:
-        - name: Check each wallet for required fields
+        - name: Check for missing mnemonic or supportedChains
           set_fact:
-            incomplete_wallets: "{{ wallets | selectattr('mnemonic', 'undefined') | list + wallets | selectattr('supportedChains', 'undefined') | list }}"
+            invalid_wallets: "{{ wallets | selectattr('mnemonic', 'undefined') | list + wallets | selectattr('supportedChains', 'undefined') | list }}"
 
-        - name: Prompt for wallet details if missing
-          block:
-            - name: Prompt for mnemonic
-              pause:
-                prompt: "Enter mnemonic for wallet {{ item.index + 1 }}:"
-                echo: yes
-              register: mnemonic_input
-              with_indexed_items: "{{ incomplete_wallets }}"
-              when: item.mnemonic is not defined
-
-            - name: Set mnemonic fact
-              set_fact:
-                wallets: "{{ wallets | map('combine', { 'mnemonic': mnemonic_input.results[item.index].user_input }) | list }}"
-              with_indexed_items: "{{ incomplete_wallets }}"
-              when: item.mnemonic is not defined
-
-            - name: Prompt for supported chains
-              pause:
-                prompt: "Enter supported chains for wallet {{ item.index + 1 }} (comma-separated):"
-                echo: yes
-              register: chains_input
-              with_indexed_items: "{{ incomplete_wallets }}"
-              when: item.supportedChains is not defined
-
-            - name: Set supported chains fact
-              set_fact:
-                wallets: "{{ wallets | map('combine', { 'supportedChains': chains_input.results[item.index].user_input.split(',') | map('int') | list }) | list }}"
-              with_indexed_items: "{{ incomplete_wallets }}"
-              when: item.supportedChains is not defined
+        - name: Fail if any wallet is invalid
+          fail:
+            msg: "One or more wallets are not correctly formatted. Each wallet must have a 'mnemonic' and 'supportedChains'."
+          when: invalid_wallets | length > 0
 
     - name: Prompt to add more wallets
       pause:
