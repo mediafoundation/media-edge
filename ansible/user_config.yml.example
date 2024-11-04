@@ -1,30 +1,43 @@
 # Media Edge configuration file
 #
-# Specify your wallet address
-#
-# It should look something to this: "0x00f420693607b8079432296d2E34eb8a9dDC6e7B"
-# The use of "" is required otherwise this is taken as a hex number.
-wallet_address: "0x81974B05Dc9C1E744CD509b2E11F84897373af7d"
+# Specify your wallet configuration, network, and other settings here.
 
-# Please specify the private key for decrypting resources (64 characters)
-# It may look something like: 545cdcd19de92805371d9644fa7d5a154e51204e41c8cbc8ff3bc9fdd5083efd
-# This should be the private key to the public encryption key provided in the app at provider registering.
+# *** CAUTION *** To prevent hacking and fund loss, use a public key from a wallet without funds. Avoid using your main wallet address (staking wallet).
 
-# *** CAUTION *** To prevent hacking and fund loss, use a public key from a wallet without funds. Avoid using your main wallet address (staking wallet). 
-
-private_key:
-
-# Please specify the mnemonic for the wallet(s) you are using to stake your tokens following the following example
+# Please specify the mnemonic or privateKey for the wallet(s) you are using to stake your tokens following the following example
 # Also account index can be provided
+
+# The `wallets` section specifies the details of the wallets used in the Media Edge application.
+# Each wallet can be identified either by a mnemonic phrase or a private key.
+# The `mnemonic` field is used to specify the mnemonic phrase for the wallet.
+# The `supportedChains` field lists the IDs of the blockchain networks that the wallet supports.
+# The `accountIndex` field is optional and specifies the index of the account in the mnemonic; it defaults to 0 if not provided.
+# The `privateKey` field is used to specify the private key for the wallet. Must have the following format: "0x<64-characters-hexadecimal-string>".
+
+# *** CAUTION *** If not sure on how to fill the mnemonic or privateKey, leave it blank and a prompt will kindly guide you to fill every needed item.
+# Example configuration:
 wallets:
-  - mnemonic: "some mnemonic example"
+  -
+    mnemonic: "some mnemonic example"
+    supportedChains: [1, 2, 3] # The id of chains where this provider is going to run
+    accountIndex: 1 # The index of the account in the mnemonic. If not provided, defaults to 0
+  -
+    privateKey: "0x545cdcd19de92805371d9644fa7d5a154e51204e41c8cbc8ff3bc9fdd5083efd"
+    supportedChains: [1, 2, 3]
+wallets:
+  -
+    mnemonic: "some mnemonic example"
     supportedChains: [1, 2, 3] # The id of chains where this providers is going to run
     accountIndex: 1 # The index of the account in the mnemonic. If non provided defaults to 0
+  -
+    privateKey: "0x${string}"
+    supportedChains: [1, 2, 3]
 
-# Please specify the networks you are providing services (where you are staking your tokens). 
+
+# Please specify the networks you are providing services (where you are staking your tokens).
 networks:
 - id: 5 # This is the network ID, it should the network id of the network you are providing services
-  URL: undefined # This is the URL of the network. If undefined, it will be set the default RPC from the media-sdk
+  URL: undefined # This is the URL of the network. If undefined, it will be set the default RPC from the media-sdk.
 
 # Select the marketplace ID where you are providing services.
 marketplace_id: 1
