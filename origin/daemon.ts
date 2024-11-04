@@ -3,10 +3,9 @@ import { initCaddy, checkQueue, checkCaddy } from "./services/caddy";
 import { checkBandwidth, initBandwidth } from "./services/bandwidth";
 import { resetPurgeLog } from './services/varnish';
 import { resetDB, createRelationsBetweenTables } from "./utils/resetDB";
-import {Sdk, Blockchain, validChains, WalletUtils} from "media-sdk";
+import {Sdk, Blockchain, validChains, WalletUtils, http} from "media-sdk";
 import { CaddyController } from "./controllers/caddyController";
 import { checkEvents } from "./services/events";
-import { toHex } from "viem";
 import {env} from "./config/env";
 import {networks} from "./config/networks";
 
@@ -25,7 +24,7 @@ const init = async (network: Network, address: string, privateKey: string): Prom
 
     const resetIndex = process.argv.indexOf('--reset');
 
-    let sdk = new Sdk({ chain: validChains[network.id] });
+    let sdk = new Sdk({ chain: validChains[network.id], transport: [http(network.URL)] });
 
     if (resetIndex !== -1) {
         try {
@@ -66,10 +65,10 @@ const init = async (network: Network, address: string, privateKey: string): Prom
 
     try {
         let blockchain = new Blockchain(sdk);
-        let blockNumber = toHex(await blockchain.getBlockNumber());
-        lastReadBlock[network.id] = toHex(Number(blockNumber));
+        let blockNumber = await blockchain.getBlockNumber()
+        lastReadBlock[network.id] = blockNumber.toString()
     } catch (e) {
-        lastReadBlock[network.id] = toHex(0);
+        lastReadBlock[network.id] = "0";
         console.log("Error when getting last block", e);
         blockReadStatus = false;
     }
@@ -84,13 +83,29 @@ const filteredNetworks = (ids: number[], networks: any[]): any[] => {
 async function start() {
     await createRelationsBetweenTables();
     for (let i = 0; i < env.providers.length; i++) {
-        const hdKey = await WalletUtils.mnemonicToHDAccount(env.providers[i].mnemonic);
-        const address = hdKey.address
-        const privateKeyUnformatted = hdKey.getHdKey().privateKey
-        if(!privateKeyUnformatted) {
-            throw new Error("Private key not available, check your config/env.ts file and make sure you have a valid mnemonic");
+        let address: `0x${string}`;
+        let privateKey: `0x${string}`;
+
+        //Infer usage between mnemonic and private key. Mnemonic preferred.
+        if(env.providers[i].mnemonic) {
+            const hdKey = await WalletUtils.mnemonicToHDAccount(env.providers[i].mnemonic);
+            address = hdKey.address
+            const privateKeyUnformatted = hdKey.getHdKey().privateKey
+            if(!privateKeyUnformatted) {
+                throw new Error("Private key not available, check your config/env.ts file and make sure you have a valid mnemonic");
+            }
+
+            privateKey = Buffer.from(privateKeyUnformatted).toString("hex") as `0x${string}`;
         }
-        const privateKey = Buffer.from(privateKeyUnformatted).toString("hex")
+
+        else {
+            const account = await WalletUtils.privateKeyToAccount(env.providers[i].privateKey);
+            address = account.address
+            privateKey = env.providers[i].privateKey
+        }
+
+
+
         const networksFiltered = filteredNetworks(env.providers[i].supportedChains, networks);
         for (const CURRENT_NETWORK of networksFiltered) {
             console.log(CURRENT_NETWORK);
@@ -100,7 +115,7 @@ async function start() {
                 console.log("Edge started correctly");
             }
 
-            if (lastReadBlock[CURRENT_NETWORK.id] !== toHex(0)) {
+            if (lastReadBlock[CURRENT_NETWORK.id] !== "0") {
                 console.log("Start to check events");
                 setInterval(async () => {
                     try {
