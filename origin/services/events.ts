@@ -22,7 +22,7 @@ import {sleep} from "../utils/sleep";
 import {Domains} from "../models/resources/Domains";
 import {networks} from "../config/networks";
 
-import {Blockchain, Encryption, EventsHandler, Marketplace, Resources, Sdk, validChains} from "media-sdk"
+import {Blockchain, Encryption, EventsHandler, http, Marketplace, Resources, Sdk, validChains} from "media-sdk"
 
 
 export const checkEvents = async (lastReadBlock, CURRENT_NETWORK, privateKey: string, address: string) => {
@@ -35,7 +35,7 @@ export const checkEvents = async (lastReadBlock, CURRENT_NETWORK, privateKey: st
     let addedBalance = undefined
     const network = networks.find(network => network.id === CURRENT_NETWORK.id)
 
-    let sdk = new Sdk({privateKey: privateKey, chain: validChains[network.id]})
+    let sdk = new Sdk({chain: validChains[network.id], transport: [http(network.URL)]})
 
     let blockchain = new Blockchain(sdk)
     let blockNumber = await blockchain.getBlockNumber()
