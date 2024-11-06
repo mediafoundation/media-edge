@@ -58,7 +58,7 @@ export const initDatabase = async function (network, sdkInstance: Sdk, address: 
             let attr = JSON.parse(resource.encryptedData)
             let decryptedSharedKey = Encryption.ethSigDecrypt(
                 resource.encryptedSharedKey,
-                privateKey
+                privateKey.substring(2)
             );
 
             let decrypted = Encryption.decrypt(
@@ -72,7 +72,7 @@ export const initDatabase = async function (network, sdkInstance: Sdk, address: 
 
             let resourceForDb = {id: generateUniqueItemId(Number(resource.id), network.id), owner: resource.owner, ...data}
 
-            await ResourcesController.parseResource(resourceForDb)
+            ResourcesController.parseResource(resourceForDb)
 
             if(data.domains) {
                 let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => Number(deal.id).toString()))
