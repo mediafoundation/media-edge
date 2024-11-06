@@ -168,7 +168,7 @@ export const manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK, priva
 
     const network = networks.find(network => network.id === CURRENT_NETWORK.id)
 
-    let sdk = new Sdk({privateKey: privateKey, chain: validChains[network.id]})
+    let sdk = new Sdk({chain: validChains[network.id], transport: [http(network.URL)]})
 
     let marketplace = new Marketplace(sdk)
     let resourceInstance = new Resources(sdk)
@@ -321,7 +321,7 @@ export const manageResourceUpdated = async(resourceId, CURRENT_NETWORK, privateK
 
             const network = networks.find(network => network.id === CURRENT_NETWORK.id)
 
-            let sdk = new Sdk({privateKey: privateKey, chain: validChains[network.id]})
+            let sdk = new Sdk({chain: validChains[network.id], transport: [http(network.URL)]})
 
             let resources = new Resources(sdk)
             let resourceFromEvm = await resources.getResource({ id: resourceId, address: address })
@@ -416,7 +416,7 @@ export const manageCancelledDeal = async (dealId, CURRENT_NETWORK) => {
 export const manageAddedBalance = async (dealId, chainId, privateKey: string) => {
     const network = networks.find(network => network.id === chainId)
 
-    let sdk = new Sdk({privateKey: privateKey, chain: validChains[network.id]})
+    let sdk = new Sdk({chain: validChains[network.id], transport: [http(network.URL)]})
 
     let marketplace = new Marketplace(sdk)
     let deal = await marketplace.getDealById({marketplaceId: env.MARKETPLACE_ID, dealId: dealId})
