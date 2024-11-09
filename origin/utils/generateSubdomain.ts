@@ -16,7 +16,7 @@ export function generateSubdomain(marketplaceId, dealId, privateKey: string) {
 
 export function generateTXTRecord(owner, domain, privateKey: string) {
     let hash = crypto.createHash('sha256');
-    hash.update(owner + domain + privateKey);
+    hash.update(owner + domain + privateKey.substring(2));
 
     let result = hash.digest('base64').replace(/[^a-z0-9]/gi, '0'); // replace invalid characters with '0'
 
