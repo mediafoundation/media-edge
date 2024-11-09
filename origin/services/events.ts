@@ -327,9 +327,9 @@ export const manageResourceUpdated = async(resourceId, CURRENT_NETWORK, privateK
             let resourceFromEvm = await resources.getResource({ id: resourceId, address: address })
 
             let attr = JSON.parse(resourceFromEvm.encryptedData)
-            let decryptedSharedKey = await Encryption.ethSigDecrypt(
+            let decryptedSharedKey = Encryption.ethSigDecrypt(
                 resourceFromEvm.encryptedSharedKey,
-                privateKey
+                privateKey.substring(2)
             );
 
             let decrypted = Encryption.decrypt(
