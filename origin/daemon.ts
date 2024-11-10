@@ -8,6 +8,7 @@ import { CaddyController } from "./controllers/caddyController";
 import { checkEvents } from "./services/events";
 import {env} from "./config/env";
 import {networks} from "./config/networks";
+import {providerState} from "./models/providerState"
 
 let lastReadBlock: { [key: string]: string } = {};
 
@@ -96,12 +97,15 @@ async function start() {
             }
 
             privateKey = Buffer.from(privateKeyUnformatted).toString("hex") as `0x${string}`;
+
+            providerState[address] = {privateKey: privateKey};
         }
 
         else {
             const account = await WalletUtils.privateKeyToAccount(env.providers[i].privateKey);
             address = account.address
             privateKey = env.providers[i].privateKey
+            providerState[address] = {privateKey: privateKey};
         }
 
 

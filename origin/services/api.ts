@@ -29,6 +29,7 @@ import {CaddySource} from "../models/caddy";
 
 //const {where, Op} = require("sequelize");
 import {createRelationsBetweenTables} from "../utils/resetDB";
+import {providerState} from "../models/providerState"
 
 
 /* const helmet = require('helmet'); */
@@ -294,6 +295,7 @@ app.post('/getDNSConfig', async (req, res) => {
   } else {
     try {
       let owner = await DealsController.getDealOwner(req.body.dealId);
+      const provider = await DealsController.getDealProvider(req.body.dealId);
       if (owner === req.body.message.address) {
         if (psl.isValid(req.body.domain)) {
           const parsed = psl.parse(req.body.domain);
@@ -301,7 +303,11 @@ app.post('/getDNSConfig', async (req, res) => {
           console.log("Owner", owner)
           console.log("Domain", getHostName(req.body.domain))
 
-          let generatedTxt = generateTXTRecord(owner, getHostName(req.body.domain))
+          const privateKey = providerState[provider].privateKey
+
+          console.log(privateKey)
+
+          let generatedTxt = generateTXTRecord(owner, getHostName(req.body.domain), privateKey)
 
           let txtValid = await CaddyController.checkTxtRecord(
             getHostName(req.body.domain),

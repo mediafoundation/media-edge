@@ -147,6 +147,19 @@ export class DealsController {
             throw error;
         }
     };
+
+    static async getDealProvider(id) {
+        try {
+            const deal = await Deal.findByPk(id, {attributes: ['providerId'], raw: true});
+            if (!deal) {
+                return null;
+            }
+            const provider: any = await Provider.findByPk(deal.providerId, {attributes: ['account'], raw: true});
+            return provider.account;
+        } catch (error) {
+            throw error;
+        }
+    }
     
 
     static async getDealResource(dealId){
