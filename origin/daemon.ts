@@ -9,6 +9,7 @@ import { checkEvents } from "./services/events";
 import {env} from "./config/env";
 import {networks} from "./config/networks";
 import {providerState} from "./models/providerState"
+import ExpressProvider from "./services/ExpressProvider"
 
 let lastReadBlock: { [key: string]: string } = {};
 
@@ -149,4 +150,8 @@ async function start() {
     }
 }
 
-start();
+start()
+.then(() => {
+    console.log("Started");
+    ExpressProvider.init()
+})

@@ -1,10 +1,7 @@
 //@ts-nocheck
-import express from "express";
-//const {purgeRecord} = require('./varnish')
-import cors from "cors";
+import {Router} from "express";
 
 import {env} from "../config/env";
-//const {Signer} = require("media-sdk");
 import {DealsController} from "../controllers/dealsController";
 
 import {PurgeLogsController} from "../controllers/purgeLogsController";
@@ -20,47 +17,23 @@ import Session from "express-session";
 import {manageAddedBalance, manageCancelledDeal, manageDealCreatedOrAccepted, manageResourceUpdated} from "./events";
 
 import psl from "psl";
-//const {ResourcesController} = require("../controllers/resourcesController");
 import {generateTXTRecord} from "../utils/generateSubdomain";
 
 import {getHostName} from "../utils/domains";
 
 import {CaddySource} from "../models/caddy";
 
-//const {where, Op} = require("sequelize");
-import {createRelationsBetweenTables} from "../utils/resetDB";
 import {providerState} from "../models/providerState"
 
 
-/* const helmet = require('helmet'); */
+const apiRouter = Router()
 
-
-const app = express()
-
-/* app.use(
-  helmet({
-      contentSecurityPolicy: false,
-  }),
-); */
-
-app.use(cors({
-  origin: '*',
-  credentials: true,
-}))
-
-const port = 8080; // Change this to your desired port number
-//const networks = require("./../config/networks")
-
-//const signer = new Signer()
-
-app.use(express.json())
-
-app.use((req, res, next) => {
+apiRouter.use((req, res, next) => {
   res.set('Cache-Control', 'no-store')
   next()
 })
 
-app.use(Session({
+apiRouter.use(Session({
   name: 'siwe-quickstarts',
   secret: "siwe-quickstart-secrets",
   resave: true,
@@ -71,14 +44,14 @@ app.use(Session({
   }
 }));
 
-app.get('/nonce', async (req, res) => {
+apiRouter.get('/nonce', async (req, res) => {
   // @ts-ignore
   req.session.nonce = generateNonce();
   // @ts-ignore
   req.session.save(() => res.status(200).send(req.session.nonce).end());
 });
 
-app.post('/me', async (req, res) => {
+apiRouter.post('/me', async (req, res) => {
   const data = await checkSignature(req);
 
   if (!data) {
@@ -104,7 +77,7 @@ async function checkSignature(req) {
   }
 }
 
-app.post('/sign_in', async (req, res) => {
+apiRouter.post('/sign_in', async (req, res) => {
   try {
     const {signature} = req.body;
     if (!req.body.message) {
@@ -148,7 +121,7 @@ app.post('/sign_in', async (req, res) => {
   }
 });
 
-app.post('/logout', async (req, res) => {
+apiRouter.post('/logout', async (req, res) => {
   if (!req.session.siwe) {
     res.status(401).json({message: 'You have to first sign_in'});
     return;
@@ -213,7 +186,7 @@ app.post('/logout', async (req, res) => {
 
 });*/
 
-app.post('/purge', async (req, res) => {
+apiRouter.post('/purge', async (req, res) => {
 
   const data = await checkSignature(req);
 
@@ -246,7 +219,7 @@ app.post('/purge', async (req, res) => {
 });
 
 
-app.get('/getAllDealsEndpoints', async (req, res) => {
+apiRouter.get('/getAllDealsEndpoints', async (req, res) => {
   let payload = req.body
   if (!req.session.siwe) {
     res.status(401).json({message: 'You have to first sign_in'});
@@ -262,7 +235,7 @@ app.get('/getAllDealsEndpoints', async (req, res) => {
   }
 })
 
-app.post('/getDealEndpoints', async (req, res) => {
+apiRouter.post('/getDealEndpoints', async (req, res) => {
   const data = await checkSignature(req);
 
   if (!data) {
@@ -286,7 +259,7 @@ app.post('/getDealEndpoints', async (req, res) => {
 
 })
 
-app.post('/getDNSConfig', async (req, res) => {
+apiRouter.post('/getDNSConfig', async (req, res) => {
   const data = await checkSignature(req);
 
   if (!data) {
@@ -368,14 +341,14 @@ app.post('/getDNSConfig', async (req, res) => {
 
 })
 
-app.post('/syncDeal', async (req, res) => {
+apiRouter.post('/syncDeal', async (req, res) => {
   const {dealId} = req.body
   const splitIds = recoverOriginalDataFromUniqueDealId(dealId)
   await manageDealCreatedOrAccepted(splitIds.dealId, splitIds.chainId)
   res.send('Deal synced successfully!')
 })
 
-app.get("/ipAddress", async (req, res) => {
+apiRouter.get("/ipAddress", async (req, res) => {
   const data = await checkSignature(req)
 
   if (!data) {
@@ -395,7 +368,7 @@ Following params for network should be and object on the following form:
   network_id: 1
 }
  */
-app.post("/dealCreated", async (req, res) => {
+apiRouter.post("/dealCreated", async (req, res) => {
   const {dealId, network} = req.body
   try {
     await manageDealCreatedOrAccepted(BigInt(dealId), network)
@@ -407,7 +380,7 @@ app.post("/dealCreated", async (req, res) => {
 
 })
 
-app.post("/resourceUpdated", async (req, res) => {
+apiRouter.post("/resourceUpdated", async (req, res) => {
   const {resourceId, network} = req.body
   try {
     await manageResourceUpdated(resourceId, network)
@@ -418,7 +391,7 @@ app.post("/resourceUpdated", async (req, res) => {
   }
 })
 
-app.post("/dealCancelled", async (req, res) => {
+apiRouter.post("/dealCancelled", async (req, res) => {
   const {dealId, network} = req.body
   try {
     await manageCancelledDeal(dealId, network)
@@ -429,7 +402,7 @@ app.post("/dealCancelled", async (req, res) => {
   }
 })
 
-app.post("/addedBalance", async (req, res) => {
+apiRouter.post("/addedBalance", async (req, res) => {
   const {dealId, network} = req.body
   try {
     await manageAddedBalance(dealId, network.id)
@@ -439,8 +412,8 @@ app.post("/addedBalance", async (req, res) => {
     res.status(500).send('Error adding balance')
   }
 })
+
 // Start the server
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
-createRelationsBetweenTables().then(_ => console.log("Relations created"))
+//createRelationsBetweenTables().then(_ => console.log("Relations created"))
+
+export default apiRouter
