@@ -70,15 +70,27 @@
 - name: Remove all containers
   shell: docker rm $(docker ps -a -q)
 
-- name: Install postgres
-  shell: docker run --rm --name some-postgres -p 5432:5432 -e POSTGRES_PASSWORD={{db_password}} -e POSTGRES_USER={{db_user}} -e POSTGRES_DB={{db_name}} -d postgres:14
+- name: Remove all existing files in containers folder
+  file:
+    path: /root/containers
+    state: absent
 
 - name: Create containers folder
   file:
     path: /root/containers
     state: directory
 
-- name: Install Caddy
+- name: Copy docker compose file
+  copy:
+      src: files/origin/docker/docker-compose.yml
+      dest: /root/containers/docker-compose.yml
+
+- name: Create .env file
+  template:
+    src: files/origin/docker/.env.j2
+    dest: /root/containers/.env
+
+- name: Build Caddy
   block:
     - name: Copy CaddyFile
       copy:
@@ -95,7 +107,7 @@
       args:
         chdir: /root/containers
 
-- name: Install varnish
+- name: Build varnish
   block:
     - name: Copy varnish DockerFile
       copy:
@@ -116,6 +128,42 @@
       shell: docker build -t varnish-origin -f Dockerfile.varnish .
       args:
         chdir: /root/containers
+
+- name: Build origin
+  block:
+    - name: Remove existing origin
+      file:
+        path: /root/origin
+        state: absent
+
+    - name: Create program directory
+      file:
+        path: /root/origin
+        state: directory
+
+    - name: Copy program folder
+      synchronize:
+        src: ../origin/
+        dest: /root/origin
+        rsync_opts:
+          - "--exclude=node_modules/"
+          - "--exclude=yarn.lock"
+          - "--exclude=package-lock.json"
+          - "--exclude=.git"
+    - name: Create env.ts file
+      template:
+        src: files/origin/config/env.ts.j2
+        dest: /root/origin/config/env.ts
+
+    - name: Create networks.ts file
+      template:
+        src: files/origin/config/networks.ts.j2
+        dest: /root/origin/config/networks.ts
+
+    - name: Build image
+      shell: docker build -t origin -f Dockerfile.node .
+      args:
+          chdir: /root/origin
 
 
 

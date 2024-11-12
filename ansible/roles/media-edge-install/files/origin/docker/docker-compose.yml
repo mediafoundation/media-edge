@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  caddy:
+    image: caddy-origin
+    ports:
+      - "80:80"
+      - "443:443"
+      - "2020:2020"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    restart: unless-stopped
+
+  varnish:
+    image: varnish-origin
+    ports:
+      - "6969:6969"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  origin:
+    image: origin
+    ports:
+      - "3000:3000"

@@ -43,6 +43,7 @@
   },
   "scripts": {
     "test": "NODE_ENV=testing jest",
-    "build": "rm -rd ./lib && tsc"
+    "build": "tsc",
+    "start": "node lib/daemon.js --reset"
   }
 }
