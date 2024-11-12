@@ -1,0 +1,22 @@
+# Usa una imagen base de Caddy
+FROM caddy:2.8-builder AS builder
+
+# Instala los módulos necesarios
+RUN xcaddy build \
+    --with github.com/mediafoundation/caddy-bandwidth@latest \
+    --with github.com/caddy-dns/lego-deprecated \
+    --with github.com/firecow/caddy-elastic-encoder
+
+# Usa una imagen base de Caddy para la ejecución
+FROM caddy:2.8
+
+COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+
+# Copia los archivos de configuración
+COPY ./Caddyfile /etc/caddy/Caddyfile
+
+# Exponer el puerto 80 y 443
+EXPOSE 80 443 2020
+
+# Comando para iniciar Caddy
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
