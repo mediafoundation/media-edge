@@ -124,7 +124,7 @@ async function start() {
                 console.log("Start to check events");
                 setInterval(async () => {
                     try {
-                        let getLastBlock = await checkEvents(BigInt(lastReadBlock[CURRENT_NETWORK.id]), CURRENT_NETWORK, privateKey, address);
+                        let getLastBlock = await checkEvents(BigInt(lastReadBlock[CURRENT_NETWORK.id]), CURRENT_NETWORK);
                         lastReadBlock[CURRENT_NETWORK.id] = getLastBlock ? getLastBlock : lastReadBlock[CURRENT_NETWORK.id];
                     } catch (e) {
                         console.log("Something failed while checking events", e);
