@@ -1,14 +1,10 @@
 FROM varnish:latest
 
-# Copia el archivo de configuración de Varnish
+# Copy the Varnish configuration file
 COPY default.vcl /etc/varnish/default.vcl
 
-USER root
-RUN mkdir -p /var/cache/varnish.cache && chown -R varnish:varnish /var/cache/varnish.cache
-RUN chown -R varnish:varnish /var/cache/varnish.cache
+# Copy the Varnish service file
+COPY varnish.service /etc/systemd/system/varnish.service
 
-# Exponer el puerto 6969
-EXPOSE 6969
-
-# Comando para iniciar Varnish
-CMD ["varnishd", "-j", "unix,user=vcache", "-F", "-a", "0.0.0.0:6969", "-T", "localhost:6082", "-f", "/etc/varnish/default.vcl", "-s", "file,/var/cache/varnish.cache,{{ disk_space }}M"]
+# Enable the Varnish service
+RUN systemctl enable varnish.service

@@ -3,22 +3,30 @@ version: '3.8'
 services:
   caddy:
     image: caddy-origin
+    container_name: caddy-origin
     ports:
       - "80:80"
       - "443:443"
       - "2020:2020"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
     restart: unless-stopped
 
   varnish:
-    image: varnish-origin
+    image: varnish:stable
+    container_name: varnish-origin
+    volumes:
+      - "./default.vcl:/etc/varnish/default.vcl"
+    tmpfs:
+      - /var/lib/varnish:exec
+    environment:
+      - VARNISH_SIZE=2G
     ports:
       - "6969:6969"
+    command: "-a 0.0.0.0:6969 -T localhost:6082"
     restart: unless-stopped
 
   postgres:
     image: postgres:14
+    container_name: postgres-origin
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -28,6 +36,7 @@ services:
     restart: unless-stopped
 
   origin:
+    container_name: origin
     image: origin
     ports:
-      - "3000:3000"
+      - "8080:8080"

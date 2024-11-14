@@ -109,25 +109,11 @@
 
 - name: Build varnish
   block:
-    - name: Copy varnish DockerFile
-      copy:
-        src: files/origin/docker/Dockerfile.varnish
-        dest: /root/containers/Dockerfile.varnish
 
     - name: Copy Varnish config file
       template:
         src: files/origin/varnish/default.vcl.j2
         dest: /root/containers/default.vcl
-
-    - name: Copy Varnish systemd service file
-      template:
-        src: files/origin/varnish/varnish.service.j2
-        dest: /root/containers/varnish.service
-
-    - name: Build image
-      shell: docker build -t varnish-origin -f Dockerfile.varnish .
-      args:
-        chdir: /root/containers
 
 - name: Build origin
   block:
