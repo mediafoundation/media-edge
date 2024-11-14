@@ -109,7 +109,7 @@
       block:
         - name: Check for missing mnemonic or supportedChains
           set_fact:
-            invalid_wallets: "{{ wallets | selectattr('mnemonic', 'undefined') | list + wallets | selectattr('supportedChains', 'undefined') | list }}"
+            invalid_wallets: "{{ wallets | selectattr('supportedChains', 'undefined') | list + wallets | selectattr('mnemonic', 'undefined') | selectattr('privateKey', 'undefined') | list }}"
 
         - name: Fail if any wallet is invalid
           fail:
