@@ -124,13 +124,13 @@
 
     - name: Create program directory
       file:
-        path: /root/origin
+        path: /root/containers/origin
         state: directory
 
     - name: Copy program folder
       synchronize:
         src: ../origin/
-        dest: /root/origin
+        dest: /root/containers/origin
         rsync_opts:
           - "--exclude=node_modules/"
           - "--exclude=yarn.lock"
@@ -139,17 +139,22 @@
     - name: Create env.ts file
       template:
         src: files/origin/config/env.ts.j2
-        dest: /root/origin/config/env.ts
+        dest: /root/containers/origin/config/env.ts
 
     - name: Create networks.ts file
       template:
         src: files/origin/config/networks.ts.j2
-        dest: /root/origin/config/networks.ts
+        dest: /root/containers/origin/config/networks.ts
 
     - name: Build image
       shell: docker build -t origin -f Dockerfile.node .
       args:
-          chdir: /root/origin
+          chdir: /root/containers/origin
+
+- name: Run origin
+  shell: docker compose up -d
+  args:
+      chdir: /root/containers
 
 
 
