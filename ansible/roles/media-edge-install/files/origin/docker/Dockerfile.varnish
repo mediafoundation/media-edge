@@ -1,10 +1,10 @@
-FROM varnish:latest
+FROM varnish:6.6
 
-# Copy the Varnish configuration file
+# Copia el archivo de configuración VCL
 COPY default.vcl /etc/varnish/default.vcl
 
-# Copy the Varnish service file
-COPY varnish.service /etc/systemd/system/varnish.service
+# Crea el directorio de caché y establece los permisos
+RUN mkdir -p /var/cache/varnish && chown varnish:varnish /var/cache/varnish
 
-# Enable the Varnish service
-RUN systemctl enable varnish.service
+# Configura el comando de inicio para usar espacio en disco para la caché
+CMD ["sh", "-c", "varnishd -F -a 0.0.0.0:6969 -T localhost:6082 -f /etc/varnish/default.vcl -s file,/var/cache/varnish/varnish.cache,${CACHE_SIZE}"]

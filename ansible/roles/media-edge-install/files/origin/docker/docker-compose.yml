@@ -11,18 +11,15 @@ services:
     restart: unless-stopped
 
   varnish:
-    image: varnish:stable
     container_name: varnish-origin
-    volumes:
-      - "./default.vcl:/etc/varnish/default.vcl"
-    tmpfs:
-      - /var/lib/varnish:exec
-    environment:
-      - VARNISH_SIZE=2G
+    image: varnish-origin
+    env_file:
+      - .env
     ports:
       - "6969:6969"
-    command: "-a 0.0.0.0:6969 -T localhost:6082"
-    restart: unless-stopped
+    volumes:
+      - ./default.vcl:/etc/varnish/default.vcl
+      - ./var/cache/varnish:/var/cache/varnish
 
   postgres:
     image: postgres:14

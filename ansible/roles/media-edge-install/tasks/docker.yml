@@ -115,6 +115,16 @@
         src: files/origin/varnish/default.vcl.j2
         dest: /root/containers/default.vcl
 
+    - name: Copy varnish DockerFile
+      copy:
+        src: files/origin/docker/Dockerfile.varnish
+        dest: /root/containers/Dockerfile.varnish
+
+    - name: Build image
+      shell: docker build -t varnish-origin -f Dockerfile.varnish .
+      args:
+        chdir: /root/containers
+
 - name: Build origin
   block:
     - name: Remove existing origin
