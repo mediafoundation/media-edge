@@ -1,10 +1,10 @@
 //Certificate manager
-import express, { Request, Response } from "express";
-const app = express();
+import express, {Request, Response, Router} from "express";
+export const certsRouter = Router();
 import { obtainAndRenewCertificates, challengesPath } from "../utils/certs";
 import { CaddyController } from "../controllers/caddyController";
 
-const getDomains = async (req: Request, res: Response): Promise<void> => {
+export const getDomains = async (req: Request, res: Response): Promise<void> => {
   try {
     let domain = false;
     //add protocol to validate URL object if missing (should be missing always)
@@ -18,12 +18,10 @@ const getDomains = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-app.use("/.well-known/acme-challenge", express.static(challengesPath));
-app.use('/domains', getDomains);
 
-app.listen(7878, () => {
+/*certsRouter.listen(7878, () => {
   console.log("Server listening on port 7878");
-});
+});*/
 
 const checkCerts = async (): Promise<void> => {
   let domains: any = await CaddyController.getCaddySources(['host']);

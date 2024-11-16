@@ -10,6 +10,7 @@ import {env} from "./config/env";
 import {networks} from "./config/networks";
 import {providerState} from "./models/providerState"
 import ExpressProvider from "./services/ExpressProvider"
+import CertsProvider from "./services/CertsProvider"
 
 let lastReadBlock: { [key: string]: string } = {};
 
@@ -150,6 +151,7 @@ async function start() {
     }
 }
 
+CertsProvider.init()
 start()
 .then(() => {
     console.log("Started");

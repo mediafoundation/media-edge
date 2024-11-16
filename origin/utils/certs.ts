@@ -4,8 +4,8 @@ import path from "path";
 import crypto from "crypto";
 import querystring from "querystring";
 
-const challengesPath = "/var/www/challenges";
-const certsPath = "/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory";
+const challengesPath = `/usr/src/app/challenges`;
+const certsPath = `/usr/src/app/certs`;
 
 enum CertStatus {
   VALID = "valid",
@@ -100,6 +100,7 @@ async function obtainAndRenewCertificates(domains: Domain[]): Promise<void> {
 }
 
 async function obtainAndRenewCertificate(domain: Domain): Promise<CertStatus> {
+  console.log(process.env.__dirname, process.env);
   const certPath = path.join(certsPath, `${domain.host}`, `${domain.host}.crt`);
   const keyPath = path.join(certsPath, `${domain.host}`, `${domain.host}.key`);
   const jsonPath = path.join(certsPath, `${domain.host}`, `${domain.host}.json`);

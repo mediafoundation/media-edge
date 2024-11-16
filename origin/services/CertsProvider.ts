@@ -2,11 +2,13 @@ import express, { Application } from "express"
 import cors from "cors"
 import {Server} from "node:http"
 import apiRouter from "./api"
+import {certsRouter, getDomains } from "./certificates"
+import {challengesPath} from "../utils/certs"
 
-class ExpressProvider {
+class CertsProvider {
     public express: Application
     public server?: Server
-    private port = 8080;
+    private port = 7878;
 
     constructor() {
         this.express = express()
@@ -20,16 +22,12 @@ class ExpressProvider {
     }
 
     private mountMiddlewares() {
-        this.express.use(express.json())
-        this.express.use(cors({
-            origin: '*',
-            credentials: true,
-        }))
-        this.express.use(express.urlencoded({ extended: true }))
+        this.express.use("/.well-known/acme-challenge", express.static(challengesPath));
+        this.express.use('/domains', getDomains);
     }
 
     private mountRoutes() {
-        this.express.use(apiRouter)
+        this.express.use(certsRouter)
     }
 
     public init() {
@@ -46,4 +44,4 @@ class ExpressProvider {
     }
 }
 
-export default new ExpressProvider()
+export default new CertsProvider()
