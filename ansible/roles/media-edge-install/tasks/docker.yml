@@ -161,6 +161,11 @@
       args:
           chdir: /root/containers/origin
 
+- name: Copy config for elasticsearch
+  copy:
+    src: files/origin/elasticsearch.yml.j2
+    dest: /root/containers/elasticsearch.yml
+
 - name: Run origin
   shell: docker compose up -d
   args:
