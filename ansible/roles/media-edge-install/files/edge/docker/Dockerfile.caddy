@@ -2,6 +2,7 @@
 FROM caddy:2.8
 
 COPY ./caddy /usr/bin/caddy
+RUN chmod +x /usr/bin/caddy
 
 # Copia los archivos de configuración
 COPY ./Caddyfile /etc/caddy/Caddyfile
