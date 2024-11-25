@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
 
   es01:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.25
     container_name: es01
     environment:
       - discovery.type=single-node
@@ -41,9 +41,27 @@ services:
       - "9200:9200"
       - "9300:9300"
 
+  kib01:
+    image: docker.elastic.co/kibana/kibana:7.17.25
+    container_name: kib01
+    environment:
+      - "ELASTICSEARCH_HOSTS=http://es01:9200"
+    ports:
+      - "5601:5601"
+
+  lg01:
+    image: docker.elastic.co/logstash/logstash:7.17.25
+    container_name: lg01
+    ports:
+      - "5044:5044"
+    volumes:
+      - ./logstashSettings/logstash.conf:/usr/share/logstash/config/logstash.conf
+      - ./logstashSettings/logstash.yml:/usr/share/logstash/config/logstash.yml
   origin:
     container_name: origin
     image: origin
     ports:
       - "8080:8080"
       - "7878:7878"
+    volumes:
+      - /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/:/usr/src/app/certs/

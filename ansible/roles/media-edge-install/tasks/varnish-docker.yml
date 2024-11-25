@@ -1,0 +1,37 @@
+- name: Build varnish
+  block:
+    - name: Copy Varnish config file
+      template:
+        src: files/origin/varnish/default.vcl.j2
+        dest: /root/containers/default.vcl
+      when: inventory_hostname in groups["origin"]
+
+    - name: Copy varnish DockerFile
+      copy:
+        src: files/origin/docker/Dockerfile.varnish
+        dest: /root/containers/Dockerfile.varnish
+      when: inventory_hostname in groups["origin"]
+
+    - name: Build image
+      shell: docker build -t varnish-origin -f Dockerfile.varnish .
+      args:
+        chdir: /root/containers
+      when: inventory_hostname in groups["origin"]
+
+    - name: Copy Varnish config file
+      template:
+        src: files/edge/varnish/default.vcl.j2
+        dest: /root/containers/default.vcl
+      when: inventory_hostname in groups["edge"]
+
+    - name: Copy varnish DockerFile
+      copy:
+        src: files/edge/docker/Dockerfile.varnish
+        dest: /root/containers/Dockerfile.varnish
+      when: inventory_hostname in groups["edge"]
+
+    - name: Build image
+      shell: docker build -t varnish-edge -f Dockerfile.varnish .
+      args:
+        chdir: /root/containers
+      when: inventory_hostname in groups["edge"]

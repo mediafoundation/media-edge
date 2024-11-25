@@ -6,8 +6,11 @@ COPY ./caddy /usr/bin/caddy
 # Copia los archivos de configuración
 COPY ./Caddyfile /etc/caddy/Caddyfile
 
+# Copia los archivos de configuración
+COPY ./Caddyfile /etc/caddy/Caddyfile
+
 # Exponer el puerto 80 y 443
 EXPOSE 80 443 2020
 
 # Comando para iniciar Caddy
-CMD ["/usr/bin/caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

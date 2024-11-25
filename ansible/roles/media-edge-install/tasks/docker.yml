@@ -1,74 +1,78 @@
-- name: Remove possible conflicting packages
-  apt:
-    name:
-      - docker.io
-      - docker-doc
-      - docker-compose
-      - podman-docker
-      - containerd
-      - runc
-    state: absent
+- name: Install docker
+  block:
+  - name: Remove possible conflicting packages
+    apt:
+      name:
+        - docker.io
+        - docker-doc
+        - docker-compose
+        - podman-docker
+        - containerd
+        - runc
+      state: absent
 
-- name: Install required packages
-  apt:
-    name:
-      - ca-certificates
-      - curl
-    state: present
-    update_cache: yes
+  - name: Install required packages
+    apt:
+      name:
+        - ca-certificates
+        - curl
+      state: present
+      update_cache: yes
 
-- name: Update APT package index
-  shell:  apt-get update
+  - name: Update APT package index
+    shell:  apt-get update
 
-- name: Install required packages
-  shell:  apt-get install -y ca-certificates curl
+  - name: Install required packages
+    shell:  apt-get install -y ca-certificates curl
 
-- name: Create directory for apt keyrings
-  shell:  install -m 0755 -d /etc/apt/keyrings
+  - name: Create directory for apt keyrings
+    shell:  install -m 0755 -d /etc/apt/keyrings
 
-- name: Download Docker's official GPG key
-  shell:  curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+  - name: Download Docker's official GPG key
+    shell:  curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
 
-- name: Change permissions for Docker's GPG key
-  shell:  chmod a+r /etc/apt/keyrings/docker.asc
+  - name: Change permissions for Docker's GPG key
+    shell:  chmod a+r /etc/apt/keyrings/docker.asc
 
-- name: Add Docker's official APT repository
-  shell: |
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo $VERSION_CODENAME) stable" |  tee /etc/apt/sources.list.d/docker.list > /dev/null
+  - name: Add Docker's official APT repository
+    shell: |
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo $VERSION_CODENAME) stable" |  tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-- name: Update APT package index again
-  shell:  apt-get update
+  - name: Update APT package index again
+    shell:  apt-get update
 
-- name: Install Docker CLI
-  apt:
-    name:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-buildx-plugin
-      - docker-compose-plugin
-    state: present
-    update_cache: yes
+  - name: Install Docker CLI
+    apt:
+      name:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - docker-buildx-plugin
+        - docker-compose-plugin
+      state: present
+      update_cache: yes
 
-- name: Ensure Docker service is running
-  service:
-    name: docker
-    state: started
-    enabled: yes
+  - name: Ensure Docker service is running
+    service:
+      name: docker
+      state: started
+      enabled: yes
 
-- name: Verify Docker installation by running hello-world
-  command: docker run hello-world
-  register: hello_world_output
+  - name: Verify Docker installation by running hello-world
+    command: docker run hello-world
+    register: hello_world_output
 
-- name: Print hello-world output
-  debug:
-    var: hello_world_output.stdout
+  - name: Print hello-world output
+    debug:
+      var: hello_world_output.stdout
 
-- name: Stop all containers
-  shell: docker stop $(docker ps -a -q)
+- name: Stop all origin containers
+  shell: docker stop origin varnish-origin caddy-origin postgres-origin es01 lg01 kb01
+  ignore_errors: yes
 
 - name: Remove all containers
-  shell: docker rm $(docker ps -a -q)
+  shell: docker rm origin varnish-origin caddy-origin postgres-origin es01 lg01 kb01
+  ignore_errors: yes
 
 - name: Remove all existing files in containers folder
   file:
@@ -84,120 +88,104 @@
   copy:
       src: files/origin/docker/docker-compose.yml
       dest: /root/containers/docker-compose.yml
+  when: inventory_hostname in groups["origin"]
+
+- name: Copy docker compose file
+  copy:
+    src: files/edge/docker/docker-compose.yml
+    dest: /root/containers/docker-compose.yml
+  when: inventory_hostname in groups["edge"]
 
 - name: Create .env file
   template:
     src: files/origin/docker/.env.j2
     dest: /root/containers/.env
+  when: inventory_hostname in groups["origin"]
 
-- name: Build Caddy
-  block:
-    - name: Copy CaddyFile
-      copy:
-        src: files/origin/caddy/Caddyfile.j2
-        dest: /root/containers/Caddyfile
+- name: Create .env file
+  template:
+    src: files/edge/docker/.env.j2
+    dest: /root/containers/.env
+  when: inventory_hostname in groups["edge"]
 
-    - name: Copy caddy DockerFile
-      copy:
-        src: files/origin/docker/Dockerfile.caddy
-        dest: /root/containers/Dockerfile.caddy
-
-    - name: Build image
-      shell: docker build -t caddy -f Dockerfile.caddy .
-      args:
-        chdir: /root/containers
-
-- name: Build varnish
-  block:
-
-    - name: Copy Varnish config file
-      template:
-        src: files/origin/varnish/default.vcl.j2
-        dest: /root/containers/default.vcl
-
-    - name: Copy varnish DockerFile
-      copy:
-        src: files/origin/docker/Dockerfile.varnish
-        dest: /root/containers/Dockerfile.varnish
-
-    - name: Build image
-      shell: docker build -t varnish-origin -f Dockerfile.varnish .
-      args:
-        chdir: /root/containers
-
-- name: Build origin
-  block:
-    - name: Remove existing origin
-      file:
-        path: /root/origin
-        state: absent
-
-    - name: Create program directory
-      file:
-        path: /root/containers/origin
-        state: directory
-
-    - name: Copy program folder
-      synchronize:
-        src: ../origin/
-        dest: /root/containers/origin
-        rsync_opts:
-          - "--exclude=node_modules/"
-          - "--exclude=yarn.lock"
-          - "--exclude=package-lock.json"
-          - "--exclude=.git"
-    - name: Create env.ts file
-      template:
-        src: files/origin/config/env.ts.j2
-        dest: /root/containers/origin/config/env.ts
-
-    - name: Create networks.ts file
-      template:
-        src: files/origin/config/networks.ts.j2
-        dest: /root/containers/origin/config/networks.ts
-
-    - name: Build image
-      shell: docker build -t origin -f Dockerfile.node .
-      args:
-          chdir: /root/containers/origin
-
-- name: Copy config for elasticsearch
-  copy:
-    src: files/origin/elasticsearch.yml.j2
-    dest: /root/containers/elasticsearch.yml
-
-- name: Run origin
-  shell: docker compose up -d
-  args:
-      chdir: /root/containers
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#- name: Build varnish
+#  block:
+#
+#    - name: Copy Varnish config file
+#      template:
+#        src: files/origin/varnish/default.vcl.j2
+#        dest: /root/containers/default.vcl
+#
+#    - name: Copy varnish DockerFile
+#      copy:
+#        src: files/origin/docker/Dockerfile.varnish
+#        dest: /root/containers/Dockerfile.varnish
+#
+#    - name: Build image
+#      shell: docker build -t varnish-origin -f Dockerfile.varnish .
+#      args:
+#        chdir: /root/containers
+#
+#- name: Build origin
+#  block:
+#    - name: Remove existing origin
+#      file:
+#        path: /root/origin
+#        state: absent
+#
+#    - name: Create program directory
+#      file:
+#        path: /root/containers/origin
+#        state: directory
+#
+#    - name: Copy program folder
+#      synchronize:
+#        src: ../origin/
+#        dest: /root/containers/origin
+#        rsync_opts:
+#          - "--exclude=node_modules/"
+#          - "--exclude=yarn.lock"
+#          - "--exclude=package-lock.json"
+#          - "--exclude=.git"
+#    - name: Create env.ts file
+#      template:
+#        src: files/origin/config/env.ts.j2
+#        dest: /root/containers/origin/config/env.ts
+#
+#    - name: Create networks.ts file
+#      template:
+#        src: files/origin/config/networks.ts.j2
+#        dest: /root/containers/origin/config/networks.ts
+#
+#    - name: Build image
+#      shell: docker build -t origin -f Dockerfile.node .
+#      args:
+#          chdir: /root/containers/origin
+#
+#- name: Copy config for elasticsearch
+#  copy:
+#    src: files/origin/elasticsearch.yml.j2
+#    dest: /root/containers/elasticsearch.yml
+#
+#
+#- name: Copy config for logstash
+#  block:
+#    - name: Create logstashSettings folder
+#      file:
+#        path: /root/containers/logstashSettings
+#        state: directory
+#
+#    - name: Copy logstash config file
+#      copy:
+#        src: files/origin/logstash.conf.j2
+#        dest: /root/containers/logstashSettings/logstash.conf
+#
+#    - name: Copy yml file
+#      copy:
+#        src: files/origin/logstash.yml.j2
+#        dest: /root/containers/logstashSettings/logstash.yml
+#
+#- name: Run origin
+#  shell: docker compose up -d
+#  args:
+#      chdir: /root/containers

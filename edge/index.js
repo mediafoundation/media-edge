@@ -3,7 +3,7 @@ const axios = require('axios');
 const chokidar = require('chokidar');
 const async = require('async');
 
-const fileName = '/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/varnish_queue.json';
+const fileName = '/usr/src/app/certs/varnish_queue.json';
 let lastReadId = 0;
 
 // Function to purge a record using Axios

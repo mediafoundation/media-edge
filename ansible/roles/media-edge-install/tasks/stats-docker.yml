@@ -1,0 +1,47 @@
+- name: Configure Origin stats
+  block:
+    - name: Copy config for logstash
+      block:
+        - name: Create logstashSettings folder
+          file:
+            path: /root/containers/logstashSettings
+            state: directory
+
+        - name: Copy logstash config file
+          copy:
+            src: files/origin/logstash.conf.j2
+            dest: /root/containers/logstashSettings/logstash.conf
+
+        - name: Copy yml file
+          copy:
+            src: files/origin/logstash.yml.j2
+            dest: /root/containers/logstashSettings/logstash.yml
+
+    - name: Copy config for elasticsearch
+      copy:
+        src: files/origin/elasticsearch.yml.j2
+        dest: /root/containers/elasticsearch.yml
+
+    - name: Copy dashboard for kibana
+      copy:
+        src: files/origin/dashboard.ndjson
+        dest: /root/containers/dashboard.ndjson
+
+- name: Configure edge stats
+  block:
+    - name: Configure Filebeat
+      template:
+        src: files/edge/filebeat/filebeat.yml.j2
+        dest: /root/containers/filebeat.yml
+      vars:
+        origin_ip: "{{ hostvars[groups['origin'][0]]['ansible_host'] }}"
+
+    - name: Copy Dockerfile
+      copy:
+          src: files/edge/docker/Dockerfile.filebeat
+          dest: /root/containers/Dockerfile.filebeat
+
+    - name: Build image
+      shell: docker build -t filebeat-edge -f Dockerfile.filebeat .
+      args:
+          chdir: /root/containers

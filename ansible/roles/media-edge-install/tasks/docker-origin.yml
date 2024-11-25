@@ -1,0 +1,35 @@
+- name: Build origin
+  block:
+    - name: Remove existing origin
+      file:
+        path: /root/origin
+        state: absent
+
+    - name: Create program directory
+      file:
+        path: /root/containers/origin
+        state: directory
+
+    - name: Copy program folder
+      synchronize:
+        src: ../origin/
+        dest: /root/containers/origin
+        rsync_opts:
+          - "--exclude=node_modules/"
+          - "--exclude=yarn.lock"
+          - "--exclude=package-lock.json"
+          - "--exclude=.git"
+    - name: Create env.ts file
+      template:
+        src: files/origin/config/env.ts.j2
+        dest: /root/containers/origin/config/env.ts
+
+    - name: Create networks.ts file
+      template:
+        src: files/origin/config/networks.ts.j2
+        dest: /root/containers/origin/config/networks.ts
+
+    - name: Build image
+      shell: docker build -t origin -f Dockerfile.node .
+      args:
+          chdir: /root/containers/origin

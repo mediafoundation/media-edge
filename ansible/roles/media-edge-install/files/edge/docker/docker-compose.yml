@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  caddy:
+    image: caddy-edge
+    container_name: caddy-edge
+    ports:
+      - "80:80"
+      - "443:443"
+      - "2020:2020"
+    restart: unless-stopped
+
+  varnish:
+    container_name: varnish-edge
+    image: varnish-edge
+    env_file:
+      - .env
+    ports:
+      - "6969:6969"
+    volumes:
+      - ./default.vcl:/etc/varnish/default.vcl
+      - ./var/cache/varnish:/var/cache/varnish
+
+  filebeat:
+    image: filebeat-edge
+    container_name: filebeat-edge
+    ports:
+      - "5044:5044"
+
+  edge:
+    image: edge
+    container_name: edge
+    volumes:
+      - /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/:/usr/src/app/certs/

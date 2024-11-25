@@ -1,0 +1,22 @@
+- name: Remove existing origin
+  file:
+    path: /root/containers/edge
+    state: absent
+
+- name: Create program directory
+  file:
+    path: /root/edge
+    state: directory
+
+- name: Copy program folder
+  synchronize:
+    src: ../edge/
+    dest: /root/containers/edge
+    rsync_opts:
+      - "--exclude=node_modules/"
+      - "--exclude=yarn.lock"
+      - "--exclude=.git"
+- name: Build image
+  shell: docker build -t edge -f Dockerfile.edge .
+  args:
+    chdir: /root/containers/edge

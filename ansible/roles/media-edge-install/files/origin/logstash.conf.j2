@@ -18,7 +18,7 @@ filter {
 
 output {
   elasticsearch {
-    hosts => ["http://localhost:9200"]
+    hosts => ["http://es01:9200"]
     index => "caddy-%{+YYYY.MM.dd}"
   }
 }

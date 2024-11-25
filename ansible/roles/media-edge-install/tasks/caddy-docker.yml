@@ -1,0 +1,51 @@
+- name: Build Caddy
+  block:
+    - name: Copy CaddyFile for origin
+      copy:
+        src: files/origin/caddy/Caddyfile.j2
+        dest: /root/containers/Caddyfile
+      when: inventory_hostname in groups["origin"]
+
+    - name: Copy caddy DockerFile for origin
+      copy:
+        src: files/origin/docker/Dockerfile.caddy
+        dest: /root/containers/Dockerfile.caddy
+      when: inventory_hostname in groups["origin"]
+
+    - name: Copy caddy source
+      copy:
+        src: files/caddy
+        dest: /root/containers/caddy
+      when: inventory_hostname in groups["origin"]
+
+
+    - name: Build image for origin
+      shell: docker build -t caddy-origin -f Dockerfile.caddy .
+      args:
+        chdir: /root/containers
+      when: inventory_hostname in groups["origin"]
+
+    - name: Copy CaddyFile for edge
+      copy:
+        src: files/edge/caddy/Caddyfile.j2
+        dest: /root/containers/Caddyfile
+      when: inventory_hostname in groups["edge"]
+
+    - name: Copy caddy DockerFile for edge
+      copy:
+        src: files/edge/docker/Dockerfile.caddy
+        dest: /root/containers/Dockerfile.caddy
+      when: inventory_hostname in groups["edge"]
+
+    - name: Copy caddy source
+      copy:
+        src: files/caddy
+        dest: /root/containers/caddy
+      when: inventory_hostname in groups["edge"]
+
+
+    - name: Build image for edge
+      shell: docker build -t caddy-edge -f Dockerfile.caddy .
+      args:
+        chdir: /root/containers
+      when: inventory_hostname in groups["edge"]

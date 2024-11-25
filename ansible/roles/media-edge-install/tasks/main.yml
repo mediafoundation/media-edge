@@ -1,19 +1,22 @@
 - include_tasks: set_facts.yml
 - include_tasks: system.yml
-- include_tasks: postgres.yml
-  when: inventory_hostname in groups["origin"]
-- include_tasks: varnish.apt.yml
-- include_tasks: caddy.yml
-- include_tasks: stats.yml
 - include_tasks: gluster.yml
 - include_tasks: optimize.yml
-- include_tasks: nodejs.yml
-- include_tasks: origin.yml
+- include_tasks: docker.yml
+- include_tasks: caddy-docker.yml
+- include_tasks: varnish-docker.yml
+- include_tasks: stats-docker.yml
+- include_tasks: docker-origin.yml
   when: inventory_hostname in groups["origin"]
-- include_tasks: edge.yml
+- include_tasks: docker-edge.yml
   when: inventory_hostname in groups["edge"]
-- include_tasks: dns.yml
-  when: inventory_hostname in groups["edge"]
+- include_tasks: start.yml
+#- include_tasks: edge.yml
+#  when: inventory_hostname in groups["edge"]
+#- include_tasks: dns.yml
+#  when: inventory_hostname in groups["edge"]
+#- include_tasks: nodejs.yml
+#  when: inventory_hostname in groups["edge"]
 #- include_tasks: origin2.yml
 #  when: inventory_hostname in groups["origin"]
 #- include_tasks: ganache.yml

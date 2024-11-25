@@ -1,0 +1,19 @@
+# Usa una imagen base de Node.js
+FROM node:18
+
+# Crea el directorio de la aplicación
+WORKDIR /usr/src/app
+
+RUN mkdir -p /usr/src/app/certs
+
+# Copia los archivos de la aplicación
+COPY package*.json ./
+
+RUN npm install --omit=dev
+
+USER node
+
+COPY --chown=node:node . ./
+
+# Comando para iniciar la aplicación
+CMD ["node", "index.js"]

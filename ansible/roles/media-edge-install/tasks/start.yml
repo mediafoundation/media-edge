@@ -1,0 +1,29 @@
+- name: Start origin
+  block:
+    - name: Start origin
+      shell: docker compose up -d
+      args:
+          chdir: /root/containers
+
+    - name: Wait for Kibana to be ready
+      uri:
+        url: http://localhost:5601/api/status
+        status_code: 200
+      register: kibana_status
+      until: kibana_status.status == 200
+      retries: 10
+      delay: 10
+
+    - name: Load kibana dashboard
+      command:
+        cmd: 'curl -X POST http://localhost:5601/api/saved_objects/_import?createNewCopies=true -H "kbn-xsrf: true" --form file=@dashboard.ndjson'
+        chdir: /root/containers/
+  when: inventory_hostname in groups["origin"]
+
+- name: Start edge
+  block:
+    - name: Start edge
+      shell: docker compose up -d
+      args:
+        chdir: /root/containers
+  when: inventory_hostname in groups["edge"]
