@@ -9,8 +9,7 @@ RUN mkdir -p /var/log/varnish && chown varnish:varnish /var/log/varnish
 RUN mkdir -p /run/varnishncsa && chown varnish:varnish /run/varnishncsa
 
 # Exponer los puertos necesarios
-EXPOSE 6969
-EXPOSE 6082
+EXPOSE 8080 6082
 
 # Configura el comando de inicio para usar espacio en disco para la caché
-CMD ["sh", "-c", "varnishd -F -a 0.0.0.0:8080 -T localhost:6082 -f /etc/varnish/default.vcl -s file,/var/cache/varnish/varnish.cache,${CACHE_SIZE} & varnishncsa -a -w /var/log/varnish/varnishncsa.log -D -P /run/varnishncsa/varnishncsa.pid"]
+CMD ["sh", "-c", "varnishd -F -a 0.0.0.0:8080 -T localhost:6082 -f /etc/varnish/default.vcl -s file,/var/cache/varnish/varnish.cache,${CACHE_SIZE} && exec varnishncsa -a -w /var/log/varnish/varnishncsa.log -D -P /run/varnishncsa/varnishncsa.pid"]
