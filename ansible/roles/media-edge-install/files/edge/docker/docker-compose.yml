@@ -16,7 +16,7 @@ services:
     env_file:
       - .env
     ports:
-      - "6969:6969"
+      - "8080:8080"
     volumes:
       - ./default.vcl:/etc/varnish/default.vcl
       - ./var/cache/varnish:/var/cache/varnish

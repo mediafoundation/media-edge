@@ -1,7 +1,7 @@
 - name: Build Caddy
   block:
     - name: Copy CaddyFile for origin
-      copy:
+      template:
         src: files/origin/caddy/Caddyfile.j2
         dest: /root/containers/Caddyfile
       when: inventory_hostname in groups["origin"]
@@ -26,7 +26,7 @@
       when: inventory_hostname in groups["origin"]
 
     - name: Copy CaddyFile for edge
-      copy:
+      template:
         src: files/edge/caddy/Caddyfile.j2
         dest: /root/containers/Caddyfile
       when: inventory_hostname in groups["edge"]

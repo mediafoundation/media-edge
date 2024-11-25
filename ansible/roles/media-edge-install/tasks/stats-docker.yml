@@ -8,17 +8,17 @@
             state: directory
 
         - name: Copy logstash config file
-          copy:
+          template:
             src: files/origin/logstash.conf.j2
             dest: /root/containers/logstashSettings/logstash.conf
 
         - name: Copy yml file
-          copy:
+          template:
             src: files/origin/logstash.yml.j2
             dest: /root/containers/logstashSettings/logstash.yml
 
     - name: Copy config for elasticsearch
-      copy:
+      template:
         src: files/origin/elasticsearch.yml.j2
         dest: /root/containers/elasticsearch.yml
 
