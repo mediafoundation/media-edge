@@ -5,6 +5,9 @@ COPY ./caddy /usr/local/bin/caddy
 RUN chmod +x /usr/local/bin/caddy
 COPY ./Caddyfile /etc/caddy/Caddyfile
 
+COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Configura las variables de entorno
 {% if dns_config.env_vars is defined %}
 {% for env in dns_config.env_vars %}
@@ -16,4 +19,4 @@ ENV {{ env }}
 EXPOSE 80 443 2020
 
 # Comando para arrancar Caddy con la configuración especificada
-CMD ["/usr/local/bin/caddy", "run", "--environ", "--config", "/etc/caddy/Caddyfile"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

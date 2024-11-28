@@ -8,6 +8,8 @@ services:
       - "80:80"
       - "443:443"
       - "2020:2020"
+    volumes:
+      - ./caddyLogs:/var/log/caddy/
     restart: unless-stopped
 
   varnish:
@@ -26,9 +28,14 @@ services:
     container_name: filebeat-edge
     ports:
       - "5044:5044"
+    volumes:
+      - ./caddyLogs:/var/log/caddy/
 
   edge:
     image: edge
     container_name: edge
     volumes:
       - /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/:/usr/src/app/certs/
+
+volumes:
+  caddy-logs:
