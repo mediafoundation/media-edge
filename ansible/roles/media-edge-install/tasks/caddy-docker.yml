@@ -32,8 +32,8 @@
       when: inventory_hostname in groups["edge"]
 
     - name: Copy caddy DockerFile for edge
-      copy:
-        src: files/edge/docker/Dockerfile.caddy
+      template:
+        src: files/edge/docker/Dockerfile.caddy.j2
         dest: /root/containers/Dockerfile.caddy
       when: inventory_hostname in groups["edge"]
 

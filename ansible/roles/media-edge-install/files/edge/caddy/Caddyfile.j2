@@ -15,13 +15,13 @@
 {% for domain in dns_config.domains %}
 *.{{domain}} {
     header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
-    reverse_proxy http://localhost:8080 {
+    reverse_proxy http://varnish-edge:8080 {
         @hasBandwidthLimit header X-Bandwidth-Limit Yes
         handle_response @hasBandwidthLimit {
             bandwidth {
                 limit 50000
             }
-            reverse_proxy http://localhost:8080
+            reverse_proxy http://varnish-edge:8080
         }
     }
     {% if dns_config.lego is defined %}
@@ -40,13 +40,13 @@
 
 https:// {
     header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
-    reverse_proxy http://localhost:8080 {
+    reverse_proxy http://varnish-edge:8080 {
         @hasBandwidthLimit header X-Bandwidth-Limit Yes
         handle_response @hasBandwidthLimit {
             bandwidth {
                 limit 50000
             }
-            reverse_proxy http://localhost:8080
+            reverse_proxy http://varnish-edge:8080
         }
     }
     tls {
@@ -63,13 +63,13 @@ http:// {
     handle /.well-known/acme-challenge/* {
         reverse_proxy http://{{ origin_ips[0] }}:7878
     }
-    reverse_proxy http://localhost:8080 {
+    reverse_proxy http://varnish-edge:8080 {
         @hasBandwidthLimit header X-Bandwidth-Limit Yes
         handle_response @hasBandwidthLimit {
             bandwidth {
                limit 50000
             }
-            reverse_proxy http://localhost:8080
+            reverse_proxy http://varnish-edge:8080
         }
     }
     log {
