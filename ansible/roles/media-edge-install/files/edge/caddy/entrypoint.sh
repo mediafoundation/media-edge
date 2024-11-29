@@ -7,7 +7,4 @@
 sleep 5
 
 # Change permissions of the /var/log/caddy directory
-chmod -R 0644 /var/log/caddy
-
-# Wait for Caddy to exit
-wait.
+chmod -R 755 /var/log/caddy

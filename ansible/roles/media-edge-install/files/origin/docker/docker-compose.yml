@@ -55,7 +55,7 @@ services:
     ports:
       - "5044:5044"
     volumes:
-      - ./logstashSettings/logstash.conf:/usr/share/logstash/config/logstash.conf
+      - ./logstashSettings/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
       - ./logstashSettings/logstash.yml:/usr/share/logstash/config/logstash.yml
   origin:
     container_name: origin
