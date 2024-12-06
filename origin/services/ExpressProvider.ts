@@ -1,5 +1,4 @@
 import express, { Application } from "express"
-import cors from "cors"
 import {Server} from "node:http"
 import apiRouter from "./api"
 
@@ -21,10 +20,10 @@ class ExpressProvider {
 
     private mountMiddlewares() {
         this.express.use(express.json())
-        this.express.use(cors({
+        /*this.express.use(cors({
             origin: '*',
             credentials: true,
-        }))
+        }))*/
         this.express.use(express.urlencoded({ extended: true }))
     }
 

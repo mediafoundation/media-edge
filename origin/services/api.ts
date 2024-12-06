@@ -24,6 +24,7 @@ import {getHostName} from "../utils/domains";
 import {CaddySource} from "../models/caddy";
 
 import {providerState} from "../models/providerState"
+import cors from "cors"
 
 
 const apiRouter = Router()
@@ -32,6 +33,10 @@ apiRouter.use((req, res, next) => {
   res.set('Cache-Control', 'no-store')
   next()
 })
+
+apiRouter.use(cors({
+  credentials: true,
+}))
 
 apiRouter.use(Session({
   name: 'siwe-quickstarts',
