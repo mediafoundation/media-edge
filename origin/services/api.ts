@@ -24,7 +24,6 @@ import {getHostName} from "../utils/domains";
 import {CaddySource} from "../models/caddy";
 
 import {providerState} from "../models/providerState"
-import cors from "cors"
 
 
 const apiRouter = Router()
@@ -34,9 +33,20 @@ apiRouter.use((req, res, next) => {
   next()
 })
 
-apiRouter.use(cors({
-  credentials: true,
-}))
+apiRouter.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(204);
+  } else {
+    next();
+  }
+});
 
 apiRouter.use(Session({
   name: 'siwe-quickstarts',
