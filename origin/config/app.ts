@@ -49,7 +49,7 @@ let caddyInitialApps = {
                   ":80"
               ],
               "routes": [
-                  createRoute("api", "localhost:8080"),
+                  createRoute("api", "origin:8080"),
                   createRoute("appdev", "localhost:3000"),
                   createRoute("swaptest", "localhost:3002")
               ],
