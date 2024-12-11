@@ -80,6 +80,7 @@
       - tmux
       - jq
       - wget
+      - vim
       - curl
       - bmon
       - iftop
