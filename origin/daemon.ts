@@ -8,7 +8,7 @@ import { CaddyController } from "./controllers/caddyController";
 import { checkEvents } from "./services/events";
 import {env} from "./config/env";
 import {networks} from "./config/networks";
-import {providerState} from "./models/providerState"
+import {providerData, providerState} from "./models/providerState"
 import ExpressProvider from "./services/ExpressProvider"
 import CertsProvider from "./services/CertsProvider"
 
@@ -101,6 +101,7 @@ async function start() {
             privateKey = Buffer.from(privateKeyUnformatted).toString("hex") as `0x${string}`;
 
             providerState[address] = {privateKey: privateKey};
+            providerData[privateKey] = {a_record: [], cname: []}
         }
 
         else {

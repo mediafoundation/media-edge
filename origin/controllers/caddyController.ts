@@ -12,6 +12,7 @@ import {CaddySource} from "../models/caddy";
 
 import {getHostName, isARecord} from "../utils/domains";
 import {appConfig} from "../config/app"
+import {providerData} from "../models/providerState"
 
 const resolver = new doh.DohResolver('https://1.1.1.1/dns-query')
 
@@ -362,8 +363,8 @@ export class CaddyController {
                     console.log("Item on check queue", item)
                     if (env.debug) console.log(`Retrying to apply custom domain ${item.item.domain} (${item.retry})`, item);
                     try{
-
-                        let hostValid = await this.isRecordPointingCorrectly(item.item.domain);
+                        const providerMetadata = providerData[privateKey]
+                        let hostValid = await this.isRecordPointingCorrectly(item.item.domain, providerMetadata.a_record, providerMetadata.cname);
  /*                        let isA = isARecord(item.item.domain)
 
                         let hostValid = false
@@ -499,18 +500,18 @@ export class CaddyController {
         }
     }
 
-    static async isRecordPointingCorrectly(targetDomain){
+    static async isRecordPointingCorrectly(targetDomain, a_record, cname){
       let isA = isARecord(targetDomain)
 
       let hostValid = false
 
       if(isA) {
-          for (const aElement of env.a_record) {
+          for (const aElement of a_record) {
               hostValid = await this.checkARecord(targetDomain, aElement)
               if(hostValid) break;
           }
       } else {
-          hostValid = await this.checkCname(targetDomain, env.cname)
+          hostValid = await this.checkCname(targetDomain, cname)
       }
 
       return hostValid;

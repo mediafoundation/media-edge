@@ -34,7 +34,10 @@ apiRouter.use((req, res, next) => {
   next()
 })
 
-apiRouter.use(cors())
+apiRouter.use(cors({
+  origin: true,
+  credentials: true
+}))
 
 apiRouter.use(Session({
   name: 'siwe-quickstarts',
