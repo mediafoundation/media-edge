@@ -18,14 +18,13 @@
 # Example configuration:
 wallets:
   -
-    mnemonic: "some mnemonic example"
-    supportedChains: [1, 2, 3] # The id of chains where this provider is going to run
-    accountIndex: 1 # The index of the account in the mnemonic. If not provided, defaults to 0
-  -
+    #  If prefer to use mnemonic phrase instead of private key, uncomment the following line and fill the mnemonic field. And comment the privateKey field.
+    #  mnemonic: "some mnemonic example"
+    #  accountIndex: 1 # The index of the account in the mnemonic. If not provided, defaults to 0
     privateKey: "your private Key"
     supportedChains: [11155111] #Specify comma separated if supporting multiple chains
     cname: [cname.yourdomain.com]
-    a_record: [xxxx.xxxx.xxxx.xxxx] #Should be the ip or your origin's server
+    a_record: [xxxx.xxxx.xxxx.xxxx] #Should be the ip or your edges's server
 
 
 # Please specify the networks you are providing services (where you are staking your tokens).
