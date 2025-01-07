@@ -22,16 +22,10 @@ wallets:
     supportedChains: [1, 2, 3] # The id of chains where this provider is going to run
     accountIndex: 1 # The index of the account in the mnemonic. If not provided, defaults to 0
   -
-    privateKey: "0x545cdcd19de92805371d9644fa7d5a154e51204e41c8cbc8ff3bc9fdd5083efd"
-    supportedChains: [1, 2, 3]
-wallets:
-  -
-    mnemonic: "some mnemonic example"
-    supportedChains: [1, 2, 3] # The id of chains where this providers is going to run
-    accountIndex: 1 # The index of the account in the mnemonic. If non provided defaults to 0
-  -
-    privateKey: "0x${string}"
-    supportedChains: [1, 2, 3]
+    privateKey: "your private Key"
+    supportedChains: [11155111] #Specify comma separated if supporting multiple chains
+    cname: [cname.yourdomain.com]
+    a_record: [xxxx.xxxx.xxxx.xxxx] #Should be the ip or your origin's server
 
 
 # Please specify the networks you are providing services (where you are staking your tokens).
