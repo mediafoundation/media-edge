@@ -46,16 +46,14 @@ Ensure these are installed on your local computer and target server(s):
 
 - [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-ansible-on-specific-operating-systems)
 - [rsync](https://rsync.samba.org/)
-- [Debian 10 x64](https://www.debian.org/releases/buster/debian-installer/)
+- [Debian 11 x64](https://www.debian.org/releases/bullseye/)
 
 ### 🛠️ Installation
 
-1. Clone the repository and its submodules:
+1. Clone the repository:
    ```sh
    git clone https://github.com/mediafoundation/media-edge.git
    cd media-edge
-   git submodule init
-   git submodule update
    ```
 2. Navigate to the `ansible` folder:
    ```sh

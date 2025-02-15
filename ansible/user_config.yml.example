@@ -18,13 +18,13 @@
 # Example configuration:
 wallets:
   -
-    #  If prefer to use mnemonic phrase instead of private key, uncomment the following line and fill the mnemonic field. And comment the privateKey field.
+    #  If prefer to use mnemonic phrase instead of private key uncomment the following line, fill the mnemonic field and comment the privateKey field.
     #  mnemonic: "some mnemonic example"
     #  accountIndex: 1 # The index of the account in the mnemonic. If not provided, defaults to 0
     privateKey: "your private Key"
-    supportedChains: [11155111] #Specify comma separated if supporting multiple chains
-    cname: [cname.yourdomain.com]
-    a_record: [xxxx.xxxx.xxxx.xxxx] #Should be the ip or your edges's server
+    supportedChains: [11155111] # Specify comma separated if supporting multiple chains
+    cname: [cname.yourdomain.com] # Please specify cname to provide on your origin. Take into account that by pointing *.yourdomain.com to your edges ips, you will be able to use the same cname for all your edges.
+    a_record: [xxxx.xxxx.xxxx.xxxx] #Should be the ip or your edges's server. If have more than one, specify all the ips by separating by commas.
 
 
 # Please specify the networks you are providing services (where you are staking your tokens).
@@ -35,11 +35,6 @@ networks:
 # Select the marketplace ID where you are providing services.
 marketplace_id: 1
 
-# Please specify the ip address to provide on your origin
-origin_ip: xxxx.xxxx.xxxx.xxxx
-
-# Please specify cname to provide on your origin
-cname: cname.example.com
 
 # DNS Configuration: This allows caddy to create TXT records to pass acme challenges. Leave lego and env_vars commented to disable.
 # Domain is required, otherwise installation will fail!
