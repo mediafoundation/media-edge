@@ -4,8 +4,8 @@ FROM node:18
 # Crea el directorio de la aplicación
 WORKDIR /usr/src/app
 
-RUN mkdir -p /usr/src/app/challenges /usr/src/app/certs && \
-    chown -R node:node /usr/src/app/challenges /usr/src/app/certs
+RUN mkdir -p /usr/src/app/challenges /usr/src/app/certs /usr/src/app/lib && \
+    chown -R node:node /usr/src/app/challenges /usr/src/app/certs /usr/src/app/lib
 
 # Copia los archivos de la aplicación
 COPY package*.json ./
