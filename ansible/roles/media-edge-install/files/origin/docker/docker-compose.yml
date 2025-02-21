@@ -65,3 +65,5 @@ services:
       - "7878:7878"
     volumes:
       - /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/:/usr/src/app/certs/
+    depends_on:
+      - postgres
