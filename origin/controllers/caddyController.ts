@@ -365,54 +365,48 @@ export class CaddyController {
                     try{
                         const providerMetadata = providerData[privateKey]
                         let hostValid = await this.isRecordPointingCorrectly(item.item.domain, providerMetadata.a_record, providerMetadata.cname);
- /*                        let isA = isARecord(item.item.domain)
+                        if(hostValid){
+                            let targetDomain = getHostName(item.item.domain)
+                            let expectedValue = generateTXTRecord(item.owner, getHostName(item.item.domain), privateKey)
+    
+                            if (env.debug){
+                                console.log("Params on generate txt record", item.owner, getHostName(item.item.domain))
+                                console.log(`checking txt record for ${getHostName(item.item.domain)}`)
+                                console.log("Expected value", expectedValue)
+                            }
 
-                        let hostValid = false
-
-                        if(isA) {
-                            for (const aElement of env.a_record) {
-                                hostValid = await this.checkARecord(item.item.domain, aElement)
-                                if(hostValid) break;
+                            let txtValid = await this.checkTxtRecord(
+                              targetDomain,
+                              expectedValue
+                            )
+    
+                            if(txtValid){
+    
+                                await this.patchRecord(item);
+                                //todo: following function should return a boolean
+                                let certificateObtainedStatus = await obtainAndRenewCertificate({host: item.item.domain});
+    
+                                if (certificateObtainedStatus === CertStatus.OBTAINED || certificateObtainedStatus === CertStatus.VALID) {
+                                    if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.item.domain}`);
+                                    //queue.splice(i, 1);
+                                    await this.deleteFromAllQueues(item.item.domain)
+                                    console.log("Queue after clean", queue)
+                                } else if (item.retry === limit) {
+                                    if (env.debug) console.log(`Domain exceeded retry limits, sending to next stage: ${item.item}`);
+                                    if (current === "Minutely") queues.Hourly.push(item);
+                                    else if (current === "Hourly") queues.Daily.push(item);
+                                    else if (current === "Daily") queues.Monthly.push(item);
+                                    else console.log(`Domain exceeded retry limits, checked for 12 months without restart: ${item.item}`);
+                                    queue.splice(i, 1);
+                                }
+                            } else {
+                                if (env.debug) console.log(`Domain ${item.item.domain} TXT record not valid`);
                             }
                         } else {
-                            hostValid = await this.checkCname(item.item.domain, env.cname)
-                        }*/
-
-                        console.log("Host valid item", item)
-
-                        let targetDomain = getHostName(item.item.domain)
-                        let expectedValue = generateTXTRecord(item.owner, getHostName(item.item.domain), privateKey)
-
-                        console.log("Params on generate txt record", item.owner, getHostName(item.item.domain))
-                        console.log(`checking txt record for ${getHostName(item.item.domain)}`)
-                        console.log("Expected value", expectedValue)
-                        hostValid = await this.checkTxtRecord(
-                          targetDomain,
-                          expectedValue
-                        )
-
-                        console.log("Host valid", hostValid)
-
-                        if(hostValid){
-
-                            await this.patchRecord(item);
-                            //todo: following function should return a boolean
-                            let certificateObtainedStatus = await obtainAndRenewCertificate({host: item.item.domain});
-
-                            if (certificateObtainedStatus === CertStatus.OBTAINED || certificateObtainedStatus === CertStatus.VALID) {
-                                if (env.debug) console.log(`Removing pending domain from queue, patch success: ${item.item.domain}`);
-                                //queue.splice(i, 1);
-                                await this.deleteFromAllQueues(item.item.domain)
-                                console.log("Queue after clean", queue)
-                            } else if (item.retry === limit) {
-                                if (env.debug) console.log(`Domain exceeded retry limits, sending to next stage: ${item.item}`);
-                                if (current === "Minutely") queues.Hourly.push(item);
-                                else if (current === "Hourly") queues.Daily.push(item);
-                                else if (current === "Daily") queues.Monthly.push(item);
-                                else console.log(`Domain exceeded retry limits, checked for 12 months without restart: ${item.item}`);
-                                queue.splice(i, 1);
-                            }
+                            if (env.debug) console.log(`Domain ${item.item.domain} not pointing correctly`);
                         }
+
+                        
                     } catch (e) {
                         console.log("Error checking queue for item:", item, e)
                     }
