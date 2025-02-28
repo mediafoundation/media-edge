@@ -1,43 +1,47 @@
 # Media Edge configuration file
-#
+
 # Specify your wallet configuration, network, and other settings here.
 
-# *** CAUTION *** To prevent hacking and fund loss, use a public key from a wallet without funds. Avoid using your main wallet address (staking wallet).
+# *** CAUTION *** To prevent fund losses, it's recommended to have two wallets: one for staking and another for decryption. The staking wallet is used to manage registration (staking) and provider management. This wallet will have access to your funds, so it's recommended to keep it secure and separate from the decryption wallet. The decryption wallet is used to decrypt the clients resources. The decryption wallet's public key should be provided to the app at register time, so your clients can later use it to encrypt the keys to decrypt their resources. The private key or mnemonic for the decryption wallet should be provided in this file, while the mnemonic for the staking wallet should never be shared or compromised in a server.
 
-# Please specify the mnemonic or privateKey for the wallet(s) you are using to stake your tokens following the following example
-# Also account index can be provided
-
-# The `wallets` section specifies the details of the wallets used in the Media Edge application.
+# The `providers` section contains the details of the wallets, networks, and dns configuration used in the Media Edge.
 # Each wallet can be identified either by a mnemonic phrase or a private key.
-# The `mnemonic` field is used to specify the mnemonic phrase for the wallet.
-# The `supportedChains` field lists the IDs of the blockchain networks that the wallet supports.
+# The `wallet_address` field is used to specify the provider wallet address.
+# The `mnemonic` field is used to specify the mnemonic phrase for the decryption wallet.
 # The `accountIndex` field is optional and specifies the index of the account in the mnemonic; it defaults to 0 if not provided.
-# The `privateKey` field is used to specify the private key for the wallet. Must have the following format: "0x<64-characters-hexadecimal-string>".
+# The `privateKey` field is used to specify the private key for the decryption wallet. Must have the following format: "0x<64-characters-hexadecimal-string>".
+# The `supportedChains` field is used to specify the networks where you are providing services. It should be a list of network IDs. Remember that you need to register and create offers on each network independently.
+# The `cname` field specifies the CNAME that you will provide to your clients, so they can use custom domains. Adding an A record `*.yourdomain.com` pointing to all your edges ips is mandatory, so if you use something like `cname.yourdomain.com` this record should work automatically.
+# The `a_record` field specifies the IP address of your edge servers. If you have more than one, specify all the IPs by separating them with commas.
 
-# *** CAUTION *** If not sure on how to fill the mnemonic or privateKey, leave it blank and a prompt will kindly guide you to fill every needed item.
 # Example configuration:
-wallets:
-  -
-    #  If prefer to use mnemonic phrase instead of private key uncomment the following line, fill the mnemonic field and comment the privateKey field.
-    #  mnemonic: "some mnemonic example"
-    #  accountIndex: 1 # The index of the account in the mnemonic. If not provided, defaults to 0
-    privateKey: "your private Key"
-    supportedChains: [11155111] # Specify comma separated if supporting multiple chains
-    cname: [cname.yourdomain.com] # Please specify cname to provide on your origin. Take into account that by pointing *.yourdomain.com to your edges ips, you will be able to use the same cname for all your edges.
-    a_record: [xxxx.xxxx.xxxx.xxxx] #Should be the ip or your edges's server. If have more than one, specify all the ips by separating by commas.
+providers:
+  -    
+    wallet_address: "0x0000000000000000000000000000000000000000" # Address of the "staking" wallet (1st wallet).
+
+    # Decryption wallet configuration (2nd wallet)
+    mnemonic: "media media media media media media media media media media media" # Any twelve word bip39 mnemonic phrase would work ok in this field
+    accountIndex: 1 # The index of the account in the mnemonic. If not provided, defaults to 0
+    # If prefer to use private key instead of mnemonic phrase uncomment and fill the following line, and comment the `mnemonic` and `accountIndex` fields.
+    #privateKey: "0x0000000000000000000000000000000000000000000000000000000000000000" 
+    supportedChains: [11155111, 84532] # Specify comma separated if supporting multiple chains
+    cname: "cname.yourdomain.com"
+    a_record: ["xxx.xxx.xxx.xxx"] 
 
 
-# Please specify the networks you are providing services (where you are staking your tokens).
+# Choose the same networks as `supportedChains` and use custom RPC URLs if needed.
 networks:
-- id: 5 # This is the network ID, it should the network id of the network you are providing services
-  URL: undefined # This is the URL of the network. If undefined, it will be set the default RPC from the media-sdk.
+- id: 11155111 # This is the network ID, it should the network id of the network. Example: 11155111 for Ethereum Sepolia.
+  URL: undefined # This is the RPC URL of the network. If undefined, it will be set the default RPC from the media-sdk.
+- id: 84532 # Base Sepolia
+  URL: undefined
 
-# Select the marketplace ID where you are providing services.
+# Select the marketplace ID. Media Network default marketplace is 1
 marketplace_id: 1
 
 
 # DNS Configuration: This allows caddy to create TXT records to pass acme challenges. Leave lego and env_vars commented to disable.
-# Domain is required, otherwise installation will fail!
+# Domain is required, otherwise installation will fail! This is the domain that will be used to create endpoints for your clients. Each service you sell will have a unique subdomain under this domain.
 # Check https://go-acme.github.io/lego/dns/#dns-providers for providers and env variables settings.
 dns_config: 
 #  lego: cloudns 
@@ -45,22 +49,12 @@ dns_config:
 #  - CLOUDNS_SUB_AUTH_ID=<user>
 #  - CLOUDNS_AUTH_PASSWORD=<password>
   domains: 
-  - medianetwork.app
+  - mydomain.com
 
 # Postgres config
+# Please provide the postgresql configuration for the origin database. This is the database where the origin will store the data.
 db_host: localhost
 db_port: 5432
 db_user: origin
-db_password: 1234
+db_password: changeme1234
 db_name: origin
-
-# Testing server, set to true to provision the server with ganache
-testing: false
-
-# Ganache config, set up all the ganache environment. Only if testing is true
-persist_ganache_db: true
-ganache_host: 0.0.0.0
-ganache_port: 8545
-ganache_mnemonic: "blue stone rain outer bomb like lounge spoil stuff prison shoe own"
-ganache_network_id: 418
-ganache_chain_id: 418

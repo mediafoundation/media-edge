@@ -92,25 +92,26 @@ async function start() {
         //Infer usage between mnemonic and private key. Mnemonic preferred.
         if(env.providers[i].mnemonic) {
             const hdKey = await WalletUtils.mnemonicToHDAccount(env.providers[i].mnemonic);
-            address = hdKey.address
+            address = env.providers[i].wallet_address ? env.providers[i].wallet_address : hdKey.address
             const privateKeyUnformatted = hdKey.getHdKey().privateKey
             if(!privateKeyUnformatted) {
                 throw new Error("Private key not available, check your config/env.ts file and make sure you have a valid mnemonic");
             }
 
             privateKey = Buffer.from(privateKeyUnformatted).toString("hex") as `0x${string}`;
-
-            providerState[address] = {privateKey: privateKey};
-            providerData[privateKey] = {a_record: [], cname: []}
         }
 
         else {
             const account = await WalletUtils.privateKeyToAccount(env.providers[i].privateKey);
-            address = account.address
+            address = env.providers[i].wallet_address ? env.providers[i].wallet_address : account.address
             privateKey = env.providers[i].privateKey
-            providerState[address] = {privateKey: privateKey};
         }
 
+        providerState[address] = {privateKey: privateKey};
+        providerData[privateKey] = {
+          a_record: env.providers[i].a_record, 
+          cname: env.providers[i].cname
+        };
 
 
         const networksFiltered = filteredNetworks(env.providers[i].supportedChains, networks);

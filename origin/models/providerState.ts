@@ -7,7 +7,7 @@ interface ProviderState {
 interface ProviderData {
     [privateKey: string]: {
         a_record: string[]
-        cname: string[]
+        cname: string
     }
 }
 

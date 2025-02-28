@@ -34,7 +34,7 @@
         src: files/edge/filebeat/filebeat.yml.j2
         dest: /root/containers/filebeat.yml
       vars:
-        origin_ip: "{{ hostvars[groups['origin'][0]]['ansible_host'] }}"
+        origin_ip: "{{ origin_ips[0] }}"
 
     - name: Copy Dockerfile
       copy:

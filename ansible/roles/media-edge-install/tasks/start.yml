@@ -1,6 +1,6 @@
 - name: Start origin
   block:
-    - name: Start edge
+    - name: Stop origin
       shell: docker compose down
       args:
         chdir: /root/containers

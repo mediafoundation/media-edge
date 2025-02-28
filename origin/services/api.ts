@@ -1,7 +1,6 @@
 //@ts-nocheck
 import {Router} from "express";
 
-import {env} from "../config/env";
 import {DealsController} from "../controllers/dealsController";
 
 import {PurgeLogsController} from "../controllers/purgeLogsController";
@@ -23,7 +22,7 @@ import {getHostName} from "../utils/domains";
 
 import {CaddySource} from "../models/caddy";
 
-import {providerState} from "../models/providerState"
+import {providerData, providerState} from "../models/providerState"
 import cors from "cors"
 
 
@@ -283,6 +282,7 @@ apiRouter.post('/getDNSConfig', async (req, res) => {
           console.log("Domain", getHostName(req.body.domain))
 
           const privateKey = providerState[provider].privateKey
+          const providerMetadata = providerData[privateKey]
 
           console.log(privateKey)
 
@@ -318,7 +318,7 @@ apiRouter.post('/getDNSConfig', async (req, res) => {
               type: 'CNAME',
               name: parsed.domain,
               subdomain: parsed.subdomain,
-              value: env.cname,
+              value: providerMetadata.cname,
               txtData,
               warning,
               patchedDomain
@@ -327,7 +327,7 @@ apiRouter.post('/getDNSConfig', async (req, res) => {
             res.json({
               type: 'A',
               name: parsed.domain,
-              value: env.a_record,
+              value: providerMetadata.a_record,
               txtData,
               warning,
               patchedDomain
@@ -354,17 +354,6 @@ apiRouter.post('/syncDeal', async (req, res) => {
   res.send('Deal synced successfully!')
 })
 
-apiRouter.get("/ipAddress", async (req, res) => {
-  const data = await checkSignature(req)
-
-  if (!data) {
-    console.log("Bad Signature")
-    res.status(401).json({message: "Bad Signature"})
-  } else {
-    res.send({ipAddress: env.ipAddress})
-  }
-
-})
 
 /*
 Following params for network should be and object on the following form:
