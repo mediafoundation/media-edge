@@ -2,17 +2,17 @@
 
 # Specify your wallet configuration, network, and other settings here.
 
-# *** CAUTION *** To prevent fund losses, it's recommended to have two wallets: one for staking and another for decryption. The staking wallet is used to manage registration (staking) and provider management. This wallet will have access to your funds, so it's recommended to keep it secure and separate from the decryption wallet. The decryption wallet is used to decrypt the clients resources. The decryption wallet's public key should be provided to the app at register time, so your clients can later use it to encrypt the keys to decrypt their resources. The private key or mnemonic for the decryption wallet should be provided in this file, while the mnemonic for the staking wallet should never be shared or compromised in a server.
+# *** CAUTION *** To prevent fund losses, it is recommended to use two separate wallets: one for staking and one for decryption. The staking wallet is used to manage registration (staking) and provider management. This wallet will have access to your funds, so it is important to keep it secure and separate from the decryption wallet. The decryption wallet is used to decrypt your clients' resources. Its public key should be provided to the app during registration so that your clients can later use it to encrypt the keys needed to decrypt their resources. The private key or mnemonic for the decryption wallet should be provided in this file, while the mnemonic for the staking wallet should never be shared or stored on a server.
 
-# The `providers` section contains the details of the wallets, networks, and dns configuration used in the Media Edge.
-# Each wallet can be identified either by a mnemonic phrase or a private key.
-# The `wallet_address` field is used to specify the provider wallet address.
-# The `mnemonic` field is used to specify the mnemonic phrase for the decryption wallet.
-# The `accountIndex` field is optional and specifies the index of the account in the mnemonic; it defaults to 0 if not provided.
-# The `privateKey` field is used to specify the private key for the decryption wallet. Must have the following format: "0x<64-characters-hexadecimal-string>".
-# The `supportedChains` field is used to specify the networks where you are providing services. It should be a list of network IDs. Remember that you need to register and create offers on each network independently.
-# The `cname` field specifies the CNAME that you will provide to your clients, so they can use custom domains. Adding an A record `*.yourdomain.com` pointing to all your edges ips is mandatory, so if you use something like `cname.yourdomain.com` this record should work automatically.
-# The `a_record` field specifies the IP address of your edge servers. If you have more than one, specify all the IPs by separating them with commas.
+# The `providers` section contains details about the wallets, networks, and DNS configuration used in Media Edge.
+# Each wallet can be identified either by a mnemonic phrase or by a private key.
+# The `wallet_address` field specifies the address of the provider wallet.
+# The `mnemonic` field specifies the mnemonic phrase for the decryption wallet.
+# The `accountIndex` field is optional and specifies the index of the account within the mnemonic (defaults to 0 if not provided).
+# The `privateKey` field specifies the private key for the decryption wallet. It must have the following format: "0x<64-character hexadecimal string>".
+# The `supportedChains` field lists the network IDs where you are providing services. Remember that you need to register and create offers on each network independently.
+# The `cname` field specifies the CNAME that you will provide to your clients so they can use custom domains. Adding an A record for `*.yourdomain.com` that points to all your edge IPs is mandatory; if you use a record such as `cname.yourdomain.com`, it should work automatically.
+# The `a_record` field specifies the IP address of your edge servers. If you have more than one, list all IPs by separating them with commas.
 
 # Example configuration:
 providers:
@@ -20,39 +20,37 @@ providers:
     wallet_address: "0x0000000000000000000000000000000000000000" # Address of the "staking" wallet (1st wallet).
 
     # Decryption wallet configuration (2nd wallet)
-    mnemonic: "media media media media media media media media media media media" # Any twelve word bip39 mnemonic phrase would work ok in this field
-    accountIndex: 1 # The index of the account in the mnemonic. If not provided, defaults to 0
-    # If prefer to use private key instead of mnemonic phrase uncomment and fill the following line, and comment the `mnemonic` and `accountIndex` fields.
+    mnemonic: "media media media media media media media media media media media" # Any twelve-word BIP39 mnemonic phrase will work in this field.
+    accountIndex: 1 # The index of the account within the mnemonic (defaults to 0 if not provided).
+    # If you prefer to use a private key instead of a mnemonic phrase, uncomment and fill in the following line, and comment out the `mnemonic` and `accountIndex` fields.
     #privateKey: "0x0000000000000000000000000000000000000000000000000000000000000000" 
-    supportedChains: [11155111, 84532] # Specify comma separated if supporting multiple chains
+    supportedChains: [11155111, 84532] # List of network IDs to support (separated by commas if multiple).
     cname: "cname.yourdomain.com"
-    a_record: ["xxx.xxx.xxx.xxx"] 
+    a_record: ["123.45.67.89"] 
 
-
-# Choose the same networks as `supportedChains` and use custom RPC URLs if needed.
+# Choose the same networks as specified in `supportedChains` and use custom RPC URLs if needed.
 networks:
-- id: 11155111 # This is the network ID, it should the network id of the network. Example: 11155111 for Ethereum Sepolia.
-  URL: undefined # This is the RPC URL of the network. If undefined, it will be set the default RPC from the media-sdk.
-- id: 84532 # Base Sepolia
-  URL: undefined
+- id: 11155111 # Network ID (e.g., 11155111 for Ethereum Sepolia).
+  URL: "https://sepolia.drpc.org" # RPC URL of the network. If not defined (i.e., commented out), the default RPC from media-sdk will be used.
+- id: 84532 # Network ID for Base Sepolia.
+  URL: "https://sepolia.base.org"
 
-# Select the marketplace ID. Media Network default marketplace is 1
+# Select the marketplace ID. The default marketplace for Media Network is 1.
 marketplace_id: 1
 
-
-# DNS Configuration: This allows caddy to create TXT records to pass acme challenges. Leave lego and env_vars commented to disable.
-# Domain is required, otherwise installation will fail! This is the domain that will be used to create endpoints for your clients. Each service you sell will have a unique subdomain under this domain.
-# Check https://go-acme.github.io/lego/dns/#dns-providers for providers and env variables settings.
+# DNS Configuration: Allows Caddy to create TXT records for ACME challenges.
+# Leave `lego` and `env_vars` commented out to disable HTTPS (HTTP only).
+# A domain is required; otherwise, installation will fail. This domain is used to create endpoints for your clients, and each service you sell will have a unique subdomain under it.
+# For extended Lego configuration, check https://go-acme.github.io/lego/dns/#dns-providers to set DNS provider and environment variable settings.
 dns_config: 
-#  lego: cloudns 
-#  env_vars: 
-#  - CLOUDNS_SUB_AUTH_ID=<user>
-#  - CLOUDNS_AUTH_PASSWORD=<password>
+  lego:  cloudflare
+  env_vars: 
+  - CLOUDFLARE_DNS_API_TOKEN=<token>
   domains: 
-  - mydomain.com
+  - yourdomain.com
 
-# Postgres config
-# Please provide the postgresql configuration for the origin database. This is the database where the origin will store the data.
+# PostgreSQL Configuration:
+# Provide the PostgreSQL configuration for the origin database where the origin will store its data.
 db_host: localhost
 db_port: 5432
 db_user: origin

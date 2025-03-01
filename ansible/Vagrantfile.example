@@ -13,7 +13,8 @@ Vagrant.configure("2") do |config|
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
   config.vm.define "origin" do |origin|
-    origin.vm.box = "bento/debian-10.13"
+    origin.vm.box = "debian/bookworm64"
+    origin.vm.box_version = "12.20250126.1"
     origin.vm.network "public_network", ip: "192.168.0.170"
     origin.vm.provision :shell, path: "scripts/provission.sh"
     origin.vm.provider "virtualbox" do |v|
@@ -24,7 +25,8 @@ Vagrant.configure("2") do |config|
 
 
   config.vm.define "edge" do |edge|
-    edge.vm.box = "bento/debian-10.13"
+    edge.vm.box = "debian/bookworm64"
+    edge.vm.box_version = "12.20250126.1"
     edge.vm.network "public_network", ip: "192.168.0.171"
     edge.vm.provision :shell, path: "scripts/provission.sh"
     edge.vm.provider "virtualbox" do |v|
@@ -34,7 +36,8 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.define "edge2" do |edge2|
-    edge2.vm.box = "bento/debian-10.13"
+    edge2.vm.box = "debian/bookworm64"
+    edge2.vm.box_version = "12.20250126.1"
     edge2.vm.network "public_network", ip: "192.168.0.172"
     edge2.vm.provision :shell, path: "scripts/provission.sh"
     edge2.vm.provider "virtualbox" do |v|

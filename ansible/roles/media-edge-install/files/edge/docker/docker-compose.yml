@@ -10,6 +10,7 @@ services:
       - "2020:2020"
     volumes:
       - ./caddyLogs/:/var/log/caddy/
+      - /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/:/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
     restart: unless-stopped
 
   varnish:

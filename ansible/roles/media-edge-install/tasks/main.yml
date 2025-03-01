@@ -10,7 +10,10 @@
   when: inventory_hostname in groups["origin"]
 - include_tasks: docker-edge.yml
   when: inventory_hostname in groups["edge"]
-- include_tasks: start.yml
+- include_tasks: start-origin.yml
+  when: inventory_hostname in groups["origin"]
+- include_tasks: start-edge.yml
+  when: inventory_hostname in groups["edge"]
 #- include_tasks: edge.yml.unused
 #  when: inventory_hostname in groups["edge"]
 #- include_tasks: dns.yml.unused

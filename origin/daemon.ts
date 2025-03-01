@@ -153,9 +153,12 @@ async function start() {
     }
 }
 
-CertsProvider.init()
-start()
-.then(() => {
-    console.log("Started");
-    ExpressProvider.init()
-})
+CertsProvider.init();
+
+start();
+
+// This requires fixing asap. 
+setTimeout(() => {
+  console.log("Starting API");
+  ExpressProvider.init()
+}, 30000);

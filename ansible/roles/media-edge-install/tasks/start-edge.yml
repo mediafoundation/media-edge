@@ -1,0 +1,21 @@
+- name: Start edge
+  block:
+    - name: Stop edge
+      shell: docker compose down
+      args:
+        chdir: /root/containers
+    - name: Start edge
+      shell: docker compose up -d
+      args:
+        chdir: /root/containers
+    - name: wait until caddy is running
+      uri:
+          url: http://localhost:80
+          status_code: 200
+      register: caddy_status
+      until: caddy_status.status == 200
+      retries: 10
+      delay: 10
+
+    - name: Change caddyLogs folder permissions
+      shell: chmod 755 -R /root/containers/caddyLogs
