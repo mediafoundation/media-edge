@@ -7,7 +7,7 @@
     - name: Start origin
       shell: docker compose up -d
       args:
-          chdir: /root/containers
+        chdir: /root/containers
 
     - name: Wait for Kibana to be ready
       uri:

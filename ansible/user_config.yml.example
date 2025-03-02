@@ -32,20 +32,21 @@ providers:
 networks:
 - id: 11155111 # Network ID (e.g., 11155111 for Ethereum Sepolia).
   URL: "https://sepolia.drpc.org" # RPC URL of the network. If not defined (i.e., commented out), the default RPC from media-sdk will be used.
-- id: 84532 # Network ID for Base Sepolia.
-  URL: "https://sepolia.base.org"
+#- id: 84532 # Network ID for Base Sepolia.
+#  URL: "https://sepolia.base.org"
 
 # Select the marketplace ID. The default marketplace for Media Network is 1.
 marketplace_id: 1
 
 # DNS Configuration: Allows Caddy to create TXT records for ACME challenges.
-# Leave `lego` and `env_vars` commented out to disable HTTPS (HTTP only).
+# Leave `provider` and `env_vars` commented out to disable HTTPS (HTTP only).
 # A domain is required; otherwise, installation will fail. This domain is used to create endpoints for your clients, and each service you sell will have a unique subdomain under it.
-# For extended Lego configuration, check https://go-acme.github.io/lego/dns/#dns-providers to set DNS provider and environment variable settings.
+# Check all available providers and settings here: https://github.com/caddy-dns
 dns_config: 
-  lego:  cloudflare
+  provider: cloudflare
   env_vars: 
-  - CLOUDFLARE_DNS_API_TOKEN=<token>
+  - CF_API_TOKEN=<token>
+  email: admin@yourdomain.com # for EAB credentials
   domains: 
   - yourdomain.com
 

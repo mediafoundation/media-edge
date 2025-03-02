@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import querystring from "querystring";
+import {env} from "../config/env";
 
 const challengesPath = `/usr/src/app/challenges`;
 const certsPath = `/usr/src/app/certs`;
@@ -61,7 +62,7 @@ async function generateEABCredentials(email?: string, apiKey?: string): Promise<
   if (!apiKey) {
     if (!email) {
       console.warn("Missing email address for ZeroSSL; it is strongly recommended to set one for next time");
-      email = "caddy@zerossl.com";
+      email = env.email;
     }
     headers["Content-Type"] = "application/x-www-form-urlencoded";
   }
@@ -100,7 +101,6 @@ async function obtainAndRenewCertificates(domains: Domain[]): Promise<void> {
 }
 
 async function obtainAndRenewCertificate(domain: Domain): Promise<CertStatus> {
-  console.log(process.env.__dirname, process.env);
   const certPath = path.join(certsPath, `${domain.host}`, `${domain.host}.crt`);
   const keyPath = path.join(certsPath, `${domain.host}`, `${domain.host}.key`);
   const jsonPath = path.join(certsPath, `${domain.host}`, `${domain.host}.json`);
@@ -128,7 +128,7 @@ async function obtainAndRenewCertificate(domain: Domain): Promise<CertStatus> {
         });
         const cert = await client.auto({
           csr,
-          email: "caddy@zerossl.com",
+          email: env.email,
           termsOfServiceAgreed: true,
           challengePriority: ["http-01"],
           challengeCreateFn: async (authz, challenge, keyAuthorization) => {

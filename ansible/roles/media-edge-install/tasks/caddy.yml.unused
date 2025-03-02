@@ -95,7 +95,7 @@
             GOPATH: '/root/caddy/go'
 
         - name: Build Caddy
-          shell: /root/caddy/go/bin/xcaddy build --with github.com/mediafoundation/caddy-bandwidth@latest --with github.com/caddy-dns/lego-deprecated --with github.com/firecow/caddy-elastic-encoder
+          shell: /root/caddy/go/bin/xcaddy build --with github.com/mediafoundation/caddy-bandwidth@latest --with github.com/caddy-dns/{{dns_config.provider}} --with github.com/firecow/caddy-elastic-encoder
           environment:
             PATH: '/usr/local/go/bin:$PATH'
             GOROOT: '/usr/local/go'

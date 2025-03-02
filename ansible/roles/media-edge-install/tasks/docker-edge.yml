@@ -5,7 +5,7 @@
 
 - name: Create program directory
   file:
-    path: /root/edge
+    path: /root/containers/edge
     state: directory
 
 - name: Copy program folder

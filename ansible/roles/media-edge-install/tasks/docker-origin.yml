@@ -2,7 +2,7 @@
   block:
     - name: Remove existing origin
       file:
-        path: /root/origin
+        path: /root/containers/origin
         state: absent
 
     - name: Create program directory
