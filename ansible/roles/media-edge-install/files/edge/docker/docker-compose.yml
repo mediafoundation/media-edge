@@ -10,7 +10,11 @@ services:
       - "2020:2020"
     volumes:
       - ./caddyLogs/:/var/log/caddy/
+      - ./Caddyfile:/etc/caddy/Caddyfile
       - /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/:/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
+
+    env_file:
+      - .env.caddy
     restart: unless-stopped
 
   varnish:
@@ -25,12 +29,13 @@ services:
       - ./var/cache/varnish:/var/cache/varnish
 
   filebeat:
-    image: filebeat-edge
+    image: docker.elastic.co/beats/filebeat:7.17.25
     container_name: filebeat-edge
     ports:
       - "5044:5044"
     volumes:
       - ./caddyLogs/:/var/log/caddy/
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
 
   edge:
     image: edge

@@ -1,8 +1,5 @@
 FROM varnish:6.6
 
-# Copia el archivo de configuración VCL
-COPY default.vcl /etc/varnish/default.vcl
-
 # Crea el directorio de caché y establece los permisos
 RUN mkdir -p /var/cache/varnish && chown varnish:varnish /var/cache/varnish
 

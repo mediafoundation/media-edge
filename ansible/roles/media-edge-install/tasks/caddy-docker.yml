@@ -1,62 +1,59 @@
-- name: Build Caddy
+- name: Build Caddy for origin
   block:
     - name: Copy CaddyFile for origin
       template:
         src: files/origin/caddy/Caddyfile.j2
         dest: /root/containers/Caddyfile
-      when: inventory_hostname in groups["origin"]
 
     - name: Copy caddy DockerFile for origin
       copy:
         src: files/origin/docker/Dockerfile.caddy
         dest: /root/containers/Dockerfile.caddy
-      when: inventory_hostname in groups["origin"]
 
     - name: Copy caddy source
       copy:
         src: files/caddy
         dest: /root/containers/caddy
-      when: inventory_hostname in groups["origin"]
 
 
     - name: Build image for origin
       shell: docker build -t caddy-origin -f Dockerfile.caddy .
       args:
         chdir: /root/containers
-      when: inventory_hostname in groups["origin"]
 
-    - name: Copy CaddyFile for edge
-      template:
-        src: files/edge/caddy/Caddyfile.j2
-        dest: /root/containers/Caddyfile
-      when: inventory_hostname in groups["edge"]
-
-    - name: Copy caddy DockerFile for edge
-      template:
-        src: files/edge/docker/Dockerfile.caddy.j2
-        dest: /root/containers/Dockerfile.caddy
-      when: inventory_hostname in groups["edge"]
-
-    - name: Copy caddy source
-      copy:
-        src: files/caddy
-        dest: /root/containers/caddy
-      when: inventory_hostname in groups["edge"]
-
-    - name: Copy caddy entrypoint
-      copy:
-          src: files/edge/caddy/entrypoint.sh
-          dest: /root/containers/entrypoint.sh
-      when: inventory_hostname in groups["edge"]
 
     - name: Create caddy logs folder
       file:
         path: /root/containers/caddyLogs
         state: directory
+  when: inventory_hostname in groups["origin"]
 
+
+- name: Build Caddy for edge
+  block:
+    - name: Copy CaddyFile for edge
+      template:
+        src: files/edge/caddy/Caddyfile.j2
+        dest: /root/containers/Caddyfile
+
+    - name: Copy caddy DockerFile for edge
+      template:
+        src: files/edge/docker/Dockerfile.caddy.j2
+        dest: /root/containers/Dockerfile.caddy
+
+    - name: Copy caddy source
+      copy:
+        src: files/caddy
+        dest: /root/containers/caddy
+
+    - name: Generate .env.caddy for Caddy
+      template:
+        src: files/edge/caddy/.env.j2
+        dest: /root/containers/.env.caddy
 
     - name: Build image for edge
       shell: docker build -t caddy-edge -f Dockerfile.caddy .
       args:
         chdir: /root/containers
-      when: inventory_hostname in groups["edge"]
+
+  when: inventory_hostname in groups["edge"]

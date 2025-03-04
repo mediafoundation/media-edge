@@ -66,3 +66,21 @@
 - name: Set RAM capacity as a fact
   set_fact:
     system_ram: "{{ ansible_memtotal_mb }}"
+
+# - name: 
+#   debug:
+#     msg: "{{postgres_password}}"
+
+# - name:
+#   pause:
+#     prompt: "Do you want to use the origins in testing mode? (yes/no) [no]: "
+#     echo: yes
+#   register: testing_mode
+#   when: inventory_hostname in groups["origin"]
+
+# - name:
+#   pause:
+#     prompt: "\nEnter your wallet network"
+#     echo: no
+#   register: wallet_network
+#   when: inventory_hostname in groups["edge"]
