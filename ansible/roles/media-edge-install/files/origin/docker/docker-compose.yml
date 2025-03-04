@@ -8,6 +8,9 @@ services:
       - "80:80"
       - "443:443"
       - "2020:2020"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./caddyLogs/:/var/log/caddy/
     restart: unless-stopped
 
   varnish:

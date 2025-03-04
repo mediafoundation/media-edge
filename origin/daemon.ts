@@ -3,21 +3,18 @@ import { initCaddy, checkQueue, checkCaddy } from "./services/caddy";
 import { checkBandwidth, initBandwidth } from "./services/bandwidth";
 import { resetPurgeLog } from './services/varnish';
 import { resetDB, createRelationsBetweenTables } from "./utils/resetDB";
-import {Sdk, Blockchain, validChains, WalletUtils, http} from "media-sdk";
+import { Sdk, Blockchain, validChains, WalletUtils, http } from "media-sdk";
 import { CaddyController } from "./controllers/caddyController";
 import { checkEvents } from "./services/events";
-import {env} from "./config/env";
-import {networks} from "./config/networks";
-import {providerData, providerState} from "./models/providerState"
+import { env } from "./config/env";
+import { providerData, providerState } from "./models/providerState"
 import ExpressProvider from "./services/ExpressProvider"
 import CertsProvider from "./services/CertsProvider"
+import { Network } from "./config/interfaces";
+import { obtainAndRenewCertificates } from "./utils/certs";
 
 let lastReadBlock: { [key: string]: string } = {};
 
-interface Network {
-    id: string;
-    URL?: string;
-}
 
 const init = async (network: Network, address: string, privateKey: string): Promise<boolean> => {
     let databaseInitStatus = true;
@@ -79,10 +76,6 @@ const init = async (network: Network, address: string, privateKey: string): Prom
     return databaseInitStatus && caddyInitStatus && bandwidthInitStatus && blockReadStatus;
 }
 
-const filteredNetworks = (ids: number[], networks: any[]): any[] => {
-    return networks.filter(element => ids.includes(element.id));
-}
-
 async function start() {
     await createRelationsBetweenTables();
     for (let i = 0; i < env.providers.length; i++) {
@@ -108,14 +101,11 @@ async function start() {
         }
 
         providerState[address] = {privateKey: privateKey};
-        providerData[privateKey] = {
-          a_record: env.providers[i].a_record, 
-          cname: env.providers[i].cname
-        };
+        providerData[privateKey] = env.providers[i];
 
 
-        const networksFiltered = filteredNetworks(env.providers[i].supportedChains, networks);
-        for (const CURRENT_NETWORK of networksFiltered) {
+        const networks = env.providers[i].supportedChains;
+        for (const CURRENT_NETWORK of networks) {
             console.log(CURRENT_NETWORK);
 
             let initResult = await init(CURRENT_NETWORK, address, privateKey);
@@ -150,6 +140,13 @@ async function start() {
                 await resetPurgeLog();
             }, 24 * 7 * 60 * 60 * 1000);
         }
+        //obtain all wildcard certificates for this provider
+        const updatedDomains = env.providers[i].domains.map(domain => ({
+            ...domain,
+            host: `*.${domain.host}`,
+        }));
+
+        await obtainAndRenewCertificates(updatedDomains);
     }
 }
 

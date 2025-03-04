@@ -1,11 +1,8 @@
 # Usa una imagen base de Caddy para la ejecución
-FROM caddy:2.8
+FROM caddy:2.9.1
 
 COPY ./caddy /usr/bin/caddy
 RUN chmod +x /usr/bin/caddy
-
-# Copia los archivos de configuración
-COPY ./Caddyfile /etc/caddy/Caddyfile
 
 # Exponer el puerto 80 y 443
 EXPOSE 80 443 2020

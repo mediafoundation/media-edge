@@ -126,8 +126,8 @@
   when: inventory_hostname in groups["origin"]
 
 - name: Copy caddy edge service file to /etc/systemd/system/caddy.service
-  template:
-    src: files/edge/caddy/caddy.service.j2
+  copy:
+    src: files/edge/caddy/caddy.service
     dest: /etc/systemd/system/caddy.service
     owner: root
     group: root
@@ -135,8 +135,8 @@
   when: inventory_hostname in groups["edge"]
 
 - name: Copy caddy origin service file to /etc/systemd/system/caddy.service
-  template:
-    src: files/origin/caddy/caddy.service.j2
+  copy:
+    src: files/origin/caddy/caddy.service
     dest: /etc/systemd/system/caddy.service
     owner: root
     group: root

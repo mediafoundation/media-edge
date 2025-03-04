@@ -34,11 +34,9 @@ let initCaddy = async function (network: any, privateKey: string) {
 
     await CaddyController.addRecords(matchDealResources, caddyRecords, network, privateKey);
 
-    let caddyFile = await CaddyController.getRecords();
-
     let difference = await CaddyController.compareDbAndCaddyData(
         dealsFromDB.map((deal: any) => deal.id),
-        caddyFile.map((obj: any) => obj['@id']).filter((id: any) => id)
+        caddyRecords.map((obj: any) => obj['@id']).filter((id: any) => id)
     );
 
     for (const deal of difference) {

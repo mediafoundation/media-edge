@@ -19,6 +19,7 @@ const Deal = sequelize.define("Deals",
                 key: 'id'
             }*/
         },
+        provider: DataTypes.STRING,
         totalPayment: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
         blockedBalance: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),
         pricePerSecond: DataTypes.DECIMAL(DECIMALS_DIGITS, 0),

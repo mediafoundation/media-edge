@@ -1,9 +1,7 @@
-import express, { Application } from "express"
-import cors from "cors"
-import {Server} from "node:http"
-import apiRouter from "./api"
-import {certsRouter, getDomains } from "./certificates"
-import {challengesPath} from "../utils/certs"
+import express, { Application } from "express";
+import { Server } from "node:http";
+import { certsRouter, getDomains } from "./certificates";
+import { challengesPath } from "../utils/certs";
 
 class CertsProvider {
     public express: Application

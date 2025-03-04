@@ -8,6 +8,7 @@
   "dependencies": {
     "@elastic/elasticsearch": "^8.7.0",
     "acme-client": "^5.0.0",
+    "acme-dns-01-cloudflare": "^1.2.5",
     "axios": "^0.21.1",
     "basic-auth": "^2.0.1",
     "bignumber.js": "^9.0.1",

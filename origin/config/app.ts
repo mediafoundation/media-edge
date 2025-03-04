@@ -1,11 +1,12 @@
 import {env} from "./env"
 
 const getHosts = (subdomain) => {
-  console.log(env.hosts)
-  let hostnames = []
-  for(const host of env.hosts) {
-    hostnames.push(`${subdomain}.${host}`)
-  }
+    let hostnames = []
+    for(const provider of env.providers) {
+        for(const host of provider.domains) {
+            hostnames.push(`${subdomain}.${host}`)
+        }
+    }
   return hostnames
 }
 function createRoute(name, dialAddress) {
@@ -50,8 +51,6 @@ let caddyInitialApps = {
               ],
               "routes": [
                   createRoute("api", "origin:8080"),
-                  createRoute("appdev", "localhost:3000"),
-                  createRoute("swaptest", "localhost:3002")
               ],
               "tls_connection_policies": [{}]
           }
@@ -60,16 +59,5 @@ let caddyInitialApps = {
 };
 
 export const appConfig = {
-  media: {
-    //minimum_amount: env.minimum_amount
-  },
-  server: {
-    env: "development",
-    url: "http://127.0.0.1",
-    httpPort: 8080,
-    httpsPort: 443,
-    privateKey: "/etc/letsencrypt/live/xxxx/privkey.pem",
-    certificate: "/etc/letsencrypt/live/xxxx/cert.pem"
-  },
   caddyInitialApps: caddyInitialApps
 }

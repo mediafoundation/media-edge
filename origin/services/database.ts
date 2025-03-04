@@ -145,11 +145,12 @@ export const initDatabase = async function (network, sdkInstance: Sdk, address: 
 
 
     // Update records in caddy if needed
-    for (const resource of resourcesToBeUpdatedInCaddy) {
-        for (const deal of deals) {
-            await CaddyController.upsertRecord({resource: resource, deal: deal}, network, privateKey)
-        }
-    }
+    
+    // for (const resource of resourcesToBeUpdatedInCaddy) {
+    //     for (const deal of deals) {
+    //         await CaddyController.upsertRecord({resource: resource, deal: deal}, privateKey)
+    //     }
+    // }
 }
 
 function compareOldAndNewResourceOnDB(obj1, obj2) {

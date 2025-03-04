@@ -3,37 +3,35 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import querystring from "querystring";
-import {env} from "../config/env";
+import { env } from "../config/env";
+import { getDNSProvider } from "../services/dnsProviders/factory";
+import { Domain } from "../config/interfaces";
 
-const challengesPath = `/usr/src/app/challenges`;
-const certsPath = `/usr/src/app/certs`;
-
-enum CertStatus {
+export enum CertStatus {
   VALID = "valid",
   FAILED = "failed",
   OBTAINED = "obtained"
 }
 
-interface Issuer {
-  name: string;
-  url: string;
-}
+export const challengesPath = `/usr/src/app/challenges`;
+const certsPath = `/usr/src/app/certs`;
 
-const issuers: Issuer[] = [
+// List of ACME issuers.
+const issuers: { name: string; url: string }[] = [
   { name: "Let's Encrypt", url: acme.directory.letsencrypt.production },
   { name: "ZeroSSL", url: "https://acme.zerossl.com/v2/DV90" },
   { name: "Buypass Go SSL", url: "https://api.buypass.com/acme/directory" },
-  // Add more ACME endpoints as needed...
 ];
 
+// Check if an existing certificate is valid.
 function checkCertificateValidity(certificatePath: string, host: string): boolean {
   try {
     const certData = fs.readFileSync(certificatePath, "utf-8");
     const cert = new crypto.X509Certificate(certData);
     const currentDate = new Date();
-
     const oneWeekAway = new Date();
     oneWeekAway.setDate(oneWeekAway.getDate() + 7);
+
     if (currentDate >= new Date(cert.validFrom) && new Date(cert.validTo) <= oneWeekAway) {
       console.log("The SSL certificate is less than one week away from expiring. Time to issue a new certificate.");
       return false;
@@ -50,6 +48,7 @@ function checkCertificateValidity(certificatePath: string, host: string): boolea
   }
 }
 
+// Generate External Account Binding credentials for ZeroSSL.
 async function generateEABCredentials(email?: string, apiKey?: string): Promise<{ kid: string; hmacKey: string }> {
   const zerosslAPIBase = "https://api.zerossl.com/acme";
   const endpoint = apiKey
@@ -90,20 +89,26 @@ async function generateEABCredentials(email?: string, apiKey?: string): Promise<
   }
 }
 
-interface Domain {
-  host: string;
+// Compute the TXT record value required for DNS-01 challenge.
+export function getDNSRecordValue(keyAuthorization: string): string {
+  const hash = crypto.createHash("sha256").update(keyAuthorization).digest();
+  return hash.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-async function obtainAndRenewCertificates(domains: Domain[]): Promise<void> {
+// Temporary storage for DNS record IDs keyed by challenge token.
+const dnsRecordIds = new Map<string, string>();
+
+export async function obtainAndRenewCertificates(domains: Domain[]): Promise<void> {
   for (const domain of domains) {
     await obtainAndRenewCertificate(domain);
   }
 }
 
-async function obtainAndRenewCertificate(domain: Domain): Promise<CertStatus> {
-  const certPath = path.join(certsPath, `${domain.host}`, `${domain.host}.crt`);
-  const keyPath = path.join(certsPath, `${domain.host}`, `${domain.host}.key`);
-  const jsonPath = path.join(certsPath, `${domain.host}`, `${domain.host}.json`);
+export async function obtainAndRenewCertificate(domain: Domain): Promise<CertStatus> {
+  const certPath = path.join(certsPath, domain.host, `${domain.host}.crt`);
+  const keyPath = path.join(certsPath, domain.host, `${domain.host}.key`);
+  const jsonPath = path.join(certsPath, domain.host, `${domain.host}.json`);
+  const challengeType = domain.dns_provider ? "dns-01" : "http-01";
 
   try {
     if (fs.existsSync(certPath) && fs.existsSync(keyPath) && fs.existsSync(jsonPath)) {
@@ -115,6 +120,7 @@ async function obtainAndRenewCertificate(domain: Domain): Promise<CertStatus> {
       }
     }
 
+    // Loop through the defined issuers.
     for (const issuer of issuers) {
       try {
         console.log(`Obtaining certificate for ${domain.host} from ${issuer.name} / ${issuer.url}`);
@@ -123,37 +129,45 @@ async function obtainAndRenewCertificate(domain: Domain): Promise<CertStatus> {
           accountKey: await acme.crypto.createPrivateKey(),
           externalAccountBinding: issuer.name === "ZeroSSL" ? await generateEABCredentials() : undefined,
         });
-        const [key, csr] = await acme.crypto.createCsr({
-          commonName: String(domain.host),
-        });
+        const [key, csr] = await acme.crypto.createCsr({ commonName: domain.host });
         const cert = await client.auto({
           csr,
           email: env.email,
           termsOfServiceAgreed: true,
-          challengePriority: ["http-01"],
+          challengePriority: [challengeType],
           challengeCreateFn: async (authz, challenge, keyAuthorization) => {
-            const filePath = path.join(
-              challengesPath,
-              challenge.token
-            );
-            fs.writeFileSync(filePath, keyAuthorization);
-            console.log("Written challenge");
+            if (challengeType === "dns-01") {
+              // For DNS-01, use the DNS provider.
+              const dnsProvider = await getDNSProvider(domain);
+              const recordId = await dnsProvider.setChallenge(keyAuthorization);
+              dnsRecordIds.set(challenge.token, recordId);
+              console.log(`Set DNS challenge record with ID ${recordId}`);
+            } else {
+              // For HTTP-01, write the challenge file.
+              const filePath = path.join(challengesPath, challenge.token);
+              fs.writeFileSync(filePath, keyAuthorization);
+              console.log("Written HTTP challenge file");
+            }
           },
-          challengeRemoveFn: async (authz, challenge) => {
-            const filePath = path.join(
-              challengesPath,
-              challenge.token
-            );
-            fs.unlinkSync(filePath);
+          challengeRemoveFn: async (authz, challenge, keyAuthorization) => {
+            if (challengeType === "dns-01") {
+              const dnsProvider = await getDNSProvider(domain);
+              await dnsProvider.removeChallenge(keyAuthorization);
+              dnsRecordIds.delete(challenge.token);
+              console.log(`Removed DNS challenge for token ${challenge.token}`);
+            } else {
+              const filePath = path.join(challengesPath, challenge.token);
+              fs.unlinkSync(filePath);
+              console.log("Removed HTTP challenge file");
+            }
           },
         });
-        if (!fs.existsSync(path.join(certsPath, `${domain.host}`))) {
-          fs.mkdirSync(path.join(certsPath, `${domain.host}`), { recursive: true });
-        }
-        const json = `{"sans": ["${domain.host}"],"issuer_data": {"url": "https://media.network/"}}`;
+
+        fs.mkdirSync(path.join(certsPath, domain.host), { recursive: true });
+        const jsonData = JSON.stringify({ sans: [domain.host], issuer_data: { url: issuer.url } });
         fs.writeFileSync(certPath, cert);
         fs.writeFileSync(keyPath, key);
-        fs.writeFileSync(jsonPath, json);
+        fs.writeFileSync(jsonPath, jsonData);
         console.log(`Certificate for ${domain.host} obtained and saved.`);
         return CertStatus.OBTAINED;
       } catch (error) {
@@ -167,5 +181,3 @@ async function obtainAndRenewCertificate(domain: Domain): Promise<CertStatus> {
 
   return CertStatus.FAILED;
 }
-
-export { obtainAndRenewCertificates, obtainAndRenewCertificate, challengesPath, CertStatus };

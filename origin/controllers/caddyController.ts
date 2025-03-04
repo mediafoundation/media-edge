@@ -51,11 +51,11 @@ export class CaddyController {
         })
     }
 
-    static async newObject(res, deal, network, privateKey: string){
+    static async newObject(res, deal, privateKey: string){
         let hosts = []
 
-        for(const host of env.hosts){
-            hosts.push(`${generateSubdomain(env.MARKETPLACE_ID, deal.id, privateKey)}.${host}`)
+        for(const domain of providerData[privateKey].domains){
+            hosts.push(`${generateSubdomain(env.MARKETPLACE_ID, deal.id, privateKey)}.${domain.host}`)
         }
 
         let transport = res.protocol === "https" ?
@@ -114,7 +114,7 @@ export class CaddyController {
         let payload = []
         //let domains = []
         for(const item of dealsResources) {
-            let caddyData = await this.newObject(item.resource, item.deal, network, privateKey)
+            let caddyData = await this.newObject(item.resource, item.deal, privateKey)
             let dealInFile = caddyFile.find(o => o["@id"] === item.deal.id);
             //if resource is not on caddyfile already, add to payload
             if(!dealInFile) {
@@ -127,7 +127,7 @@ export class CaddyController {
                 }
                 payload.push(caddyData)
             } else {
-                await this.upsertRecord(item, /* dealInFile, */ network, privateKey)
+                await this.upsertRecord(item, privateKey)
             }
         }
 
@@ -152,7 +152,7 @@ export class CaddyController {
 
     }
 
-    static async upsertRecord(item, network, privateKey){
+    static async upsertRecord(item, privateKey){
 
         //console.log("Item on upsert record", item)
 
@@ -168,7 +168,7 @@ export class CaddyController {
         await this.deleteFromAllQueuesByDeal(item.deal.id)
 
         //create Caddy object required to be posted on caddyFile
-        let newCaddyData = await this.newObject(item.resource, item.deal, network, privateKey)
+        let newCaddyData = await this.newObject(item.resource, item.deal, privateKey)
 
         //if the resource has a custom cname
         if(item.domains.length !== 0) {
@@ -363,8 +363,14 @@ export class CaddyController {
                     console.log("Item on check queue", item)
                     if (env.debug) console.log(`Retrying to apply custom domain ${item.item.domain} (${item.retry})`, item);
                     try{
-                        const providerMetadata = providerData[privateKey]
-                        let hostValid = await this.isRecordPointingCorrectly(item.item.domain, providerMetadata.a_record, providerMetadata.cname);
+                        //TODO: in order to allow providers to use multiple domains, this needs to be refactored
+                        const domain = providerData[privateKey].domains[0];
+                        let hostValid = await this.isRecordPointingCorrectly(
+                            item.item.domain, 
+                            domain.a_record, 
+                            domain.cname
+                        );
+                        /////////////////////////////////////
                         if(hostValid){
                             let targetDomain = getHostName(item.item.domain)
                             let expectedValue = generateTXTRecord(item.owner, getHostName(item.item.domain), privateKey)
@@ -444,7 +450,7 @@ export class CaddyController {
         }
     }
 
-    static async checkCname(targetDomain,expectedDomain){
+    static async checkCname(targetDomain, expectedDomain){
         try {
             let response = await resolver.query(targetDomain, 'CNAME')
             if(response.answers.length > 0){
@@ -460,13 +466,17 @@ export class CaddyController {
         }
     }
 
-    static async checkARecord(targetDomain,expectedDomain){
+    static async checkARecord(targetDomain, ipAddresses){
         try {
             let response = await resolver.query(targetDomain, 'A')
             if(response.answers.length > 0){
                 let answers = [];
                 response.answers.forEach(ans => answers.push(ans.data))
-                return answers.includes(expectedDomain);
+                //return answers.includes(ipAddresses);
+                // compare if the ips in the results are the same than ipAddresses
+                if (this.areArraysEqual(answers, ipAddresses)) {
+                    return true
+                }
             }
             return false
         } catch (e) {
@@ -500,10 +510,7 @@ export class CaddyController {
       let hostValid = false
 
       if(isA) {
-          for (const aElement of a_record) {
-              hostValid = await this.checkARecord(targetDomain, aElement)
-              if(hostValid) break;
-          }
+          hostValid = await this.checkARecord(targetDomain, a_record)
       } else {
           hostValid = await this.checkCname(targetDomain, cname)
       }

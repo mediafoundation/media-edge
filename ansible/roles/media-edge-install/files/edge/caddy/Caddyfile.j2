@@ -1,49 +1,15 @@
 {
     order bandwidth before header
-    auto_https disable_redirects
-    on_demand_tls {
-        ask http://{{ origin_ips[0] }}:7878/domains
-    }
+    #auto_https disable_redirects
+    #on_demand_tls {
+    #    ask http://{{ origin_ips[0] }}:7878/domains
+    #}
+    auto_https off
     log {
         format elastic
         output file /var/log/caddy/admin_access.log
     }
-    email {{ dns_config.email }}
 }
-
-{% for domain in dns_config.domains %}
-*.{{domain}} {
-    header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
-    reverse_proxy http://varnish-edge:8080 {
-        @hasBandwidthLimit header X-Bandwidth-Limit Yes
-        handle_response @hasBandwidthLimit {
-            bandwidth {
-                limit 50000
-            }
-            reverse_proxy http://varnish-edge:8080
-        }
-    }
-    {% if dns_config.provider is defined %}
-    tls {
-        issuer acme {
-            dir https://acme-v02.api.letsencrypt.org/directory
-            dns {{ dns_config.provider }} {env.CF_API_TOKEN}
-            resolvers 1.1.1.1
-        }
-        issuer acme {
-            dir https://acme.zerossl.com/v2/DV90
-            dns {{ dns_config.provider }} {env.CF_API_TOKEN}
-            resolvers 1.1.1.1
-        }
-    }
-    {% endif %}
-    log {
-        format elastic
-        output file /var/log/caddy/access.log
-    }
-}
-{% endfor %}
-
 
 https:// {
     header Server "MediaEdge v{{ media_edge_version }} | https://media.network"

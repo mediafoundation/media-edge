@@ -24,11 +24,6 @@
         src: files/origin/config/env.ts.j2
         dest: /root/containers/origin/config/env.ts
 
-    - name: Create networks.ts file
-      template:
-        src: files/origin/config/networks.ts.j2
-        dest: /root/containers/origin/config/networks.ts
-
     - name: Build image
       shell: docker build -t origin -f Dockerfile.node .
       args:
