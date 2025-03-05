@@ -14,8 +14,8 @@ services:
     restart: unless-stopped
 
   varnish:
-    container_name: varnish-origin
     image: varnish-origin
+    container_name: varnish-origin
     env_file:
       - .env
     ports:
@@ -60,9 +60,10 @@ services:
     volumes:
       - ./logstashSettings/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
       - ./logstashSettings/logstash.yml:/usr/share/logstash/config/logstash.yml
+
   origin:
-    container_name: origin
     image: origin
+    container_name: origin
     ports:
       - "8080:8080"
       - "7878:7878"

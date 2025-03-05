@@ -7,6 +7,7 @@ import { Sdk, Blockchain, validChains, WalletUtils, http } from "media-sdk";
 import { CaddyController } from "./controllers/caddyController";
 import { checkEvents } from "./services/events";
 import { env } from "./config/env";
+import { Domain } from "./config/interfaces";
 import { providerData, providerState } from "./models/providerState"
 import ExpressProvider from "./services/ExpressProvider"
 import CertsProvider from "./services/CertsProvider"
@@ -22,25 +23,8 @@ const init = async (network: Network, address: string, privateKey: string): Prom
     let bandwidthInitStatus = true;
     let blockReadStatus = true;
 
-    const resetIndex = process.argv.indexOf('--reset');
 
     let sdk = new Sdk({ chain: validChains[network.id], transport: [http(network.URL)] });
-
-    if (resetIndex !== -1) {
-        try {
-            await resetDB();
-        } catch (e) {
-            console.log("Error syncing db", e);
-            databaseInitStatus = false;
-        }
-
-        try {
-            await CaddyController.initApps();
-        } catch (e) {
-            console.log("Error syncing caddy", e);
-            caddyInitStatus = false;
-        }
-    }
 
     try {
         await initDatabase(network, sdk, address, privateKey);
@@ -77,6 +61,21 @@ const init = async (network: Network, address: string, privateKey: string): Prom
 }
 
 async function start() {
+
+    const resetIndex = process.argv.indexOf('--reset');
+    
+    if (resetIndex !== -1) {
+        try {
+            await resetDB();
+        } catch (e) {
+            console.log("Error syncing db", e);
+        }
+
+    }
+
+    await CaddyController.initApps();
+
+
     await createRelationsBetweenTables();
     for (let i = 0; i < env.providers.length; i++) {
         let address: `0x${string}`;
@@ -128,34 +127,38 @@ async function start() {
             checkQueue(privateKey);
 
             setInterval(async () => {
-                await checkCaddy(privateKey);
+                checkCaddy(privateKey);
             }, 60000);
 
             setInterval(async () => {
                 console.log("Start checking bandwidth");
-                await checkBandwidth();
+                //checkBandwidth();
             }, 60000);
 
             setInterval(async () => {
-                await resetPurgeLog();
+                resetPurgeLog();
             }, 24 * 7 * 60 * 60 * 1000);
         }
         //obtain all wildcard certificates for this provider
-        const updatedDomains = env.providers[i].domains.map(domain => ({
+        const updatedDomains = env.providers[i].domains.map((domain: Domain) => ({
             ...domain,
             host: `*.${domain.host}`,
         }));
 
-        await obtainAndRenewCertificates(updatedDomains);
+        obtainAndRenewCertificates(updatedDomains);
     }
 }
 
-CertsProvider.init();
+CertsProvider.init(); // Certificate manager
 
 start();
 
-// This requires fixing asap. 
-setTimeout(() => {
-  console.log("Starting API");
-  ExpressProvider.init()
-}, 30000);
+//this should start once the records are set in DB.
+
+ExpressProvider.init(); // API (for clients)
+
+// // This requires fixing asap. 
+// setTimeout(() => {
+//   console.log("Starting API");
+//   ExpressProvider.init()
+// }, 30000);

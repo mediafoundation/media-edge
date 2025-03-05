@@ -4,6 +4,7 @@ export interface Domain {
     cname?: string;
     dns_provider?: "cloudflare" | "route53" | "google" | "digitalocean";
     env_vars?: any;
+    email?: string;
 }
 
 export interface Provider {
@@ -29,7 +30,6 @@ export interface Env {
     dbPort: number;
     dbDialect: "postgres" | "mysql" | "sqlite" | "mariadb" | "mssql";
     caddyUrl: string;
-    email?: string;
     elasticSearchUrl: string;
     debug?: boolean;
     providers: Provider[];

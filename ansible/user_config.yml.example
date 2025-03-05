@@ -15,12 +15,9 @@
 # The `host` field specifies the domain name where you will host your services. This domain will be used to create endpoints for your clients, and each service you sell will have a unique subdomain under it.
 # The `dns_provider` field specifies the DNS provider you are using. Check all available providers and settings here: https://github.com/mediafoundation/media-edge/tree/main/origin/services/dnsProviders
 # The `env_vars` field specifies the environment variables needed to authenticate with the DNS provider. The format is "KEY=VALUE". If you need to provide multiple variables, list them separately.
+# The `email` field specifies the email address associated with the domain. This email address will be used to create EAB credentials, which are required by ZeroSSL to issue SSL certificates.
 # The `a_record` field specifies the IP addresses of your edge servers. You can add multiple IP addresses to this field. These IP addresses will be sent to the client when they add custom domains that are root domains (not subdomains) to their account.
 # The `cname` field specifies the hostname that you will provide to your clients so they can use custom domains (when the custom domain is a subdomain and not a root domain). Adding an A record for `*.yourdomain.com` that points to all your edge IPs is mandatory; if you choose something such as `cname.yourdomain.com`, it should work automatically. If you choose a different hostname, you will need to add an extra A record for it, pointing to all your edge IPs. (It could also be on a complete different domain than the one you are using for the `host` field, as long as it points to the correct IPs.)
-
-# Leave `dns_provider` and `env_vars` commented out to disable HTTPS (HTTP only).
-# At least one domain is required; otherwise, installation will fail. This domain is used to create endpoints for your clients, and each service you sell will have a unique subdomain under it.
-
 
 # Example configuration:
 providers:
@@ -40,16 +37,17 @@ providers:
     #     URL: "https://sepolia.base.org"
     domains:
       - 
-        host: "yourdomain.com"
-        dns_provider: "cloudflare"
+        host: yourdomain.com
+        dns_provider: cloudflare
         env_vars:
-          - CF_API_TOKEN=<token>
-        # - CF_API_EMAIL=<email>
-        # - CF_API_KEY=<key>
+          CF_API_TOKEN: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        # CF_API_EMAIL: admin@yourdomain.com
+        # CF_API_KEY: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        email: admin@yourdomain.com
         a_record:
           - "123.45.67.89"
           - "234.56.78.90"
-        cname: "cname.yourdomain.com"
+        cname: cname.yourdomain.com
 
 # Select the marketplace ID. The default marketplace for Media Network is 1.
 marketplace_id: 1

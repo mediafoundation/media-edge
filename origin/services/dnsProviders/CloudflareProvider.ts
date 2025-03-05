@@ -1,6 +1,8 @@
-import acmeDnsCloudflare from "acme-dns-01-cloudflare";
 import { DNSProvider } from "./DNSProvider";
 import { Domain } from "../../config/interfaces";
+
+// Import the plugin via require (CommonJS)
+const acmeDnsCloudflare = require("acme-dns-01-cloudflare");
 
 export class CloudflareProvider implements DNSProvider {
   private dns: any;
@@ -11,12 +13,12 @@ export class CloudflareProvider implements DNSProvider {
 
   /**
    * Factory method to create a CloudflareProvider.
-   * The user configuration is simplified: you supply either an API token or email + global API key,
-   * plus the domain (which will be used for zone lookup internally by the package).
+   * It uses the domain's env_vars to configure the provider.
+   * The user can supply either an API token or email + global API key.
    */
   public static async create(domain: Domain): Promise<CloudflareProvider> {
     const env = domain.env_vars;
-    const config: any = { ttl: 120, zone: domain };
+    let config: any = {}; // Only credentials are needed
 
     if (env.CF_API_TOKEN) {
       config.token = env.CF_API_TOKEN;
@@ -27,20 +29,35 @@ export class CloudflareProvider implements DNSProvider {
       throw new Error("Missing Cloudflare credentials: provide either CF_API_TOKEN or both CF_EMAIL and CF_API_KEY");
     }
 
-    // Initialize the acme-dns-01-cloudflare adapter.
-    const dns = acmeDnsCloudflare(config);
-    return new CloudflareProvider(dns);
+    //config.verifyPropagation = true;
+    config.verbose = true;
+
+    // Instantiate the acme-dns-01-cloudflare adapter using "new".
+    console.log("acme-dns-01-cloudflare", acmeDnsCloudflare);
+    const dns = new acmeDnsCloudflare(config);
+    console.log("Cloudflare DNS provider initialized", dns);
+    const provider = new CloudflareProvider(dns);
+    console.log("Cloudflare provider created", provider);
+    return provider;
   }
 
-  async setChallenge(keyAuthorization: string): Promise<string> {
-    // The acme-dns-01-cloudflare package is designed to be compatible with ACME.js/Greenlock,
-    // so we simply pass the keyAuthorization.
-    // Assume the returned object has an "id" property that we can use to remove the record later.
-    const result = await this.dns.setChallenge(keyAuthorization);
-    return result.id;
+  async set(keyAuthorization: string, domain: Domain): Promise<void> {
+    const host = domain.host.replace(/^\*\./, "");
+    await this.dns.set({ challenge: {
+      // The plugin will compute dnsPrefix and dnsZone internally.
+      dnsAuthorization: keyAuthorization,
+      //remove *. from the *.domain.host
+      dnsZone: host,
+      dnsPrefix: "_acme-challenge"
+    }});
   }
 
-  async removeChallenge(keyAuthorization: string): Promise<void> {
-    await this.dns.removeChallenge(keyAuthorization);
+  async remove(keyAuthorization: string, domain: Domain): Promise<void> {
+    const host = domain.host.replace(/^\*\./, "");
+    await this.dns.remove({ challenge: {
+      dnsAuthorization: keyAuthorization,
+      dnsZone: host,
+      dnsPrefix: "_acme-challenge"
+    }});
   }
 }

@@ -3,8 +3,8 @@ import {env} from "./env"
 const getHosts = (subdomain) => {
     let hostnames = []
     for(const provider of env.providers) {
-        for(const host of provider.domains) {
-            hostnames.push(`${subdomain}.${host}`)
+        for(const domain of provider.domains) {
+            hostnames.push(`${subdomain}.${domain.host}`)
         }
     }
   return hostnames

@@ -9,7 +9,7 @@
     "@elastic/elasticsearch": "^8.7.0",
     "acme-client": "^5.0.0",
     "acme-dns-01-cloudflare": "^1.2.5",
-    "axios": "^0.21.1",
+    "axios": "^1.8.1",
     "basic-auth": "^2.0.1",
     "bignumber.js": "^9.0.1",
     "cors": "^2.8.5",

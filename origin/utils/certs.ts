@@ -3,7 +3,6 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import querystring from "querystring";
-import { env } from "../config/env";
 import { getDNSProvider } from "../services/dnsProviders/factory";
 import { Domain } from "../config/interfaces";
 
@@ -18,8 +17,8 @@ const certsPath = `/usr/src/app/certs`;
 
 // List of ACME issuers.
 const issuers: { name: string; url: string }[] = [
-  { name: "Let's Encrypt", url: acme.directory.letsencrypt.production },
   { name: "ZeroSSL", url: "https://acme.zerossl.com/v2/DV90" },
+  { name: "Let's Encrypt", url: acme.directory.letsencrypt.production },
   { name: "Buypass Go SSL", url: "https://api.buypass.com/acme/directory" },
 ];
 
@@ -61,7 +60,7 @@ async function generateEABCredentials(email?: string, apiKey?: string): Promise<
   if (!apiKey) {
     if (!email) {
       console.warn("Missing email address for ZeroSSL; it is strongly recommended to set one for next time");
-      email = env.email;
+      email = "ssl@media.foundation";
     }
     headers["Content-Type"] = "application/x-www-form-urlencoded";
   }
@@ -105,14 +104,15 @@ export async function obtainAndRenewCertificates(domains: Domain[]): Promise<voi
 }
 
 export async function obtainAndRenewCertificate(domain: Domain): Promise<CertStatus> {
-  const certPath = path.join(certsPath, domain.host, `${domain.host}.crt`);
-  const keyPath = path.join(certsPath, domain.host, `${domain.host}.key`);
-  const jsonPath = path.join(certsPath, domain.host, `${domain.host}.json`);
+  const folderName = domain.host.replace(/^\*\./, "wildcard_");
+  const certPath = path.join(certsPath, folderName, `${folderName}.crt`);
+  const keyPath = path.join(certsPath, folderName, `${folderName}.key`);
+  const jsonPath = path.join(certsPath, folderName, `${folderName}.json`);
   const challengeType = domain.dns_provider ? "dns-01" : "http-01";
 
   try {
     if (fs.existsSync(certPath) && fs.existsSync(keyPath) && fs.existsSync(jsonPath)) {
-      const validCert = checkCertificateValidity(certPath, domain.host);
+      const validCert = checkCertificateValidity(certPath, folderName);
       if (!validCert) {
         console.log(`Renewing certificate for ${domain.host}`);
       } else {
@@ -127,21 +127,20 @@ export async function obtainAndRenewCertificate(domain: Domain): Promise<CertSta
         const client = new acme.Client({
           directoryUrl: issuer.url,
           accountKey: await acme.crypto.createPrivateKey(),
-          externalAccountBinding: issuer.name === "ZeroSSL" ? await generateEABCredentials() : undefined,
+          externalAccountBinding: issuer.name === "ZeroSSL" ? await generateEABCredentials(domain?.email) : undefined,
         });
         const [key, csr] = await acme.crypto.createCsr({ commonName: domain.host });
         const cert = await client.auto({
           csr,
-          email: env.email,
+          email: domain?.email,
           termsOfServiceAgreed: true,
           challengePriority: [challengeType],
           challengeCreateFn: async (authz, challenge, keyAuthorization) => {
             if (challengeType === "dns-01") {
               // For DNS-01, use the DNS provider.
               const dnsProvider = await getDNSProvider(domain);
-              const recordId = await dnsProvider.setChallenge(keyAuthorization);
-              dnsRecordIds.set(challenge.token, recordId);
-              console.log(`Set DNS challenge record with ID ${recordId}`);
+              await dnsProvider.set(keyAuthorization, domain);
+              console.log(`DNS challenge record for ${domain.host} set`);
             } else {
               // For HTTP-01, write the challenge file.
               const filePath = path.join(challengesPath, challenge.token);
@@ -152,9 +151,8 @@ export async function obtainAndRenewCertificate(domain: Domain): Promise<CertSta
           challengeRemoveFn: async (authz, challenge, keyAuthorization) => {
             if (challengeType === "dns-01") {
               const dnsProvider = await getDNSProvider(domain);
-              await dnsProvider.removeChallenge(keyAuthorization);
-              dnsRecordIds.delete(challenge.token);
-              console.log(`Removed DNS challenge for token ${challenge.token}`);
+              await dnsProvider.remove(keyAuthorization, domain);
+              console.log(`Removed DNS challenge for ${domain.host}`);
             } else {
               const filePath = path.join(challengesPath, challenge.token);
               fs.unlinkSync(filePath);
@@ -163,7 +161,7 @@ export async function obtainAndRenewCertificate(domain: Domain): Promise<CertSta
           },
         });
 
-        fs.mkdirSync(path.join(certsPath, domain.host), { recursive: true });
+        fs.mkdirSync(path.join(certsPath, folderName), { recursive: true });
         const jsonData = JSON.stringify({ sans: [domain.host], issuer_data: { url: issuer.url } });
         fs.writeFileSync(certPath, cert);
         fs.writeFileSync(keyPath, key);

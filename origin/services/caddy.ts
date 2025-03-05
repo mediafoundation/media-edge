@@ -13,10 +13,7 @@ let caddyNeedsUpdate = false;
 
 let initCaddy = async function (network: any, privateKey: string) {
     let caddyRecords = await CaddyController.getRecords();
-    if (!caddyRecords) {
-        await CaddyController.initApps();
-        caddyRecords = await CaddyController.getRecords();
-    }
+
 
     let dealsFromDB = await DealsController.getDeals();
     let resourcesFromDB = await ResourcesController.getResources();
@@ -43,7 +40,7 @@ let initCaddy = async function (network: any, privateKey: string) {
         await CaddyController.deleteRecord(deal);
     }
 
-    await CaddyController.checkQueue(queues.Minutely, "Minutely", 60, privateKey);
+    CaddyController.checkQueue(queues.Minutely, "Minutely", 60, privateKey);
 };
 
 let checkDealsShouldBeActive = async function () {

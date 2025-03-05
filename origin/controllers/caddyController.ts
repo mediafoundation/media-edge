@@ -16,9 +16,6 @@ import {providerData} from "../models/providerState"
 
 const resolver = new doh.DohResolver('https://1.1.1.1/dns-query')
 
-
-
-
 export const queues = {
     Minutely: [],
     Hourly: [],
@@ -121,7 +118,6 @@ export class CaddyController {
                 //console.log("Item", item)
                 if(item.domains && item.domains.length !== 0) {
                     for (const domain of item.domains) {
-                      console.log("Domain", domain)
                       await this.addToQueue(queues.Minutely, domain.id, domain, item.resource.owner);
                     }
                 }
@@ -131,9 +127,6 @@ export class CaddyController {
             }
         }
 
-        //Add to caddy file
-        //console.log("Payload", payload.length, payload)
-        //console.log("Domains", domains.length, domains)
         try {
             await axios.post(
                 caddyRoutesUrl+"/...",
@@ -141,9 +134,7 @@ export class CaddyController {
                 caddyReqCfg
             )
             if (env.debug) console.log('Added to caddy:', payload.length, "deals")
-            /*for (const domain of domains) {
-                await this.patchRecord(domain)
-            }*/
+
         } catch (e){
             console.log("axios error", e)
             return false
@@ -259,7 +250,7 @@ export class CaddyController {
             //await Caddy.destroy({ where: { account:caddy.account }})
             return true
         } catch (e){
-            console.log("Error when deleting from caddy:", e)
+            if(env.debug) console.log("Error when deleting from caddy:", e)
             let data = e?.response?.data?.error;
             if(data.includes("unknown object")){
                 if(env.debug) console.log('Deal already deleted:', dealId)
