@@ -1,0 +1,70 @@
+- name: Crear directorio brick en servidores origin
+  file:
+    path: "/data/brick1"
+    state: directory
+
+- name: Iniciar contenedor GlusterFS server
+  docker_container:
+    name: "glusterfs-server"
+    image: "gluster/gluster-centos:latest"
+    state: started
+    restart_policy: always
+    privileged: true
+    volumes:
+      - "/data/brick1:/data/brick1"
+    command: /usr/sbin/glusterd -N
+
+  when: inventory_hostname in groups['origin']
+
+### 3. Configuración del GlusterFS Volume en el primer servidor origin
+- name: Crear peers de GlusterFS
+  command: >
+    docker exec glusterfs-server gluster peer probe {{ hostvars[item]['ansible_host'] }}
+  with_items: "{{ groups['origin'][1:] }}"
+  when: inventory_hostname == groups['origin'][0]
+
+- name: Crear el volumen GlusterFS
+  command: >
+    docker exec glusterfs-server gluster volume create cert_vol
+    {% if groups['origin'] | length > 1 %} replica {{ groups['origin'] | length }} {% endif %}
+    transport tcp
+    {% for host in groups['origin'] %}
+    {{ hostvars[host]['ansible_host'] }}:/data/brick1
+    {% endfor %}
+    force
+  register: create_volume
+  failed_when:
+    - "'already exists' not in create_volume.stderr"
+    - create_volume.rc != 0
+  when: inventory_hostname == groups['origin'][0]
+
+- name: Iniciar el volumen GlusterFS
+  command: docker exec glusterfs-server gluster volume start cert_vol
+  when: inventory_hostname == groups['origin'][0]
+
+### 4. Montar el volumen en nodos edge y origin
+- name: Instalar GlusterFS client en contenedor
+  docker_container:
+    name: "glusterfs-client"
+    image: "gluster/gluster-centos:latest"
+    state: started
+    restart_policy: always
+    volumes:
+      - "/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/:/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/"
+
+- name: Crear directorio de montaje
+  file:
+    path: "/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/"
+    state: directory
+    mode: '0755'
+
+- name: Montar el volumen GlusterFS
+  command: >
+    mount -t glusterfs {{ groups['origin'][0] }}:/cert_vol /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
+  when: inventory_hostname in groups['edge'] + groups['origin']
+
+- name: Añadir el montaje a /etc/fstab
+  lineinfile:
+    path: /etc/fstab
+    line: "{{ groups['origin'][0] }}:/cert_vol /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/ glusterfs defaults,_netdev 0 0"
+    state: present
