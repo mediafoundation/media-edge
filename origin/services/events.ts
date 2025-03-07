@@ -1,6 +1,5 @@
 import {env} from "../config/env";
 
-
 import {DealsController} from "../controllers/dealsController";
 
 import {ResourcesController} from "../controllers/resourcesController";
@@ -20,7 +19,7 @@ import {generateUniqueItemId, recoverOriginalDataFromUniqueDealId} from "../util
 import {sleep} from "../utils/sleep";
 
 import {Domains} from "../models/resources/Domains";
-import {networks} from "../config/networks";
+
 
 import {Blockchain, Encryption, EventsHandler, http, Marketplace, Resources, Sdk, validChains} from "media-sdk"
 import {providerState} from "../models/providerState"
@@ -34,9 +33,8 @@ export const checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     let cancelledDeals = undefined
     let acceptedDeals = undefined
     let addedBalance = undefined
-    const network = networks.find(network => network.id === CURRENT_NETWORK.id)
 
-    let sdk = new Sdk({chain: validChains[network.id], transport: [http(network.URL)]})
+    let sdk = new Sdk({chain: validChains[CURRENT_NETWORK.id], transport: [http(CURRENT_NETWORK.URL)]})
 
     let blockchain = new Blockchain(sdk)
     let blockNumber = await blockchain.getBlockNumber()
@@ -148,7 +146,7 @@ export const checkEvents = async (lastReadBlock, CURRENT_NETWORK) => {
     if(typeof addedBalance !== "undefined" && addedBalance.length > 0){
         for (const event of addedBalance) {
             try{
-                await manageAddedBalance(event.args._dealId, CURRENT_NETWORK.id)
+                await manageAddedBalance(event.args._dealId, CURRENT_NETWORK)
             }catch (e) {
                 if (e instanceof z.ZodError) {
                     console.error("Zod Metadata Validation failed on deal", event.args._dealId);
@@ -167,9 +165,7 @@ export const manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
 
     console.log("Data from event", dealId, CURRENT_NETWORK)
 
-    const network = networks.find(network => network.id === CURRENT_NETWORK.id)
-
-    let sdk = new Sdk({chain: validChains[network.id], transport: [http(network.URL)]})
+    let sdk = new Sdk({chain: validChains[CURRENT_NETWORK.id], transport: [http(CURRENT_NETWORK.URL)]})
 
     let marketplace = new Marketplace(sdk)
     let resourceInstance = new Resources(sdk)
@@ -323,9 +319,7 @@ export const manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
         let resource: any = await ResourcesController.getResourceById(generateUniqueItemId(Number(resourceId), CURRENT_NETWORK.id))
         if (resource !== false) {
 
-            const network = networks.find(network => network.id === CURRENT_NETWORK.id)
-
-            let sdk = new Sdk({chain: validChains[network.id], transport: [http(network.URL)]})
+            let sdk = new Sdk({chain: validChains[CURRENT_NETWORK.id], transport: [http(CURRENT_NETWORK.URL)]})
 
             let resources = new Resources(sdk)
             const address = await DealsController.getDealProvider(deals[0].dealId)
@@ -347,13 +341,13 @@ export const manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
 
             let data = JSON.parse(decrypted)
 
-            let resourceForDb = { id: generateUniqueItemId(Number(resourceFromEvm.id), network.id), owner: deals[0].client, ...data }
+            let resourceForDb = { id: generateUniqueItemId(Number(resourceFromEvm.id), CURRENT_NETWORK.id), owner: deals[0].client, ...data }
 
             if(data.domains) {
                 console.log("Domains from evm", data.domains, deals.map(deal => recoverOriginalDataFromUniqueDealId(deal.id).dealId.toString()))
                 let filteredDomainsForDeal = filterDomainsMatchingDeals(data.domains, deals.map((deal) => recoverOriginalDataFromUniqueDealId(deal.id).dealId.toString()))
                 console.log("Filtered domains", filteredDomainsForDeal)
-                filteredDomains.push({resourceId: generateUniqueItemId(Number(resource.id), network.id), domains: filteredDomainsForDeal})
+                filteredDomains.push({resourceId: generateUniqueItemId(Number(resource.id), CURRENT_NETWORK.id), domains: filteredDomainsForDeal})
             }
 
             console.log("Domains from db before filter", domainsFromDb)
@@ -392,7 +386,8 @@ export const manageResourceUpdated = async(resourceId, CURRENT_NETWORK) => {
                         resource: upsertResourceResult.instance,
                         deal: dealFromDB,
                         domains: caddyDomain
-                    },CURRENT_NETWORK, privateKey
+                    }, 
+                    privateKey
                 )
             }
         }
@@ -419,8 +414,7 @@ export const manageCancelledDeal = async (dealId, CURRENT_NETWORK) => {
     }
 }
 
-export const manageAddedBalance = async (dealId, chainId) => {
-    const network = networks.find(network => network.id === chainId)
+export const manageAddedBalance = async (dealId, network) => {
 
     let sdk = new Sdk({chain: validChains[network.id], transport: [http(network.URL)]})
 
@@ -428,7 +422,7 @@ export const manageAddedBalance = async (dealId, chainId) => {
     let deal = await marketplace.getDealById({marketplaceId: env.MARKETPLACE_ID, dealId: dealId})
     DealsController.parseDealMetadata(deal.terms.metadata)
     let formattedDeal = DealsController.formatDeal(deal)
-    await DealsController.upsertDeal(formattedDeal, chainId)
+    await DealsController.upsertDeal(formattedDeal, network.id)
 }
 
 /*let getId = (id, network) => {

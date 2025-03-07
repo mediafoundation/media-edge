@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   caddy:
-    image: mediafoundation/caddy-origin:v0.1
+    image: caddy-origin
     container_name: caddy-origin
     ports:
       - "80:80"
@@ -10,11 +8,12 @@ services:
       - "2020:2020"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./caddyLogs/:/var/log/caddy/
     restart: unless-stopped
 
   varnish:
+    image: varnish-origin
     container_name: varnish-origin
-    image: mediafoundation/varnish-origin:v0.1
     env_file:
       - .env
     ports:
@@ -22,6 +21,7 @@ services:
     volumes:
       - ./default.vcl:/etc/varnish/default.vcl
       - ./var/cache/varnish:/var/cache/varnish
+    restart: unless-stopped
 
   postgres:
     image: postgres:14
@@ -42,6 +42,7 @@ services:
     ports:
       - "9200:9200"
       - "9300:9300"
+    restart: unless-stopped
 
   kib01:
     image: docker.elastic.co/kibana/kibana:7.17.25
@@ -50,6 +51,7 @@ services:
       - "ELASTICSEARCH_HOSTS=http://es01:9200"
     ports:
       - "5601:5601"
+    restart: unless-stopped
 
   lg01:
     image: docker.elastic.co/logstash/logstash:7.17.25
@@ -59,13 +61,16 @@ services:
     volumes:
       - ./logstashSettings/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
       - ./logstashSettings/logstash.yml:/usr/share/logstash/config/logstash.yml
+    restart: unless-stopped
+
   origin:
-    container_name: origin
     image: origin
+    container_name: origin
     ports:
       - "8080:8080"
       - "7878:7878"
     volumes:
-      - /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/:/usr/src/app/certs/
+      - /etc/ssl/caddy/:/usr/src/app/certs/
     depends_on:
       - postgres
+    restart: unless-stopped

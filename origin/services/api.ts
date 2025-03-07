@@ -282,9 +282,7 @@ apiRouter.post('/getDNSConfig', async (req, res) => {
           console.log("Domain", getHostName(req.body.domain))
 
           const privateKey = providerState[provider].privateKey
-          const providerMetadata = providerData[privateKey]
-
-          console.log(privateKey)
+          const records = providerData[privateKey].domains[0]
 
           let generatedTxt = generateTXTRecord(owner, getHostName(req.body.domain), privateKey)
 
@@ -318,7 +316,7 @@ apiRouter.post('/getDNSConfig', async (req, res) => {
               type: 'CNAME',
               name: parsed.domain,
               subdomain: parsed.subdomain,
-              value: providerMetadata.cname,
+              value: records.cname,
               txtData,
               warning,
               patchedDomain
@@ -327,7 +325,7 @@ apiRouter.post('/getDNSConfig', async (req, res) => {
             res.json({
               type: 'A',
               name: parsed.domain,
-              value: providerMetadata.a_record,
+              value: records.a_record,
               txtData,
               warning,
               patchedDomain
@@ -400,7 +398,7 @@ apiRouter.post("/dealCancelled", async (req, res) => {
 apiRouter.post("/addedBalance", async (req, res) => {
   const {dealId, network} = req.body
   try {
-    await manageAddedBalance(dealId, network.id)
+    await manageAddedBalance(dealId, network)
     res.send('Balance added successfully!')
   } catch (e) {
     console.log(e)

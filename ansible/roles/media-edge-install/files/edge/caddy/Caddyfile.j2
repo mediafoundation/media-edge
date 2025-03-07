@@ -1,19 +1,46 @@
 {
     order bandwidth before header
-    auto_https disable_redirects
-    on_demand_tls {
-        ask http://{{ origin_ips[0] }}:7878/domains
-    }
+    auto_https off
     log {
         format elastic
         output file /var/log/caddy/admin_access.log
     }
-    email {{ dns_config.email }}
 }
 
-{% for domain in dns_config.domains %}
-*.{{domain}} {
-    header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
+http://localhost:8343 {
+  handle /certs {
+    @withServerName {
+        query server_name=*
+    }
+    handle @withServerName {
+        rewrite /{query.server_name}/{query.server_name}.pem
+        file_server {
+            root /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory
+        }
+    }
+    handle {
+        respond "Invalid domain" 400
+    }
+  }
+  handle /domain {
+    @withServerName {
+        query name=*
+    }
+    handle @withServerName {
+        rewrite /{query.name}/{query.name}.pem
+        file_server {
+            root /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory
+        }
+    }
+    handle {
+        respond "Invalid domain" 400
+    }
+  }
+}
+{% for provider in providers %}
+{% for domain in provider.domains %}
+*.{{domain.host}} {
+    header Server "MediaEdge v0.2 | https://media.network"
     reverse_proxy http://varnish-edge:8080 {
         @hasBandwidthLimit header X-Bandwidth-Limit Yes
         handle_response @hasBandwidthLimit {
@@ -23,27 +50,16 @@
             reverse_proxy http://varnish-edge:8080
         }
     }
-    {% if dns_config.provider is defined %}
     tls {
-        issuer acme {
-            dir https://acme-v02.api.letsencrypt.org/directory
-            dns {{ dns_config.provider }} {env.CF_API_TOKEN}
-            resolvers 1.1.1.1
-        }
-        issuer acme {
-            dir https://acme.zerossl.com/v2/DV90
-            dns {{ dns_config.provider }} {env.CF_API_TOKEN}
-            resolvers 1.1.1.1
-        }
+        get_certificate http http://localhost:8343/domain?name=wildcard_{{domain.host}}
     }
-    {% endif %}
     log {
         format elastic
         output file /var/log/caddy/access.log
     }
 }
 {% endfor %}
-
+{% endfor %}
 
 https:// {
     header Server "MediaEdge v{{ media_edge_version }} | https://media.network"
@@ -57,7 +73,7 @@ https:// {
         }
     }
     tls {
-        on_demand
+        get_certificate http http://localhost:8343/certs
     }
     log {
         format elastic

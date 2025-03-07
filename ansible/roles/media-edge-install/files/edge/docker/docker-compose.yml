@@ -1,25 +1,20 @@
-version: '3.8'
-
 services:
   caddy:
-    image: mediafoundation/caddy-edge:v0.1
+    image: caddy-edge
     container_name: caddy-edge
     ports:
       - "80:80"
       - "443:443"
       - "2020:2020"
     volumes:
-      - ./caddyLogs/:/var/log/caddy/
       - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./caddyLogs/:/var/log/caddy/
       - /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/:/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
-
-    env_file:
-      - .env.caddy
     restart: unless-stopped
 
   varnish:
     container_name: varnish-edge
-    image: mediafoundation/varnish-edge:v0.1
+    image: varnish-edge
     env_file:
       - .env
     ports:
@@ -27,18 +22,20 @@ services:
     volumes:
       - ./default.vcl:/etc/varnish/default.vcl
       - ./var/cache/varnish:/var/cache/varnish
+    restart: unless-stopped
 
   filebeat:
-    image: docker.elastic.co/beats/filebeat:7.17.25
+    image: filebeat-edge
     container_name: filebeat-edge
     ports:
       - "5044:5044"
     volumes:
       - ./caddyLogs/:/var/log/caddy/
-      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
+    restart: unless-stopped
 
   edge:
-    image: mediafoundation/edge:v0.1
+    image: edge
     container_name: edge
     volumes:
       - /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/:/usr/src/app/certs/
+    restart: unless-stopped

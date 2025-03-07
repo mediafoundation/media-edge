@@ -1,8 +1,15 @@
-FROM caddy:2.8
+FROM caddy:2.9.1
 
 # Copia los archivos de configuración
 COPY ./caddy /usr/local/bin/caddy
 RUN chmod +x /usr/local/bin/caddy
+
+# Configura las variables de entorno
+{% if caddy.env_vars is defined %}
+{% for env in caddy.env_vars %}
+ENV {{ env }}
+{% endfor %}
+{% endif %}
 
 # Exponer el puerto 80 y 443
 EXPOSE 80 443 2020

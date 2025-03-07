@@ -5,7 +5,7 @@ import fs from "fs";
 import {PurgeLog} from "../models/purgeLog";
 
 
-const queueFile = '/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/varnish_queue.json';
+const queueFile = '/etc/ssl/caddy/varnish_queue.json';
 export class PurgeLogsController {
 
     static async addRecord (url)  {

@@ -13,10 +13,7 @@ let caddyNeedsUpdate = false;
 
 let initCaddy = async function (network: any, privateKey: string) {
     let caddyRecords = await CaddyController.getRecords();
-    if (!caddyRecords) {
-        await CaddyController.initApps();
-        caddyRecords = await CaddyController.getRecords();
-    }
+
 
     let dealsFromDB = await DealsController.getDeals();
     let resourcesFromDB = await ResourcesController.getResources();
@@ -34,18 +31,16 @@ let initCaddy = async function (network: any, privateKey: string) {
 
     await CaddyController.addRecords(matchDealResources, caddyRecords, network, privateKey);
 
-    let caddyFile = await CaddyController.getRecords();
-
     let difference = await CaddyController.compareDbAndCaddyData(
         dealsFromDB.map((deal: any) => deal.id),
-        caddyFile.map((obj: any) => obj['@id']).filter((id: any) => id)
+        caddyRecords.map((obj: any) => obj['@id']).filter((id: any) => id)
     );
 
     for (const deal of difference) {
         await CaddyController.deleteRecord(deal);
     }
 
-    await CaddyController.checkQueue(queues.Minutely, "Minutely", 60, privateKey);
+    CaddyController.checkQueue(queues.Minutely, "Minutely", 60, privateKey);
 };
 
 let checkDealsShouldBeActive = async function () {
