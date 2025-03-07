@@ -10,17 +10,6 @@
         src: files/origin/docker/Dockerfile.caddy
         dest: /root/containers/Dockerfile.caddy
 
-    - name: Copy caddy source
-      copy:
-        src: files/caddy
-        dest: /root/containers/caddy
-
-
-    - name: Build image for origin
-      shell: docker build -t caddy-origin -f Dockerfile.caddy .
-      args:
-        chdir: /root/containers
-
 
     - name: Create caddy logs folder
       file:
@@ -41,19 +30,9 @@
         src: files/edge/docker/Dockerfile.caddy.j2
         dest: /root/containers/Dockerfile.caddy
 
-    - name: Copy caddy source
-      copy:
-        src: files/caddy
-        dest: /root/containers/caddy
-
     - name: Generate .env.caddy for Caddy
       template:
         src: files/edge/caddy/.env.j2
         dest: /root/containers/.env.caddy
-
-    - name: Build image for edge
-      shell: docker build -t caddy-edge -f Dockerfile.caddy .
-      args:
-        chdir: /root/containers
 
   when: inventory_hostname in groups["edge"]
