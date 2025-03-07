@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   caddy:
-    image: caddy-edge
+    image: mediafoundation/caddy-edge:v0.1
     container_name: caddy-edge
     ports:
       - "80:80"
@@ -19,7 +19,7 @@ services:
 
   varnish:
     container_name: varnish-edge
-    image: varnish-edge
+    image: mediafoundation/varnish-edge:v0.1
     env_file:
       - .env
     ports:
@@ -38,7 +38,7 @@ services:
       - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
 
   edge:
-    image: edge
+    image: mediafoundation/edge:v0.1
     container_name: edge
     volumes:
       - /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/:/usr/src/app/certs/

@@ -35,13 +35,3 @@
         dest: /root/containers/filebeat.yml
       vars:
         origin_ip: "{{ origin_ips[0] }}"
-
-    - name: Copy Dockerfile
-      copy:
-          src: files/edge/docker/Dockerfile.filebeat
-          dest: /root/containers/Dockerfile.filebeat
-
-    - name: Build image
-      shell: docker build -t filebeat-edge -f Dockerfile.filebeat .
-      args:
-          chdir: /root/containers

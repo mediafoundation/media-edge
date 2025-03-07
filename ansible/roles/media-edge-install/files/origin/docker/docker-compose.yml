@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   caddy:
-    image: caddy-origin
+    image: mediafoundation/caddy-origin:v0.1
     container_name: caddy-origin
     ports:
       - "80:80"
@@ -14,7 +14,7 @@ services:
 
   varnish:
     container_name: varnish-origin
-    image: varnish-origin
+    image: mediafoundation/varnish-origin:v0.1
     env_file:
       - .env
     ports:
