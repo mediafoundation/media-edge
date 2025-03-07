@@ -58,14 +58,6 @@
       state: started
       enabled: yes
 
-  - name: Verify Docker installation by running hello-world
-    command: docker run hello-world
-    register: hello_world_output
-
-  - name: Print hello-world output
-    debug:
-      var: hello_world_output.stdout
-
 - name: Stop all origin containers
   shell: docker stop origin varnish-origin caddy-origin postgres-origin es01 lg01 kb01
   ignore_errors: yes

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   caddy:
     image: caddy-edge
@@ -24,6 +22,7 @@ services:
     volumes:
       - ./default.vcl:/etc/varnish/default.vcl
       - ./var/cache/varnish:/var/cache/varnish
+    restart: unless-stopped
 
   filebeat:
     image: filebeat-edge
@@ -32,9 +31,11 @@ services:
       - "5044:5044"
     volumes:
       - ./caddyLogs/:/var/log/caddy/
+    restart: unless-stopped
 
   edge:
     image: edge
     container_name: edge
     volumes:
       - /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/:/usr/src/app/certs/
+    restart: unless-stopped

@@ -17,6 +17,7 @@ const certsPath = `/usr/src/app/certs`;
 
 // List of ACME issuers.
 const issuers: { name: string; url: string }[] = [
+  //{ name: "Let's Encrypt Staging", url: acme.directory.letsencrypt.staging },
   { name: "ZeroSSL", url: "https://acme.zerossl.com/v2/DV90" },
   { name: "Let's Encrypt", url: acme.directory.letsencrypt.production },
   { name: "Buypass Go SSL", url: "https://api.buypass.com/acme/directory" },
@@ -88,15 +89,6 @@ async function generateEABCredentials(email?: string, apiKey?: string): Promise<
   }
 }
 
-// Compute the TXT record value required for DNS-01 challenge.
-export function getDNSRecordValue(keyAuthorization: string): string {
-  const hash = crypto.createHash("sha256").update(keyAuthorization).digest();
-  return hash.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-// Temporary storage for DNS record IDs keyed by challenge token.
-const dnsRecordIds = new Map<string, string>();
-
 export async function obtainAndRenewCertificates(domains: Domain[]): Promise<void> {
   for (const domain of domains) {
     await obtainAndRenewCertificate(domain);
@@ -108,6 +100,7 @@ export async function obtainAndRenewCertificate(domain: Domain): Promise<CertSta
   const certPath = path.join(certsPath, folderName, `${folderName}.crt`);
   const keyPath = path.join(certsPath, folderName, `${folderName}.key`);
   const jsonPath = path.join(certsPath, folderName, `${folderName}.json`);
+  const pemPath = path.join(certsPath, folderName, `${folderName}.pem`);
   const challengeType = domain.dns_provider ? "dns-01" : "http-01";
 
   try {
@@ -166,6 +159,7 @@ export async function obtainAndRenewCertificate(domain: Domain): Promise<CertSta
         fs.writeFileSync(certPath, cert);
         fs.writeFileSync(keyPath, key);
         fs.writeFileSync(jsonPath, jsonData);
+        fs.writeFileSync(pemPath, `${cert}\n${key}`);
         console.log(`Certificate for ${domain.host} obtained and saved.`);
         return CertStatus.OBTAINED;
       } catch (error) {
