@@ -10,9 +10,9 @@ export interface Domain {
 export interface Provider {
     wallet_address?: `0x${string}`;
     mnemonic?: string;
-    accountIndex?: number;
+    addressIndex?: number;
     privateKey?: `0x${string}`;
-    supportedChains?: Network[];
+    supportedChains: Network[];
     domains: Domain[];
 }
 
@@ -22,15 +22,16 @@ export interface Network {
 }
 
 export interface Env {
-    MARKETPLACE_ID: number;
-    dbName: string;
-    dbUser: string;
-    dbPassword: string;
-    dbHost: string;
-    dbPort: number;
-    dbDialect: "postgres" | "mysql" | "sqlite" | "mariadb" | "mssql";
-    caddyUrl: string;
-    elasticSearchUrl: string;
+    marketplace_id: number;
+    db_name: string;
+    db_user: string;
+    db_password: string;
+    db_host: string;
+    db_port: number;
+    db_dialect: "postgres" | "mysql" | "sqlite" | "mariadb" | "mssql";
+    caddy_url: string;
+    elasticsearch_url: string;
     debug?: boolean;
+    email?: string;
     providers: Provider[];
 }

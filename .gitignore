@@ -1,4 +1,4 @@
-origin/config/env.ts
+origin/config/user_config.yml
 origin/lib/**/*
 
 node_modules/

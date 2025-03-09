@@ -5,6 +5,7 @@ import crypto from "crypto";
 import querystring from "querystring";
 import { getDNSProvider } from "../services/dnsProviders/factory";
 import { Domain } from "../config/interfaces";
+import { env } from "../config/env";
 
 export enum CertStatus {
   VALID = "valid",
@@ -14,13 +15,13 @@ export enum CertStatus {
 
 export const challengesPath = `/usr/src/app/challenges`;
 const certsPath = `/usr/src/app/certs`;
+const accountsDir = `/usr/src/app/certs/accounts`;
 
 // List of ACME issuers.
 const issuers: { name: string; url: string }[] = [
-  //{ name: "Let's Encrypt Staging", url: acme.directory.letsencrypt.staging },
-  { name: "ZeroSSL", url: "https://acme.zerossl.com/v2/DV90" },
+  { name: "ZeroSSL", url: acme.directory.zerossl.production },
   { name: "Let's Encrypt", url: acme.directory.letsencrypt.production },
-  { name: "Buypass Go SSL", url: "https://api.buypass.com/acme/directory" },
+  { name: "Buypass Go SSL", url: acme.directory.buypass.production },
 ];
 
 // Check if an existing certificate is valid.
@@ -59,10 +60,6 @@ async function generateEABCredentials(email?: string, apiKey?: string): Promise<
   };
 
   if (!apiKey) {
-    if (!email) {
-      console.warn("Missing email address for ZeroSSL; it is strongly recommended to set one for next time");
-      email = "ssl@media.foundation";
-    }
     headers["Content-Type"] = "application/x-www-form-urlencoded";
   }
 
@@ -89,6 +86,22 @@ async function generateEABCredentials(email?: string, apiKey?: string): Promise<
   }
 }
 
+async function getAccountKey(email: string): Promise<string> {
+  fs.mkdirSync(accountsDir, { recursive: true });
+  const sanitizedEmail = email.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+  const accountKeyPath = path.join(accountsDir, `${sanitizedEmail}.key`);
+  if (fs.existsSync(accountKeyPath)) {
+    console.log(`Loading existing account key for ${email}`);
+    return fs.readFileSync(accountKeyPath, "utf8");
+  } else {
+    console.log(`Creating new account key for ${email}`);
+    const keyBuffer = await acme.crypto.createPrivateKey();
+    const key = keyBuffer.toString();
+    fs.writeFileSync(accountKeyPath, key);
+    return key;
+  }
+}
+
 export async function obtainAndRenewCertificates(domains: Domain[]): Promise<void> {
   for (const domain of domains) {
     await obtainAndRenewCertificate(domain);
@@ -102,16 +115,20 @@ export async function obtainAndRenewCertificate(domain: Domain): Promise<CertSta
   const jsonPath = path.join(certsPath, folderName, `${folderName}.json`);
   const pemPath = path.join(certsPath, folderName, `${folderName}.pem`);
   const challengeType = domain.dns_provider ? "dns-01" : "http-01";
+  // Use domain.email if provided, otherwise fallback to global env.email.
+  const email = domain.email || env.email;
 
   try {
     if (fs.existsSync(certPath) && fs.existsSync(keyPath) && fs.existsSync(jsonPath)) {
       const validCert = checkCertificateValidity(certPath, folderName);
-      if (!validCert) {
-        console.log(`Renewing certificate for ${domain.host}`);
-      } else {
+      if (validCert) {
         return CertStatus.VALID;
       }
+      console.log(`Renewing certificate for ${domain.host}`);
     }
+
+    // Get or create the account key for this email.
+    const accountKey = await getAccountKey(email);
 
     // Loop through the defined issuers.
     for (const issuer of issuers) {
@@ -119,13 +136,13 @@ export async function obtainAndRenewCertificate(domain: Domain): Promise<CertSta
         console.log(`Obtaining certificate for ${domain.host} from ${issuer.name} / ${issuer.url}`);
         const client = new acme.Client({
           directoryUrl: issuer.url,
-          accountKey: await acme.crypto.createPrivateKey(),
-          externalAccountBinding: issuer.name === "ZeroSSL" ? await generateEABCredentials(domain?.email) : undefined,
+          accountKey: accountKey,
+          externalAccountBinding: issuer.name === "ZeroSSL" ? await generateEABCredentials(email) : undefined,
         });
         const [key, csr] = await acme.crypto.createCsr({ commonName: domain.host });
         const cert = await client.auto({
           csr,
-          email: domain?.email,
+          email: email,
           termsOfServiceAgreed: true,
           challengePriority: [challengeType],
           challengeCreateFn: async (authz, challenge, keyAuthorization) => {

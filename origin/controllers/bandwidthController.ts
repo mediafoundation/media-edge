@@ -17,7 +17,7 @@ const caddyApiHeaders = {
 export class BandwidthController {
 
     static async getBandwidthFromElastic(bandwidthLog)  {
-        const client = new Client({ node: env.elasticSearchUrl });
+        const client = new Client({ node: env.elasticsearch_url });
 
         // Set the time range for the query based on the bandwidth's updatedAt field
         const now = new Date();
@@ -141,7 +141,7 @@ export class BandwidthController {
     static async applyBandwidthLimiter (bandwidthsLog, enable) {
         try {
             if(env.debug) console.log("Applying bandwidth limit to deal:", bandwidthsLog.dealId);
-            const dealURL = `${env.caddyUrl}id/${bandwidthsLog.dealId}`;
+            const dealURL = `${env.caddy_url}id/${bandwidthsLog.dealId}`;
             const config = await axios.get(dealURL);
             const resource = config.data;
 
@@ -181,7 +181,7 @@ export class BandwidthController {
     // This function disables the X-Bandwidth-Limit from Caddyfile for a single deal.
     static async removeBandwidthHeader (dealId){
 
-        const dealURL = `${env.caddyUrl}id/${dealId}`;
+        const dealURL = `${env.caddy_url}id/${dealId}`;
         const config = await axios.get(
             dealURL,
             caddyApiHeaders

@@ -23,7 +23,7 @@ export const queues = {
     Monthly: []
 };
 
-const caddyBaseUrl = env.caddyUrl
+const caddyBaseUrl = env.caddy_url
 const caddyRoutesUrl = caddyBaseUrl+'config/apps/http/servers/srv0/routes'
 const caddyReqCfg = {
     headers: {
@@ -52,7 +52,7 @@ export class CaddyController {
         let hosts = []
 
         for(const domain of providerData[privateKey].domains){
-            hosts.push(`${generateSubdomain(env.MARKETPLACE_ID, deal.id, privateKey)}.${domain.host}`)
+            hosts.push(`${generateSubdomain(env.marketplace_id, deal.id, privateKey)}.${domain.host}`)
         }
 
         let transport = res.protocol === "https" ?
