@@ -1,4 +1,4 @@
-- name: Build Caddy
+- name: Build Caddy for Origin
   block:
     - name: Copy CaddyFile for origin
       copy:
@@ -21,6 +21,7 @@
         chdir: /root/containers
   when: inventory_hostname in groups["origin"]
 
+- name: Build Caddy for Edge
   block:
     - name: Copy CaddyFile for edge
       template:
