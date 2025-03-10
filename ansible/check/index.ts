@@ -1,4 +1,4 @@
-import { WalletUtils } from "media-sdk";
+import { http, WalletUtils } from "media-sdk";
 import { getEncryptionPublicKey } from "@metamask/eth-sig-util";
 import { Sdk, Marketplace, validChains } from "media-sdk";
 
@@ -13,12 +13,14 @@ const env = parse(file);
 
 //console.log(util.inspect(env, {showHidden: false, depth: null, colors: true}))
 
-const sdk = new Sdk({ chain: validChains[11155111] });
-
-const marketplace = new Marketplace(sdk);
-
 const init = async (): Promise<void> => {
-  for (const provider of env.providers) {
+  
+  console.log(`Detected ${env.providers.length} provider(s)`);
+  console.log("--------------------------------------------");
+  for (let i = 0; i < env.providers.length; i++) {
+    const provider = env.providers[i];
+    console.log(`\nProvider #${i+1}`);
+    console.log("----------------------");
     let privateKey: `0x${string}`;
     let account: any;
     //Infer usage between mnemonic and private key. Mnemonic preferred.
@@ -46,22 +48,59 @@ const init = async (): Promise<void> => {
     console.log("Decryption Address: ", account.address);
     console.log("Decryption Private Key: ", privateKey);
     console.log("Decryption Public Key: ", publicKey);
+    console.log("----------------------");
 
-    const isRegistered = await marketplace.view("isRegisteredProvider", [
-      1,
-      address,
-    ]);
+    if(provider?.supportedChains && provider?.supportedChains?.length > 0) {
 
-    if (!isRegistered) {
-      console.log("Provider not registered");
-    } else {
-      const providerData = await marketplace.view("getProvider", [1, address]);
-      if (providerData.publicKey === publicKey) {
-        console.log("Provider registered correctly, encryption key matches");
-      } else {
-        console.log("Provider registered but encryption key does not match");
+      console.log(`\nFound ${provider.supportedChains.length} chain(s) for Provider #${i+1}`);
+      console.log("----------------------");
+
+      const supportedChains: any = {};
+
+      for (const chain of provider.supportedChains) {
+
+        supportedChains[chain.id] = validChains[chain.id as keyof typeof validChains];
+        if(supportedChains[chain.id]?.name) {
+          const vanityName = `${supportedChains[chain.id].name} (${chain.id})`;
+          let transport = undefined;
+          if (chain.URL) {
+            transport = [http(chain.URL)];
+          }
+          const sdk = new Sdk({ 
+            chain: supportedChains[chain.id], 
+            transport 
+          });
+
+          const marketplace = new Marketplace(sdk);
+
+          try {
+            const isRegistered = await marketplace.view("isRegisteredProvider", [
+              1,
+              address,
+            ]);
+        
+            if (!isRegistered) {
+              console.log(`${vanityName}: Error! Provider not registered`);
+            } else {
+              const providerData = await marketplace.view("getProvider", [1, address]);
+              if (providerData.publicKey === publicKey) {
+                console.log(`${vanityName}: Success! Provider registered correctly, encryption key matches.`);
+              } else {
+                console.log(`${vanityName}: Error! Provider registered but encryption key does not match.`);
+                console.log("Expected: ", providerData.publicKey);
+                console.log("Actual: ", publicKey);
+              }
+              //console.log(JSON.parse(providerData.metadata));
+            }
+          } catch (e) {
+            console.log(`${vanityName}: Error! Could not get provider status. Try with another RPC endpoint. Current URL: ${chain.URL ? chain.URL : supportedChains[chain.id].rpcURL}`);
+          }
+        } else {
+          console.log(`Error! Chain ID ${chain.id} not found in validChains`);
+        }
       }
-      //console.log(JSON.parse(providerData.metadata));
+    } else {
+      console.log(`Error! No chains found for Provider #${i+1}`);
     }
     console.log("----------------------");
   }

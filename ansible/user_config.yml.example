@@ -2,39 +2,64 @@
 
 # Specify your wallet configuration, network, and other settings here.
 
-# *** CAUTION *** To prevent fund losses, it is recommended to use two separate wallets: one for staking and one for decryption. The staking wallet is used to manage registration (staking) and provider management. This wallet will have access to your funds, so it is important to keep it secure and separate from the decryption wallet. The decryption wallet is used to decrypt your clients' resources. Its public key should be provided to the app during registration so that your clients can later use it to encrypt the keys needed to decrypt their resources. The private key or mnemonic for the decryption wallet should be provided in this file, while the mnemonic for the staking wallet should never be shared or stored on a server.
+# *** CAUTION *** To prevent fund losses, it is recommended to use two separate wallets: one for staking and one for decryption.
+
+# The staking wallet is used to manage registration (staking) and provider management. This wallet will have access to your funds, so it is important to keep it secure and separate from the decryption wallet.
+
+# The decryption wallet is used to decrypt your clients' resources. Its public key should be provided to the app during registration so that your clients can later use it to encrypt the keys needed to decrypt their resources. The private key or mnemonic for the decryption wallet should be provided in this file, while the mnemonic for the staking wallet should never be shared or stored on a server.
 
 # The `providers` section contains details about the wallets, networks, and DNS configuration used in Media Edge.
-# The `wallet_address` field specifies the address of the staking wallet. This wallet is used to manage registration (staking) and provider management.
-# The `mnemonic` field specifies the mnemonic phrase for the decryption wallet.
-# The `addressIndex` field is optional and specifies the index of the account within the mnemonic (defaults to 0 if not provided).
-# The `privateKey` field specifies the private key for the decryption wallet. It must have the following format: "0x<64-character hexadecimal string>".
-# The `supportedChains` field lists the networks where you are providing services. Remember that you need to register and create offers on each network independently.
 
-# The `domains` section contains details about the DNS configuration. You can add multiple domains to the same provider. Each domain will have the following fields:
-# The `host` field specifies the domain name where you will host your services. This domain will be used to create endpoints for your clients, and each service you sell will have a unique subdomain under it.
-# The `dns_provider` field specifies the DNS provider you are using. Check all available providers and settings here: https://github.com/mediafoundation/media-edge/tree/main/origin/services/dnsProviders
-# The `env_vars` field specifies the environment variables needed to authenticate with the DNS provider. The format is "KEY=VALUE". If you need to provide multiple variables, list them separately.
-# The `email` field specifies the email address associated with the domain. This email address will be used to create EAB credentials, which are required by ZeroSSL to issue SSL certificates.
-# The `a_record` field specifies the IP addresses of your edge servers. You can add multiple IP addresses to this field. These IP addresses will be sent to the client when they add custom domains that are root domains (not subdomains) to their account.
-# The `cname` field specifies the hostname that you will provide to your clients so they can use custom domains (when the custom domain is a subdomain and not a root domain). Adding an A record for `*.yourdomain.com` that points to all your edge IPs is mandatory; if you choose something such as `cname.yourdomain.com`, it should work automatically. If you choose a different hostname, you will need to add an extra A record for it, pointing to all your edge IPs. (It could also be on a complete different domain than the one you are using for the `host` field, as long as it points to the correct IPs.)
+  # The `wallet_address` field specifies the address of the staking wallet. This wallet is used to manage registration (staking) and provider management.
+  
+  # The `mnemonic` field specifies the mnemonic phrase for the decryption wallet.
 
+  # The `addressIndex` field is optional and specifies the index of the account within the mnemonic (defaults to 0 if not provided).
+
+  # The `privateKey` field specifies the private key for the decryption wallet. It must have the following format: "0x<64-character hexadecimal string>".
+
+  # The `supportedChains` field lists the networks where you are providing services. Remember that you need to register and create offers on each network independently.
+
+  # The `domains` section contains details about the DNS configuration. You can add multiple domains to the same provider. Each domain will have the following fields:
+
+    # The `host` field specifies the domain name where you will host your services. This domain will be used to create endpoints for your clients, and each service you sell will have a unique subdomain under it.
+
+    # The `dns_provider` field specifies the DNS provider you are using. Check all available providers and settings here: https://github.com/mediafoundation/media-edge/tree/main/origin/services/dnsProviders
+
+    # The `env_vars` field specifies the environment variables needed to authenticate with the DNS provider. The format is "KEY=VALUE". If you need to provide multiple variables, list them separately.
+
+    # The `email` field specifies the email address associated with the domain. This email address will be used to create accounts on Certificate Authorities (CAs) to issue SSL certificates.
+
+    # The `a_record` field specifies the IP addresses of your edge servers. You can add multiple IP addresses to this field. These IP addresses will be sent to the client when they add custom domains that are root domains (not subdomains) to their account.
+
+    # The `cname` field specifies the hostname that you will provide to your clients so they can use custom domains (when the custom domain is a subdomain and not a root domain). Adding an A record for `*.yourdomain.com` that points to all your edge IPs is mandatory; if you choose something such as `cname.yourdomain.com`, it should work automatically. If you choose a different hostname, you will need to add an extra A record for it, pointing to all your edge IPs. It could also be on a complete different domain than the one you are using for the `host` field, as long as it points to the correct IPs.
+
+
+# Warning: Make sure to mantain the indentation, otherwise the configuration will not be loaded correctly.
 # Example configuration:
+
 providers:
   - 
-    wallet_address: "0x0000000000000000000000000000000000000000" # Address of the "staking" wallet (1st wallet).
+    # Address of the "staking" wallet (1st wallet).
+    wallet_address: "0x0000000000000000000000000000000000000000"
+
     # Decryption wallet configuration (2nd wallet)
     mnemonic: "media media media media media media media media media media media" # Any twelve-word BIP39 mnemonic phrase will work in this field.
     addressIndex: 0 # The index of the account within the mnemonic (defaults to 0 if not provided).
+
     # If you prefer to use a private key instead of a mnemonic phrase, uncomment and fill in the following line, and comment out the `mnemonic` and `addressIndex` fields.
-    #privateKey: "0x0000000000000000000000000000000000000000000000000000000000000000" 
-    supportedChains:  # List of network IDs
+    # privateKey: "0x0000000000000000000000000000000000000000000000000000000000000000" 
+
+    # List of network where you are registered as a provider.
+    supportedChains:
       - 
-        id: 11155111 # Network ID (e.g., 11155111 for Ethereum Sepolia).
-        URL: "https://sepolia.drpc.org" # RPC URL of the network. If not defined (i.e., commented out), the default RPC from media-sdk will be used.
-    #   - 
-    #     id: 84532
-    #     URL: "https://sepolia.base.org"
+        # Network ID (e.g., 11155111 for Ethereum Sepolia).
+        id: 11155111 
+        # RPC URL of the network. If not defined, the default RPC from media-sdk will be used.
+        URL: "https://sepolia.drpc.org"
+      # - 
+      #   id: 84532
+      #   URL: "https://sepolia.base.org"
     domains:
       - 
         host: yourdomain.com
@@ -49,12 +74,17 @@ providers:
           - "234.56.78.90"
         cname: cname.yourdomain.com
 
+# Default email, used for the registration of custom domains in the Certificate Authorities (CAs) to issue SSL certificates.
+email: admin@yourdomain.com
+
 # Database credentials
 db_user: origin
 db_password: changeme1234
 
 
+#####################
 ###### CAUTION ######
+#####################
 # The following settings are for advanced users only. Do not modify them unless you know what you are doing.
 db_name: origin
 db_host: postgres-origin

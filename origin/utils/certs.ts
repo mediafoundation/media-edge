@@ -6,6 +6,8 @@ import querystring from "querystring";
 import { getDNSProvider } from "../services/dnsProviders/factory";
 import { Domain } from "../config/interfaces";
 import { env } from "../config/env";
+import axios from "axios";
+
 
 export enum CertStatus {
   VALID = "valid",
@@ -23,6 +25,48 @@ const issuers: { name: string; url: string }[] = [
   { name: "Let's Encrypt", url: acme.directory.letsencrypt.production },
   { name: "Buypass Go SSL", url: acme.directory.buypass.production },
 ];
+
+async function testHttpChallengeAccess(domainHost: string): Promise<boolean> {
+  const randomFilename = crypto.randomBytes(8).toString("hex") + ".txt";
+  const testContent = crypto.randomBytes(16).toString("hex");
+  const filePath = path.join(challengesPath, randomFilename);
+
+  // Write the test file.
+  fs.writeFileSync(filePath, testContent);
+
+  const url = `http://${domainHost}/.well-known/acme-challenge/${randomFilename}`;
+
+  // Wait a bit for the file to be served.
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  try {
+    const response = await axios.get(url);
+    if (response.status !== 200) {
+      console.error(`HTTP-01 pre-check failed: Unable to fetch file from ${url} (status: ${response.status})`);
+      fs.unlinkSync(filePath);
+      return false;
+    }
+    const fetchedContent = typeof response.data === "string"
+      ? response.data.trim()
+      : JSON.stringify(response.data).trim();
+
+    if (fetchedContent !== testContent.trim()) {
+      console.error(`HTTP-01 pre-check failed: Content mismatch at ${url}`);
+      fs.unlinkSync(filePath);
+      return false;
+    }
+  } catch (error: any) {
+    console.error(`HTTP-01 pre-check failed: Unable to fetch file from ${url} (status: ${error.response?.status || "unknown"})`);
+    fs.unlinkSync(filePath);
+    return false;
+  }
+
+  // Clean up the test file.
+  fs.unlinkSync(filePath);
+  console.log(`HTTP-01 pre-check succeeded for ${domainHost}`);
+  return true;
+}
+
 
 // Check if an existing certificate is valid.
 function checkCertificateValidity(certificatePath: string, host: string): boolean {
@@ -125,6 +169,15 @@ export async function obtainAndRenewCertificate(domain: Domain): Promise<CertSta
         return CertStatus.VALID;
       }
       console.log(`Renewing certificate for ${domain.host}`);
+    }
+
+    // For HTTP-01 challenges, test that the challenge URL is reachable.
+    if (challengeType === "http-01") {
+      const precheckPassed = await testHttpChallengeAccess(domain.host);
+      if (!precheckPassed) {
+        console.error(`Pre-check failed for ${domain.host}. Aborting certificate request.`);
+        return CertStatus.FAILED;
+      }
     }
 
     // Get or create the account key for this email.

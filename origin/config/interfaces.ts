@@ -31,7 +31,7 @@ export interface Env {
     db_dialect: "postgres" | "mysql" | "sqlite" | "mariadb" | "mssql";
     caddy_url: string;
     elasticsearch_url: string;
-    debug?: boolean;
-    email?: string;
+    email: string;
     providers: Provider[];
+    debug?: boolean;
 }

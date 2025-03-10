@@ -20,6 +20,8 @@ COPY --chown=node:node . ./
 # Compila el código TypeScript
 RUN npm run build
 
+COPY --chown=node:node config/user_config.yml lib/config/
+
 # Exponer el puerto de la aplicación
 EXPOSE 3000 7878
 
