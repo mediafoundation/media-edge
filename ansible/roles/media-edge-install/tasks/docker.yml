@@ -1,70 +1,70 @@
 - name: Install docker
   block:
-  - name: Remove possible conflicting packages
-    apt:
-      name:
-        - docker.io
-        - docker-doc
-        - docker-compose
-        - podman-docker
-        - containerd
-        - runc
-      state: absent
+    - name: Remove possible conflicting packages
+      apt:
+        name:
+          - docker.io
+          - docker-doc
+          - docker-compose
+          - podman-docker
+          - containerd
+          - runc
+        state: absent
+        autoremove: yes
 
-  - name: Install required packages
-    apt:
-      name:
-        - ca-certificates
-        - curl
-      state: present
-      update_cache: yes
+    - name: Install required packages
+      apt:
+        name:
+          - ca-certificates
+          - curl
+        state: present
+        update_cache: yes
 
-  - name: Update APT package index
-    shell:  apt-get update
+    - name: Create directory for apt keyrings
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
 
-  - name: Install required packages
-    shell:  apt-get install -y ca-certificates curl
+    - name: Add Docker GPG key
+      shell: |
+        curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+        chmod a+r /etc/apt/keyrings/docker.asc
+      args:
+        creates: /etc/apt/keyrings/docker.asc
 
-  - name: Create directory for apt keyrings
-    shell:  install -m 0755 -d /etc/apt/keyrings
+    - name: Add Docker's official APT repository
+      shell: |
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo $VERSION_CODENAME) stable" |  tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-  - name: Download Docker's official GPG key
-    shell:  curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+    - name: Update APT package index
+      apt:
+        update_cache: yes
 
-  - name: Change permissions for Docker's GPG key
-    shell:  chmod a+r /etc/apt/keyrings/docker.asc
+    - name: Install Docker CLI
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
 
-  - name: Add Docker's official APT repository
-    shell: |
-      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo $VERSION_CODENAME) stable" |  tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-  - name: Update APT package index again
-    shell:  apt-get update
-
-  - name: Install Docker CLI
-    apt:
-      name:
-        - docker-ce
-        - docker-ce-cli
-        - containerd.io
-        - docker-buildx-plugin
-        - docker-compose-plugin
-      state: present
-      update_cache: yes
-
-  - name: Ensure Docker service is running
-    service:
-      name: docker
-      state: started
-      enabled: yes
+    - name: Ensure Docker service is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
 
 - name: Stop all origin containers
-  shell: docker stop origin varnish-origin caddy-origin postgres-origin es01 lg01 kb01
-  ignore_errors: yes
+  shell: docker stop origin varnish-origin caddy-origin postgres-origin es01 lg01 kb01 || true
+  changed_when: false
 
 - name: Remove all containers
-  shell: docker rm origin varnish-origin caddy-origin postgres-origin es01 lg01 kb01
-  ignore_errors: yes
+  shell: docker rm origin varnish-origin caddy-origin postgres-origin es01 lg01 kb01 || true
+  changed_when: false
 
 - name: Remove all existing files in containers folder
   file:
@@ -75,26 +75,27 @@
   file:
     path: /root/containers
     state: directory
+    mode: '0755'
 
-- name: Copy docker compose file
+- name: Copy docker compose file for origin
   copy:
-      src: files/origin/docker/docker-compose.yml
-      dest: /root/containers/docker-compose.yml
+    src: files/origin/docker/docker-compose.yml
+    dest: /root/containers/docker-compose.yml
   when: inventory_hostname in groups["origin"]
 
-- name: Copy docker compose file
+- name: Copy docker compose file for edge
   copy:
     src: files/edge/docker/docker-compose.yml
     dest: /root/containers/docker-compose.yml
   when: inventory_hostname in groups["edge"]
 
-- name: Create .env file
+- name: Create .env file for origin
   template:
     src: files/origin/docker/.env.j2
     dest: /root/containers/.env
   when: inventory_hostname in groups["origin"]
 
-- name: Create .env file
+- name: Create .env file for edge
   template:
     src: files/edge/docker/.env.j2
     dest: /root/containers/.env
