@@ -19,10 +19,10 @@
           - "--exclude=yarn.lock"
           - "--exclude=package-lock.json"
           - "--exclude=.git"
-    - name: Create env.ts file
-      template:
-        src: files/origin/config/env.ts.j2
-        dest: /root/containers/origin/config/env.ts
+    - name: Copy user config
+      copy:
+        src: ./user_config.yml
+        dest: /root/containers/origin/config/user_config.yml
 
     - name: Build image
       shell: docker build -t origin -f Dockerfile.node .

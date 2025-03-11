@@ -80,7 +80,7 @@ let checkQueue = (privateKey: string) => {
 };
 
 let checkCaddy = async (privateKey: string) => {
-    let url = new URL(env.caddyUrl);
+    let url = new URL(env.caddy_url);
     let host = url.hostname;
     let port = url.port;
     const options = {

@@ -169,7 +169,7 @@ export const manageDealCreatedOrAccepted = async (dealId, CURRENT_NETWORK) => {
 
     let marketplace = new Marketplace(sdk)
     let resourceInstance = new Resources(sdk)
-    const deal = await marketplace.getDealById({ marketplaceId: env.MARKETPLACE_ID, dealId: Number(dealId) })
+    const deal = await marketplace.getDealById({ marketplaceId: env.marketplace_id, dealId: Number(dealId) })
 
     const address = deal.provider
     const privateKey = providerState[address].privateKey
@@ -419,12 +419,12 @@ export const manageAddedBalance = async (dealId, network) => {
     let sdk = new Sdk({chain: validChains[network.id], transport: [http(network.URL)]})
 
     let marketplace = new Marketplace(sdk)
-    let deal = await marketplace.getDealById({marketplaceId: env.MARKETPLACE_ID, dealId: dealId})
+    let deal = await marketplace.getDealById({marketplaceId: env.marketplace_id, dealId: dealId})
     DealsController.parseDealMetadata(deal.terms.metadata)
     let formattedDeal = DealsController.formatDeal(deal)
     await DealsController.upsertDeal(formattedDeal, network.id)
 }
 
 /*let getId = (id, network) => {
-    return id + "_" + network.network_id + "_" + network.chain_id + "_" + env.MARKETPLACE_ID
+    return id + "_" + network.network_id + "_" + network.chain_id + "_" + env.marketplace_id
 }*/

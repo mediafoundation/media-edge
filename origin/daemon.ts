@@ -1,3 +1,4 @@
+import { env } from "./config/env";
 import { initDatabase } from "./services/database";
 import { initCaddy, checkQueue, checkCaddy } from "./services/caddy";
 import { checkBandwidth, initBandwidth } from "./services/bandwidth";
@@ -6,7 +7,6 @@ import { resetDB, createRelationsBetweenTables } from "./utils/resetDB";
 import { Sdk, Blockchain, validChains, WalletUtils, http } from "media-sdk";
 import { CaddyController } from "./controllers/caddyController";
 import { checkEvents } from "./services/events";
-import { env } from "./config/env";
 import { Domain } from "./config/interfaces";
 import { providerData, providerState } from "./models/providerState"
 import ExpressProvider from "./services/ExpressProvider"
@@ -77,33 +77,34 @@ async function start() {
 
 
     await createRelationsBetweenTables();
-    for (let i = 0; i < env.providers.length; i++) {
-        let address: `0x${string}`;
+    for (const provider of env.providers) {
         let privateKey: `0x${string}`;
-
+        let account: any;
         //Infer usage between mnemonic and private key. Mnemonic preferred.
-        if(env.providers[i].mnemonic) {
-            const hdKey = await WalletUtils.mnemonicToHDAccount(env.providers[i].mnemonic);
-            address = env.providers[i].wallet_address ? env.providers[i].wallet_address : hdKey.address
-            const privateKeyUnformatted = hdKey.getHdKey().privateKey
-            if(!privateKeyUnformatted) {
-                throw new Error("Private key not available, check your config/env.ts file and make sure you have a valid mnemonic");
-            }
-
-            privateKey = Buffer.from(privateKeyUnformatted).toString("hex") as `0x${string}`;
+        if (provider.mnemonic) {
+          account = await WalletUtils.mnemonicToHDAccount(
+            provider.mnemonic,
+            provider.addressIndex
+          );
+          const arrayBuffer = account.getHdKey().privateKey as Uint8Array;
+          privateKey = `0x${Buffer.from(arrayBuffer).toString("hex")}`;
+        } else if (provider.privateKey) {
+          account = await WalletUtils.privateKeyToAccount(
+            provider.privateKey
+          );
+          privateKey = provider.privateKey;
+        } else {
+          throw new Error("No mnemonic or private key found in user_config.yml");
         }
-
-        else {
-            const account = await WalletUtils.privateKeyToAccount(env.providers[i].privateKey);
-            address = env.providers[i].wallet_address ? env.providers[i].wallet_address : account.address
-            privateKey = env.providers[i].privateKey
-        }
+        const address = provider.wallet_address
+          ? provider.wallet_address
+          : account.address;
 
         providerState[address] = {privateKey: privateKey};
-        providerData[privateKey] = env.providers[i];
+        providerData[privateKey] = provider;
 
 
-        const networks = env.providers[i].supportedChains;
+        const networks = provider.supportedChains;
         for (const CURRENT_NETWORK of networks) {
             console.log(CURRENT_NETWORK);
 
@@ -140,7 +141,7 @@ async function start() {
             }, 24 * 7 * 60 * 60 * 1000);
         }
         //obtain all wildcard certificates for this provider
-        const updatedDomains = env.providers[i].domains.map((domain: Domain) => ({
+        const updatedDomains = provider.domains.map((domain: Domain) => ({
             ...domain,
             host: `*.${domain.host}`,
         }));

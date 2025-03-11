@@ -30,7 +30,7 @@ cp Vagrantfile.example Vagrantfile
 vagrant up
 ```
 
-For testing purposes, the vagrant boxes are provisioned with the default Vagrant's insecure private key for both `root` and `vagrant` users. The private key is normally located at `~/.vagrant.d/insecure_private_key`. If you are missing the file, it can be downloaded from [here](https://raw.githubusercontent.com/hashicorp/vagrant/refs/heads/main/keys/vagrant.key.rsa).
+For testing purposes, the vagrant boxes are provisioned with the default Vagrant's insecure private key for both `root` and `vagrant` users. The private key is located at `ansible/insecure_private_key`.
 
 ## How to deploy the VMs with Ansible
 

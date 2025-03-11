@@ -28,7 +28,7 @@ export const initDatabase = async function (network, sdkInstance: Sdk, address: 
 
     let resources = await resourcesInstance.getAllResourcesPaginating({address: address, start: 0, steps: 10})
     let deals = await marketplaceViewer.getAllDealsPaginating({
-        marketplaceId: env.MARKETPLACE_ID,
+        marketplaceId: env.marketplace_id,
         address: address,
         isProvider: true,
         start: 0,
@@ -129,7 +129,7 @@ export const initDatabase = async function (network, sdkInstance: Sdk, address: 
                 if(!dealIds.includes(generateUniqueItemId(Number(domain.dealId), network.id))){
                     txtRecord = generateTXTRecord(resource.owner, getHostName(domain.host), privateKey)
                 }
-                //txtRecord = generateTXTRecord(env.MARKETPLACE_ID, generateUniqueItemId(Number(domain.dealId), network.id), network.id, domain.host)
+                //txtRecord = generateTXTRecord(env.marketplace_id, generateUniqueItemId(Number(domain.dealId), network.id), network.id, domain.host)
             }
             await ResourcesController.upsertResourceDomain({
                 resourceId: generateUniqueItemId(Number(resource.resourceId), network.id),

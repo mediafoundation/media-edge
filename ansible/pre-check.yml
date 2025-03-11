@@ -1,0 +1,73 @@
+- name: Check if user_config.yml parameters are valid
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+    - name: Check if npm is installed on host machine
+      shell: command -v npm
+      register: npm_check
+      changed_when: false
+      ignore_errors: yes
+
+    - name:
+      block:
+        - name: Warning! Node.js/npm not found
+          fail:
+            msg: "Please install Node.js (at least v18.20.7) and try again."
+          ignore_errors: yes
+
+        - name: "Couldn't run test"
+          pause:
+            prompt: "File user_config.yml can't be validated.\nDo you want to continue anyway? (y/n)"
+          register: npm_abort_response
+
+        - name: Abort
+          fail:
+            msg: "User aborted installation."
+          when: (npm_abort_response.user_input | default('') | lower) != "y"
+      when: npm_check.rc != 0
+
+    - name:
+      block:
+        - name: Check for missing or incorrect npm packages
+          shell: npm ls --parseable
+          args:
+            chdir: "{{ playbook_dir }}/check"
+          register: npm_ls
+          ignore_errors: yes
+
+        - name: Install npm dependencies if packages are missing or broken
+          shell: npm install
+          args:
+            chdir: "{{ playbook_dir }}/check"
+          when: npm_ls.rc != 0
+
+        - name: Validating user_config.yml
+          shell: node index.js
+          args:
+            chdir: check
+          register: node_result
+
+        - name: 
+          debug:
+            msg: "\n###################################################\nSUCCESS: Your user_config.yml is correct!\n###################################################\n\n{{ node_result.stdout }}"
+          when: "not 'error' in node_result.stdout | lower"
+
+        - name:
+          block:
+            - name: 
+              fail:
+                msg: "\n###################################################\nWARNING: Your user_config.yml contains errors!\n###################################################\n\n{{ node_result.stdout }}"
+              ignore_errors: yes
+
+            - name: "File user_config.yml contains errors"
+              pause:
+                prompt: "You can continue with the installation, but services won't start correctly unless you fix user_config.yml.\nDo you want to continue anyway? (y/n)"
+              register: user_abort_response
+
+            - name: Abort
+              fail:
+                msg: "User aborted installation."
+              when: (user_abort_response.user_input | default('') | lower) != "y"
+          when: "'error' in node_result.stdout | lower"
+      when: npm_check.rc == 0

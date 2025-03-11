@@ -77,25 +77,25 @@
     state: directory
     mode: '0755'
 
-- name: Copy docker compose file for origin
+- name: Copy origin docker compose file
   copy:
     src: files/origin/docker/docker-compose.yml
     dest: /root/containers/docker-compose.yml
   when: inventory_hostname in groups["origin"]
 
-- name: Copy docker compose file for edge
+- name: Copy edge docker compose file
   copy:
     src: files/edge/docker/docker-compose.yml
     dest: /root/containers/docker-compose.yml
   when: inventory_hostname in groups["edge"]
 
-- name: Create .env file for origin
+- name: Create origin docker .env file
   template:
     src: files/origin/docker/.env.j2
     dest: /root/containers/.env
   when: inventory_hostname in groups["origin"]
 
-- name: Create .env file for edge
+- name: Create edge docker .env file
   template:
     src: files/edge/docker/.env.j2
     dest: /root/containers/.env
