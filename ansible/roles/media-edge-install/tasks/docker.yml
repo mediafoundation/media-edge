@@ -1,4 +1,4 @@
-- name: Install docker
+- name: Install docker on Debian based systems
   block:
     - name: Remove possible conflicting packages
       apt:
@@ -57,6 +57,7 @@
         name: docker
         state: started
         enabled: yes
+  when: ansible_facts['os_family'] == "Debian"
 
 - name: Stop all origin containers
   shell: docker stop origin varnish-origin caddy-origin postgres-origin es01 lg01 kb01 || true

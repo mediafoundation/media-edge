@@ -1,31 +1,36 @@
-- name: Add GlusterFS repository key
-  apt_key:
-    url: "https://download.gluster.org/pub/gluster/glusterfs/9/rsa.pub"
-    state: present
+- name: Install GlusterFS on Debian based systems
+  block:
+  - name: Add GlusterFS repository key
+    apt_key:
+      url: "https://download.gluster.org/pub/gluster/glusterfs/9/rsa.pub"
+      state: present
 
-- name: Add GlusterFS repository
-  apt_repository:
-    repo: "deb https://download.gluster.org/pub/gluster/glusterfs/LATEST/Debian/{{ ansible_distribution_major_version }}/amd64/apt {{ ansible_distribution_release }} main"
-    state: present
+  - name: Add GlusterFS repository
+    apt_repository:
+      repo: "deb https://download.gluster.org/pub/gluster/glusterfs/LATEST/Debian/{{ ansible_distribution_major_version }}/amd64/apt {{ ansible_distribution_release }} main"
+      state: present
 
-# Only edges in inventory
-- name: Install GlusterFS client on edges
-  apt:
-    name: glusterfs-client
-    state: present
-    update_cache: yes
-  when: inventory_hostname in groups["edge"]
-#
+  # Only edges in inventory
+  - name: Install GlusterFS client on edges
+    apt:
+      name: glusterfs-client
+      state: present
+      update_cache: yes
+    when: inventory_hostname in groups["edge"]
+
+  - name: Install GlusterFS server on origins
+    apt:
+      name: glusterfs-server
+      state: present
+      update_cache: yes
+    when: inventory_hostname in groups["origin"]
+  when: ansible_facts['os_family'] == "Debian"
 
 # Only origins tasks
 - name: Configure GlusterFS for origin nodes
   block:
     ## All origins
-    - name: Install GlusterFS server on origins
-      apt:
-        name: glusterfs-server
-        state: present
-        update_cache: yes
+
       
     - name: Enable and start glusterd service
       systemd:
