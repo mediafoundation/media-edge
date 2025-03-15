@@ -59,15 +59,13 @@
         enabled: yes
   when: ansible_facts['os_family'] == "Debian"
 
-- name: Stop all origin containers
-  shell: docker stop origin varnish-origin caddy-origin postgres-origin es01 lg01 kb01 || true
+- name: Stop and remove all origin containers
+  shell: |
+    docker ps -q | xargs -r docker stop
+    docker ps -aq | xargs -r docker rm
   changed_when: false
 
-- name: Remove all containers
-  shell: docker rm origin varnish-origin caddy-origin postgres-origin es01 lg01 kb01 || true
-  changed_when: false
-
-- name: Remove all existing files in containers folder
+- name: Reset containers folder
   file:
     path: /root/containers
     state: absent
@@ -78,26 +76,19 @@
     state: directory
     mode: '0755'
 
-- name: Copy origin docker compose file
+- name: Copy Docker Compose files
   copy:
-    src: files/origin/docker/docker-compose.yml
+    src: "{{ item }}"
     dest: /root/containers/docker-compose.yml
-  when: inventory_hostname in groups["origin"]
+  loop: >
+    {{ ['files/origin/docker/docker-compose.yml'] if inventory_hostname in groups['origin'] else 
+       ['files/edge/docker/docker-compose.yml'] if inventory_hostname in groups['edge'] else [] }}
 
-- name: Copy edge docker compose file
-  copy:
-    src: files/edge/docker/docker-compose.yml
-    dest: /root/containers/docker-compose.yml
-  when: inventory_hostname in groups["edge"]
 
-- name: Create origin docker .env file
+- name: Create Docker .env files
   template:
-    src: files/origin/docker/.env.j2
+    src: "{{ item }}"
     dest: /root/containers/.env
-  when: inventory_hostname in groups["origin"]
-
-- name: Create edge docker .env file
-  template:
-    src: files/edge/docker/.env.j2
-    dest: /root/containers/.env
-  when: inventory_hostname in groups["edge"]
+  loop: >
+    {{ ['files/origin/docker/.env.j2'] if inventory_hostname in groups['origin'] else
+       ['files/edge/docker/.env.j2'] if inventory_hostname in groups['edge'] else [] }}
