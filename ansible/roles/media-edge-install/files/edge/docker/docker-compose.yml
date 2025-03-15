@@ -1,6 +1,6 @@
 services:
   caddy:
-    image: caddy-edge
+    image: mediafoundation/caddy:v0.1
     container_name: caddy-edge
     ports:
       - "80:80"
@@ -14,7 +14,7 @@ services:
 
   varnish:
     container_name: varnish-edge
-    image: varnish-edge
+    image: mediafoundation/varnish-edge:v0.1
     env_file:
       - .env
     ports:
@@ -25,16 +25,17 @@ services:
     restart: unless-stopped
 
   filebeat:
-    image: filebeat-edge
+    image: docker.elastic.co/beats/filebeat:7.17.25
     container_name: filebeat-edge
     ports:
       - "5044:5044"
     volumes:
       - ./caddyLogs/:/var/log/caddy/
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
     restart: unless-stopped
 
   edge:
-    image: edge
+    image: mediafoundation/edge:v0.1
     container_name: edge
     volumes:
       - /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/:/usr/src/app/certs/

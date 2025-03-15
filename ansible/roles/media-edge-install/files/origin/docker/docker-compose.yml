@@ -1,6 +1,6 @@
 services:
   caddy:
-    image: caddy-origin
+    image: mediafoundation/caddy:v0.1
     container_name: caddy-origin
     ports:
       - "80:80"
@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
 
   varnish:
-    image: varnish-origin
+    image: mediafoundation/varnish-origin:v0.1
     container_name: varnish-origin
     env_file:
       - .env
