@@ -1,31 +1,12 @@
-- name: Build Caddy for Origin
+- name: Build Caddy
   block:
-    - name: Copy CaddyFile for origin
-      copy:
-        src: files/origin/caddy/Caddyfile
-        dest: /root/containers/Caddyfile
-
-    - name: Copy caddy DockerFile for origin
-      copy:
-        src: files/origin/docker/Dockerfile.caddy
-        dest: /root/containers/Dockerfile.caddy
-  when: inventory_hostname in groups["origin"]
-
-- name: Build Caddy for Edge
-  block:
-    - name: Copy CaddyFile for edge
+    - name: Copy CaddyFile
       template:
-        src: files/edge/caddy/Caddyfile.j2
+        src: "{{ 'files/origin/caddy/Caddyfile' if inventory_hostname in groups['origin'] else 'files/edge/caddy/Caddyfile.j2' }}"
         dest: /root/containers/Caddyfile
+      when: inventory_hostname in groups['origin'] or inventory_hostname in groups['edge']
 
-    - name: Copy caddy DockerFile for edge
-      template:
-        src: files/edge/docker/Dockerfile.caddy.j2
-        dest: /root/containers/Dockerfile.caddy
-
-  when: inventory_hostname in groups["edge"]
-
-- name: Create caddy logs folder
-  file:
-    path: /root/containers/caddyLogs
-    state: directory
+    - name: Create caddy logs folder
+      file:
+        path: /root/containers/caddyLogs
+        state: directory
