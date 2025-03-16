@@ -1,6 +1,17 @@
 - name: Build Caddy
   block:
+    - name: Create required folders
+      file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - /root/containers/caddyLogs
+        - /root/containers/logstashSettings
+      when: inventory_hostname in groups['origin'] or (inventory_hostname in groups['edge'] and item != '/root/containers/logstashSettings')
+
     - name: Copy configuration files
+      vars:
+        origin_ip: "{{ origin_ips[0] }}"
       template:
         src: "{{ item.src }}"
         dest: "{{ item.dest }}"
@@ -8,13 +19,13 @@
         {{ [
             { 'src': 'files/origin/caddy/Caddyfile', 'dest': '/root/containers/Caddyfile' },
             { 'src': 'files/origin/varnish/default.vcl.j2', 'dest': '/root/containers/default.vcl' },
+            { 'src': 'files/origin/logstash.conf.j2', 'dest': '/root/containers/logstashSettings/logstash.conf' },
+            { 'src': 'files/origin/logstash.yml.j2', 'dest': '/root/containers/logstashSettings/logstash.yml' },
+            { 'src': 'files/origin/elasticsearch.yml.j2', 'dest': '/root/containers/elasticsearch.yml' },
+            { 'src': 'files/origin/dashboard.ndjson', 'dest': '/root/containers/dashboard.ndjson' },
           ] if inventory_hostname in groups['origin'] else
           [
             { 'src': 'files/edge/varnish/default.vcl.j2', 'dest': '/root/containers/default.vcl' },
             { 'src': 'files/edge/caddy/Caddyfile.j2', 'dest': '/root/containers/Caddyfile' },
+            { 'src': 'files/edge/filebeat/filebeat.yml.j2', 'dest': '/root/containers/filebeat.yml' },
           ] }}
-
-    - name: Create caddy logs folder
-      file:
-        path: /root/containers/caddyLogs
-        state: directory
