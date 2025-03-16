@@ -1,10 +1,18 @@
 - name: Build Caddy
   block:
-    - name: Copy CaddyFile
+    - name: Copy configuration files
       template:
-        src: "{{ 'files/origin/caddy/Caddyfile' if inventory_hostname in groups['origin'] else 'files/edge/caddy/Caddyfile.j2' }}"
-        dest: /root/containers/Caddyfile
-      when: inventory_hostname in groups['origin'] or inventory_hostname in groups['edge']
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      loop: >
+        {{ [
+            { 'src': 'files/origin/caddy/Caddyfile', 'dest': '/root/containers/Caddyfile' },
+            { 'src': 'files/origin/varnish/default.vcl.j2', 'dest': '/root/containers/default.vcl' },
+          ] if inventory_hostname in groups['origin'] else
+          [
+            { 'src': 'files/edge/varnish/default.vcl.j2', 'dest': '/root/containers/default.vcl' },
+            { 'src': 'files/edge/caddy/Caddyfile.j2', 'dest': '/root/containers/Caddyfile' },
+          ] }}
 
     - name: Create caddy logs folder
       file:

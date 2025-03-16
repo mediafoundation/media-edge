@@ -2,12 +2,5 @@
   block:
     - name: Copy Varnish config file
       template:
-        src: files/origin/varnish/default.vcl.j2
+        src: "{{ 'files/origin/varnish/default.vcl.j2' if inventory_hostname in groups['origin'] else 'files/edge/varnish/default.vcl.j2' }}"
         dest: /root/containers/default.vcl
-      when: inventory_hostname in groups["origin"]
-
-    - name: Copy Varnish config file
-      template:
-        src: files/edge/varnish/default.vcl.j2
-        dest: /root/containers/default.vcl
-      when: inventory_hostname in groups["edge"]
