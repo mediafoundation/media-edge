@@ -25,6 +25,10 @@ COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/lib ./lib
 COPY --from=build /usr/src/app/package*.json ./
 
+RUN mkdir -p /usr/src/app/challenges /usr/src/app/lib
+
+RUN chown -R node:node /usr/src/app/challenges /usr/src/app/lib
+
 # Establece el usuario node (mejor seguridad)
 USER node
 
