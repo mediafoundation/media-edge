@@ -25,6 +25,6 @@
         dest: /root/containers/origin/config/user_config.yml
 
     - name: Build image
-      shell: docker build -t origin -f Dockerfile.node .
+      shell: docker build -t origin -f Dockerfile .
       args:
           chdir: /root/containers/origin

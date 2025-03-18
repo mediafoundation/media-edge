@@ -71,6 +71,7 @@ services:
       - "7878:7878"
     volumes:
       - /etc/ssl/caddy/:/usr/src/app/certs/
+      - /root/containers/origin/config/user_config.yml:/usr/src/app/lib/config/user_config.yml
     depends_on:
       - postgres
     restart: unless-stopped
