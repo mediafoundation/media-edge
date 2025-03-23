@@ -1,70 +1,133 @@
-- name: Crear directorio brick en servidores origin
+- name: Create Brick directory
   file:
     path: "/data/brick1"
     state: directory
 
-- name: Iniciar contenedor GlusterFS server
+- name: Build image for gluster for edges
+  block:
+    - name: Clone gluster repo
+      git:
+        repo: "https://github.com/gluster/gluster-containers.git"
+        dest: "/root/containers/gluster-containers"
+        clone: yes
+        update: yes
+        force: yes
+
+    - name: Build image
+      shell: docker build -t gluster-client gluster-client
+      args:
+        chdir: /root/containers/gluster-containers
+  when: inventory_hostname in groups['edge']
+
+- name: Build image for gluster for origin
+  block:
+    - name: Clone gluster repo
+      git:
+        repo: "https://github.com/gluster/gluster-containers.git"
+        dest: "/root/containers/gluster-containers"
+        clone: yes
+        update: yes
+        force: yes
+
+    - name: Build image
+      shell: docker build -t gluster-server CentOS
+      args:
+        chdir: /root/containers/gluster-containers
+  when: inventory_hostname in groups['origin']
+
+- name: Remove running containers
   docker_container:
-    name: "glusterfs-server"
-    image: "gluster/gluster-centos:latest"
+    name: glusterfs-server
+    state: absent
+  ignore_errors: yes
+  when: inventory_hostname in groups['origin']
+
+- name: Start GlusterFS server container on Origins
+  docker_container:
+    name: glusterfs-server
+    image: gluster-server
     state: started
     restart_policy: always
     privileged: true
+    network_mode: host
     volumes:
       - "/data/brick1:/data/brick1"
     command: /usr/sbin/glusterd -N
-
   when: inventory_hostname in groups['origin']
 
-### 3. Configuración del GlusterFS Volume en el primer servidor origin
-- name: Crear peers de GlusterFS
-  command: >
-    docker exec glusterfs-server gluster peer probe {{ hostvars[item]['ansible_host'] }}
-  with_items: "{{ groups['origin'][1:] }}"
+- name: Configure GlusterFS cluster (only on first origin)
+  block:
+    - name: Configure GlusterFS peers
+      command: docker exec gluster-server peer probe {{ hostvars[item]['ansible_host'] }}
+      with_items: "{{ groups['origin'][1:] }}"
+      loop_control:
+        pause: 5
+
+    - name: Create GlusterFS volume
+      command: >
+        docker exec glusterfs-server gluster volume create cert_vol
+        {% if groups['origin'] | length > 1 %}
+        replica {{ groups['origin'] | length }}
+        {% endif %}
+        transport tcp
+        {% for host in groups['origin'] %}
+        {{ hostvars[host]['ansible_host'] }}:/data/brick1
+        {% endfor %}
+        force
+      register: create_volume
+      failed_when:
+        - "'already exists' not in create_volume.stderr"
+        - create_volume.rc != 0
+
+    - name: Set auth.allow for GlusterFS volume
+      command: >
+        docker exec glusterfs-server gluster volume set cert_vol auth.allow {{ ((groups['origin'] | map('extract', hostvars, 'ansible_host') | list) + (groups['edge'] | map('extract', hostvars, 'ansible_host') | list)) | join(',') }}
+
+    - name: Start GlusterFS volume
+      command: docker exec glusterfs-server gluster volume start cert_vol
+      register: start_volume
+      failed_when:
+        - "'already started' not in start_volume.stderr"
+        - start_volume.rc != 0
+
   when: inventory_hostname == groups['origin'][0]
 
-- name: Crear el volumen GlusterFS
-  command: >
-    docker exec glusterfs-server gluster volume create cert_vol
-    {% if groups['origin'] | length > 1 %} replica {{ groups['origin'] | length }} {% endif %}
-    transport tcp
-    {% for host in groups['origin'] %}
-    {{ hostvars[host]['ansible_host'] }}:/data/brick1
-    {% endfor %}
-    force
-  register: create_volume
-  failed_when:
-    - "'already exists' not in create_volume.stderr"
-    - create_volume.rc != 0
-  when: inventory_hostname == groups['origin'][0]
+- name: Set facts for GlusterFS mount in Docker (edges and origins)
+  set_fact:
+    primary_origin_server: "{{ origin_ips[0] }}"
+    backup_origin_servers: "{{ origin_ips[1:] | join(',') }}"
+    mount_point: "/mnt/glusterfs"
+    container_mount_target: "/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/"
 
-- name: Iniciar el volumen GlusterFS
-  command: docker exec glusterfs-server gluster volume start cert_vol
-  when: inventory_hostname == groups['origin'][0]
-
-### 4. Montar el volumen en nodos edge y origin
-- name: Instalar GlusterFS client en contenedor
-  docker_container:
-    name: "glusterfs-client"
-    image: "gluster/gluster-centos:latest"
-    state: started
-    restart_policy: always
-    volumes:
-      - "/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/:/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/"
-
-- name: Crear directorio de montaje
+- name: Create host mount point directory
   file:
-    path: "/root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/"
+    path: "{{ container_mount_target }}"
     state: directory
+    owner: 1000
+    group: 1000
     mode: '0755'
 
-- name: Montar el volumen GlusterFS
-  command: >
-    mount -t glusterfs {{ groups['origin'][0] }}:/cert_vol /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/
-  when: inventory_hostname in groups['edge'] + groups['origin']
+- name: Remove running container
+  docker_container:
+      name: glusterfs-client
+      state: absent
+  ignore_errors: yes
+  when: inventory_hostname in groups['edge']
 
-- name: Añadir el montaje a /etc/fstab
-  lineinfile:
-    path: /etc/fstab
-    line: "{{ groups['origin'][0] }}:/cert_vol /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/ glusterfs defaults,_netdev 0 0"
-    state: present
+- name: Start GlusterFS client container
+  docker_container:
+    name: glusterfs-client
+    image: gluster-client
+    state: started
+    restart_policy: always
+    privileged: true
+    network_mode: host
+    volumes:
+      - "{{ container_mount_target }}:{{ container_mount_target }}"
+    command: sleep infinity
+  when: inventory_hostname in groups['edge']
+
+- name: Mount GlusterFS inside glusterfs-client container
+  command: >
+    docker exec glusterfs-client mount -t glusterfs -o defaults,_netdev{{ ',backup-volfile-servers=' + backup_origin_servers if groups['origin'] | length > 1 else '' }} {{ primary_origin_server }}:/cert_vol {{ container_mount_target }}
+  when: inventory_hostname in groups['edge']
