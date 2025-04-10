@@ -131,6 +131,5 @@ This project is licensed under the MIT License. See `LICENSE.txt` for more detai
 ## 📞 Contact
 
  [Twitter/X](https://twitter.com/Media_FDN)
- [Telegram](https://t.me/Media_FDN)
  [Discord](https://discord.com/invite/wwSw3J7F2j)
 
