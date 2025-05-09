@@ -46,7 +46,7 @@ Ensure these are installed on your local computer and target server(s):
 
 - [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-ansible-on-specific-operating-systems)
 - [rsync](https://rsync.samba.org/)
-- [Debian 11 x64](https://www.debian.org/releases/bullseye/)
+- [Debian 11 x64](https://www.debian.org/releases/bullseye/) or [Centos9](https://www.centos.org/download/)
 
 ### 🛠️ Installation
 
