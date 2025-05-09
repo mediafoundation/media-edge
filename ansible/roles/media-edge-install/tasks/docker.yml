@@ -59,6 +59,86 @@
         enabled: yes
   when: ansible_facts['os_family'] == "Debian"
 
+- name: Install Docker on RedHat-based systems
+  block:
+    - name: Remove possible conflicting packages
+      yum:
+        name:
+          - docker
+          - docker-client
+          - docker-client-latest
+          - docker-common
+          - docker-latest
+          - docker-latest-logrotate
+          - docker-logrotate
+          - docker-engine
+        state: absent
+
+    - name: Install required packages
+      yum:
+        name:
+          - yum-utils
+          - device-mapper-persistent-data
+          - lvm2
+        state: present
+
+    - name: Add Docker repository
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Install Docker packages
+      yum:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Enable and start Docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+  when: ansible_facts['os_family'] == "RedHat"
+
+- name: Install Docker on Windows based systems
+  block:
+    - name: Enable the containers feature
+      win_feature:
+        name: Containers
+        state: present
+        include_sub_features: yes
+        restart: yes
+
+    - name: Enable the Hyper-V feature
+      win_feature:
+        name: Hyper-V
+        state: present
+        include_sub_features: yes
+        restart: yes
+
+    - name: Download DockerMsftProvider module
+      win_shell: |
+        Install-Module -Name DockerMsftProvider -Repository PSGallery -Force
+      args:
+        creates: "C:\\Program Files\\WindowsPowerShell\\Modules\\DockerMsftProvider"
+
+    - name: Install Docker using DockerMsftProvider
+      win_package:
+        name: Docker
+        provider: DockerMsftProvider
+        state: present
+
+    - name: Ensure Docker service is running
+      win_service:
+        name: docker
+        start_mode: auto
+        state: started
+  when: ansible_facts['os_family'] == "Windows"
+
 - name: Stop and remove all origin containers
   shell: |
     docker ps -q | xargs -r docker stop

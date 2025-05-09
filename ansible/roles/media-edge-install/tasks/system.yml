@@ -1,101 +1,198 @@
-# Start by resetting APT sources to avoid issues with third-party repositories
-- name: Find all files in sources.list.d
-  find:
-    paths: "/etc/apt/sources.list.d/"
-    file_type: file
-  register: found_files
+- name: Install system dependencies on debian based system
+  block:
+    # Start by resetting APT sources to avoid issues with third-party repositories
+    - name: Find all files in sources.list.d
+      find:
+        paths: "/etc/apt/sources.list.d/"
+        file_type: file
+      register: found_files
 
-- name: Remove all files from sources.list.d
-  file:
-    path: "{{ item.path }}"
-    state: absent
-  loop: "{{ found_files.files }}"
-  when: found_files.matched > 0
+    - name: Remove all files from sources.list.d
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ found_files.files }}"
+      when: found_files.matched > 0
 
-- name: Reset main sources.list to default based on current Debian release
-  copy:
-    dest: /etc/apt/sources.list
-    content: |
-      deb https://deb.debian.org/debian/ {{ ansible_distribution_release }} main
-      deb-src https://deb.debian.org/debian/ {{ ansible_distribution_release }} main
-      deb https://security.debian.org/debian-security {{ ansible_distribution_release }}-security main contrib
-      deb-src https://security.debian.org/debian-security {{ ansible_distribution_release }}-security main contrib
-      deb https://deb.debian.org/debian/ {{ ansible_distribution_release }}-updates main contrib
-      deb-src https://deb.debian.org/debian/ {{ ansible_distribution_release }}-updates main contrib
+    - name: Reset main sources.list to default based on current Debian release
+      copy:
+        dest: /etc/apt/sources.list
+        content: |
+          deb https://deb.debian.org/debian/ {{ ansible_distribution_release }} main
+          deb-src https://deb.debian.org/debian/ {{ ansible_distribution_release }} main
+          deb https://security.debian.org/debian-security {{ ansible_distribution_release }}-security main contrib
+          deb-src https://security.debian.org/debian-security {{ ansible_distribution_release }}-security main contrib
+          deb https://deb.debian.org/debian/ {{ ansible_distribution_release }}-updates main contrib
+          deb-src https://deb.debian.org/debian/ {{ ansible_distribution_release }}-updates main contrib
 
 
-# Adjust APT configurations to allow release info changes
-- name: Fixing apt package issues
-  shell: |
-    sed -i '/Acquire::AllowReleaseInfoChange::Suite/d' /etc/apt/apt.conf.d/90releaseinfo-change
-    echo 'Acquire::AllowReleaseInfoChange::Suite "true";' >> /etc/apt/apt.conf.d/90releaseinfo-change
+    # Adjust APT configurations to allow release info changes
+    - name: Fixing apt package issues
+      shell: |
+        sed -i '/Acquire::AllowReleaseInfoChange::Suite/d' /etc/apt/apt.conf.d/90releaseinfo-change
+        echo 'Acquire::AllowReleaseInfoChange::Suite "true";' >> /etc/apt/apt.conf.d/90releaseinfo-change
 
-# Update the APT cache
-- name: Update apt cache directly
-  apt:
-    update_cache: yes
-  register: apt_update_result
-  ignore_errors: yes
+    # Update the APT cache
+    - name: Update apt cache directly
+      apt:
+        update_cache: yes
+      register: apt_update_result
+      ignore_errors: yes
 
-# Display any errors encountered during the APT cache update
-- name: Print apt update output if failed
-  debug:
-    var: apt_update_result.stdout_lines
-  when: apt_update_result is failed
+    # Display any errors encountered during the APT cache update
+    - name: Print apt update output if failed
+      debug:
+        var: apt_update_result.stdout_lines
+      when: apt_update_result is failed
 
-# Upgrade all system packages if APT cache update was successful
-- name: Upgrade system packages
-  apt:
-    upgrade: "yes"
-  when: apt_update_result is succeeded
+    # Upgrade all system packages if APT cache update was successful
+    - name: Upgrade system packages
+      apt:
+        upgrade: "yes"
+      when: apt_update_result is succeeded
 
-# Address any unconfigured packages
-- name: Reconfigure dpkg
-  command: dpkg --configure -a
+    # Address any unconfigured packages
+    - name: Reconfigure dpkg
+      command: dpkg --configure -a
 
-# Prevent services from auto-starting after installation
-- name: Preventing services to start after installed
-  shell: |
-    echo '#!/bin/sh' > /usr/sbin/policy-rc.d
-    echo 'exit 101' >> /usr/sbin/policy-rc.d
-    chmod +x /usr/sbin/policy-rc.d
+    # Prevent services from auto-starting after installation
+    - name: Preventing services to start after installed
+      shell: |
+        echo '#!/bin/sh' > /usr/sbin/policy-rc.d
+        echo 'exit 101' >> /usr/sbin/policy-rc.d
+        chmod +x /usr/sbin/policy-rc.d
 
-# Remove packages that might conflict with our setup
-- name: Removing potential conflicting packages
-  apt:
-    state: absent 
-    autoremove: true
-    name:
-      - apache2
-      - nginx
+    # Remove packages that might conflict with our setup
+    - name: Removing potential conflicting packages
+      apt:
+        state: absent
+        autoremove: true
+        name:
+          - apache2
+          - nginx
 
-# Install shared system packages, ensuring APT cache update was successful
-- name: Installing shared system packages
-  apt:
-    install_recommends: true
-    state: latest
-    name:
-      - htop
-      - gpg
-      - rsync
-      - tmux
-      - jq
-      - wget
-      - vim
-      - curl
-      - bmon
-      - iftop
-  when: apt_update_result is succeeded
+    # Install shared system packages, ensuring APT cache update was successful
+    - name: Installing shared system packages
+      apt:
+        install_recommends: true
+        state: latest
+        name:
+          - htop
+          - gpg
+          - rsync
+          - tmux
+          - jq
+          - wget
+          - vim
+          - curl
+          - bmon
+          - iftop
+      when: apt_update_result is succeeded
 
-# Set the hostname based on the IP and group membership
-- name: Adds hostname to /etc/hostname based on IP
-  shell: |
-    echo "{{ 'media-origin-' if inventory_hostname in groups["origin"] else 'media-edge-' }}{{ ansible_ssh_host }}" > /etc/hostname.tmp
-    sed 's/\./-/g' /etc/hostname.tmp > /etc/hostname
-    hostname -F /etc/hostname
+    # Set the hostname based on the IP and group membership
+    - name: Adds hostname to /etc/hostname based on IP
+      shell: |
+        echo "{{ 'media-origin-' if inventory_hostname in groups["origin"] else 'media-edge-' }}{{ ansible_ssh_host }}" > /etc/hostname.tmp
+        sed 's/\./-/g' /etc/hostname.tmp > /etc/hostname
+        hostname -F /etc/hostname
 
-# Disable Firewall to allow connectivity between edge and origin
-- name: Disable UFW if enabled
-  ufw:
-    state: disabled
-  ignore_errors: yes
+    # Disable Firewall to allow connectivity between edge and origin
+    - name: Disable UFW if enabled
+      ufw:
+        state: disabled
+      ignore_errors: yes
+  when: ansible_facts['os_family'] =="Debian"
+
+- name: Reset system repositories and base config for RedHat
+  block:
+    - name: Clean yum cache
+      command: yum clean all
+
+    - name: Update YUM cache
+      yum:
+        update_cache: yes
+
+    - name: Upgrade all system packages
+      yum:
+        name: '*'
+        state: latest
+
+    - name: Disable firewalld if running
+      service:
+        name: firewalld
+        state: stopped
+        enabled: no
+      ignore_errors: yes
+
+    - name: Remove conflicting packages
+      yum:
+        name:
+          - httpd
+          - nginx
+        state: absent
+
+    - name: Install shared system packages
+      yum:
+        name:
+          - gnupg2
+          - rsync
+          - tmux
+          - jq
+          - wget
+          - git
+          - vim
+          - curl
+        state: present
+
+    - name: Set hostname based on IP and group
+      shell: |
+        echo "{{ 'media-origin-' if inventory_hostname in groups["origin"] else 'media-edge-' }}{{ ansible_ssh_host }}" > /etc/hostname
+        hostnamectl set-hostname $(cat /etc/hostname)
+
+  when: ansible_facts['os_family'] == "RedHat"
+
+- name: Install system dependencies and configure Windows Server
+  block:
+
+    - name: Ensure PowerShell can use NuGet
+      win_shell: |
+        Install-PackageProvider -Name NuGet -Force
+        Install-Module -Name PowerShellGet -Force -AllowClobber
+      args:
+        creates: C:\Program Files\PackageManagement\ProviderAssemblies
+
+    - name: Install Chocolatey (if not already installed)
+      win_shell: |
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+        iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+      args:
+        creates: C:\ProgramData\chocolatey\choco.exe
+
+    - name: Install shared system tools using Chocolatey
+      win_chocolatey:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - git
+        - 7zip
+        - vim
+        - curl
+        - wget
+        - jq
+        - rsync
+      ignore_errors: yes
+
+    - name: Set system hostname based on host IP and group
+      win_hostname:
+        name: >
+          {{
+            ('media-origin-' if inventory_hostname in groups['origin']
+             else 'media-edge-') + ansible_host.replace('.', '-')
+          }}
+
+    - name: Disable Windows Defender firewall
+      win_firewall:
+        state: disabled
+
+  when: ansible_facts['os_family'] == "Windows"
